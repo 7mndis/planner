@@ -1359,11 +1359,11 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "2026-10-23.5";
-if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+const APP_VERSION = "2026-10-23.6";
+if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {});
 let verAt = 0;
 async function checkVersion() {
-  if (Date.now() - verAt < 600000) return; verAt = Date.now();
+  if (Date.now() - verAt < 120000) return; verAt = Date.now();
   try { const h = await fetch("index.html", { cache: "no-store" }).then(r => r.ok ? r.text() : ""); const m = h.match(/const APP_VERSION = "([^"]+)"/); if (m && m[1] !== APP_VERSION) showUpdate(); } catch (e) {}
 }
 function showUpdate() {
