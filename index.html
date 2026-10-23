@@ -268,6 +268,39 @@ svg.i { width: 1.15em; height: 1.15em; flex: none; }
   .toast { bottom: 24px; }
   .sh-bar { touch-action: auto; }
 }
+/* quick add */
+.qa { display: grid; gap: 8px; }
+.qa-bar { display: flex; align-items: center; gap: 8px; background: var(--card); border-radius: 14px; padding: 4px 4px 4px 14px; min-height: 52px; }
+.qa-bar svg { width: 20px; height: 20px; color: var(--label2); flex: none; }
+.qa-bar input { flex: 1; min-width: 0; border: 0; background: none; font-size: 1rem; padding: 12px 0; outline: none; color: var(--label); }
+.qa-bar .btn { min-height: 40px; padding: 0 14px; }
+.qa-prev { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 4px; min-height: 22px; }
+.qa-prev .chip { font-size: .76rem; padding: 3px 9px; }
+.qa-prev .chip.hl { background: var(--label); color: var(--card); }
+.qa-prev button.chip { border: 0; cursor: pointer; }
+/* weekly review */
+.rv-row { display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 4px 12px; padding: 12px 16px; align-items: center; }
+.rv-row + .rv-row { border-top: .5px solid var(--sep); }
+.rv-row .itile { grid-row: span 2; }
+.rv-row b { font-weight: 600; overflow-wrap: anywhere; }
+.rv-row small { color: var(--label2); font-size: .8rem; }
+.rv-acts { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.rv-acts .btn.sm { min-height: 34px; padding: 0 12px; font-size: .82rem; }
+.rv-stat { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.rv-stat div { background: var(--card); border-radius: 12px; padding: 12px; display: grid; gap: 2px; }
+.rv-stat b { font-size: 1.4rem; font-family: var(--font-round); font-variant-numeric: tabular-nums; }
+.rv-stat span { font-size: .76rem; color: var(--label2); font-weight: 600; }
+.rt { display: grid; grid-template-columns: minmax(0, 1fr) 90px 44px; gap: 10px; align-items: center; padding: 10px 16px; font-size: .94rem; }
+.rt + .rt { border-top: .5px solid var(--sep); }
+.rt i { height: 6px; border-radius: 3px; background: var(--fill); overflow: hidden; display: block; }
+.rt i u { display: block; height: 100%; background: var(--done); border-radius: 3px; transform-origin: left; }
+.rt em { font-style: normal; text-align: right; color: var(--label2); font-variant-numeric: tabular-nums; font-size: .82rem; }
+/* gym progress */
+html.lock .toast { bottom: auto; top: calc(12px + env(safe-area-inset-top, 0px)); }
+.prog { padding-left: 32px; display: grid; gap: 2px; }
+.prog svg { width: 100%; height: 46px; display: block; overflow: visible; }
+.prog small { font-size: .78rem; color: var(--label2); font-variant-numeric: tabular-nums; }
+.prog small b { color: var(--done); font-weight: 600; }
 .setup { max-width: 460px; margin: 10vh auto 0; display: grid; gap: 14px; }
 .setup h1 { margin: 0; font-size: 1.7rem; }
 .setup p { margin: 0; color: var(--label2); font-size: .94rem; line-height: 1.45; }
@@ -498,6 +531,111 @@ const cardHtml = (inner, head) => `<div class="card">${head || ""}${inner}</div>
 const chHead = (label, dot, cnt) => `<div class="ch">${dot ? `<span class="dot" style="background:var(${dot})"></span>` : ""}${esc(label)}${cnt !== undefined ? `<span class="cnt">${cnt}</span>` : ""}</div>`;
 function rowsByDay(items) { let out = "", last = null; items.forEach(it => { if (it.date !== last) { out += `<div class="dayh">${esc(rel(it.date))}</div>`; last = it.date; } out += rowHtml(it); }); return out; }
 
+/* ---------- quick add: "pick up lunch at 12pm", "Tamkeen send IIR tomorrow 10am with reminder" ---------- */
+const CAT_WORDS = [
+  ["Gym", /\b(gym|workout|train(ing)?|cardio|run)\b/i], ["Supplements", /\b(supplements?|vitamins?|creatine|omega|protein)\b/i],
+  ["Faith", /\b(pray(er)?|quran|dhikr|adhkar|mosque|jumu?ah)\b/i], ["Laundry", /\b(laundry|iron(ing)?|dry ?clean)/i],
+  ["Shopping", /\b(buy|shop(ping)?|grocer(y|ies)|order)\b/i], ["Car", /\b(car|oil change|petrol|tyres?|service the car)\b/i],
+  ["Money", /\b(bank|pay|bill|transfer|invoice|rent|salary)\b/i], ["Self care", /\b(haircut|barber|doctor|dentist|clinic|massage)\b/i],
+  ["Home", /\b(clean|tidy|fix|repair|home|house)\b/i], ["Errands", /\b(pick ?up|drop ?off|collect|post office|errand)\b/i]
+];
+const WORK_WORDS = /\b(email|report|meeting|deck|slides|review|audit|client|proposal|timesheet|ecf|draft|policy|workshop)\b/i;
+const WDAY = { sun: 0, sunday: 0, mon: 1, monday: 1, tue: 2, tues: 2, tuesday: 2, wed: 3, wednesday: 3, thu: 4, thur: 4, thurs: 4, thursday: 4, fri: 5, friday: 5, sat: 6, saturday: 6 };
+const MON = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, sept: 9, oct: 10, nov: 11, dec: 12 };
+function parseQuick(raw) {
+  let t = " " + raw.trim() + " ";
+  const o = { scope: "", area: "", due: "", time: "", alert: false, priority: false, owner: "Me" };
+  const cut = re => { const m = t.match(re); if (m) t = t.replace(m[0], " "); return m; };
+  if (/\bremind(er)?\b/i.test(t) || /\bwith (an )?alert\b/i.test(t)) o.alert = true;
+  cut(/\bwith (a |an )?(reminder|alert)\b/i);
+  cut(/^\s*(please\s+)?(add|create|new|set)\s+(a\s+|an\s+)?(new\s+)?(task|reminder|to-?do|item)?\s*(to|for|:)?\s+/i);
+  cut(/^\s*remind me (to|about)\s+/i);
+  if (cut(/(\bhigh priority\b|\burgent\b|\s!+\s)/i)) o.priority = true;
+  // waiting on someone
+  const w = cut(new RegExp("\\b(waiting|wait) (on|for) (" + OWNERS.filter(x => x !== "Me").join("|") + ")\\b", "i"));
+  if (w) o.owner = OWNERS.find(x => x.toLowerCase() === w[3].toLowerCase());
+  // time
+  let m = cut(/\b(?:at\s+|@\s*)?(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)\b/i);
+  if (m) { let h = Number(m[1]) % 12; if (/pm/i.test(m[3])) h += 12; o.time = pad(h) + ":" + pad(Number(m[2] || 0)); }
+  else if ((m = cut(/\b(?:at\s+|@\s*)([01]?\d|2[0-3]):([0-5]\d)\b/i)) || (m = cut(/\b([01]?\d|2[0-3]):([0-5]\d)\b/))) o.time = pad(Number(m[1])) + ":" + m[2];
+  else if (cut(/\b(at\s+)?noon\b/i)) o.time = "12:00";
+  else if (cut(/\b(at\s+)?midnight\b/i)) o.time = "23:59";
+  // date
+  const d0 = today();
+  if (cut(/\btonight\b/i)) { o.due = d0; if (!o.time) o.time = "20:00"; }
+  else if (cut(/\b(this\s+)?morning\b/i)) { o.due = o.due || d0; if (!o.time) o.time = "09:00"; }
+  if (!o.due) {
+    if (cut(/\b(on\s+)?today\b/i)) o.due = d0;
+    else if (cut(/\b(on\s+)?(tomorrow|tmrw|tmr)\b/i)) o.due = add(d0, 1);
+    else if (cut(/\bday after tomorrow\b/i)) o.due = add(d0, 2);
+    else if ((m = cut(/\bin (\d{1,2}) days?\b/i))) o.due = add(d0, Number(m[1]));
+    else if (cut(/\bnext week\b/i)) o.due = add(d0, 7);
+    else if (cut(/\bnext workday\b/i)) o.due = nextWorkday();
+    else if ((m = cut(/\b(?:on\s+)?(next\s+)?(sun(?:day)?|mon(?:day)?|tue(?:s|sday)?|wed(?:nesday)?|thu(?:r|rs|rsday)?|fri(?:day)?|sat(?:urday)?)\b/i))) {
+      const n = (WDAY[m[2].toLowerCase()] - wd(d0) + 7) % 7; o.due = add(d0, n || 7); // the coming one; the same weekday means next week
+    }
+    else if ((m = cut(/\b(?:on\s+)?(\d{1,2})(?:st|nd|rd|th)?\s+(jan|feb|mar|apr|may|jun|jul|aug|sept?|oct|nov|dec)[a-z]*\b/i)) || (m = cut(/\b(?:on\s+)?(jan|feb|mar|apr|may|jun|jul|aug|sept?|oct|nov|dec)[a-z]*\s+(\d{1,2})(?:st|nd|rd|th)?\b/i))) {
+      const day = Number(/\d/.test(m[1]) ? m[1] : m[2]), mon = MON[(/\d/.test(m[1]) ? m[2] : m[1]).toLowerCase().slice(0, 4)] || MON[(/\d/.test(m[1]) ? m[2] : m[1]).toLowerCase().slice(0, 3)];
+      let y = Number(d0.slice(0, 4)); let iso2 = y + "-" + pad(mon) + "-" + pad(day); if (iso2 < d0) iso2 = (y + 1) + "-" + pad(mon) + "-" + pad(day); o.due = iso2;
+    }
+    else if ((m = cut(/\b(?:on\s+)?(\d{1,2})\/(\d{1,2})\b/))) { let y = Number(d0.slice(0, 4)); let iso2 = y + "-" + pad(Number(m[2])) + "-" + pad(Number(m[1])); if (iso2 < d0) iso2 = (y + 1) + iso2.slice(4); o.due = iso2; }
+  }
+  if (!o.due) o.due = o.time && tm(o.time) <= nowMin() ? add(d0, 1) : d0; // a time that has passed means tomorrow
+  // client or category
+  const cl = CLIENTS.find(c => new RegExp("\\b" + c + "\\b", "i").test(t));
+  if (cl) { o.scope = "work"; o.area = cl; t = t.replace(new RegExp("\\s*\\b(for\\s+)?" + cl + "\\b\\s*:?", "i"), " "); }
+  else {
+    const cat = CAT_WORDS.find(([, re]) => re.test(t));
+    if (WORK_WORDS.test(t) && !cat) { o.scope = "work"; o.area = "Internal"; }
+    else { o.scope = "personal"; o.area = cat ? cat[0] : "Other"; }
+  }
+  t = t.replace(/\s+/g, " ").replace(/\s+(on|at|by|for|to)\s*$/i, "").replace(/^\s*(to|for|-|:)\s+/i, "").trim();
+  o.title = t ? t[0].toUpperCase() + t.slice(1) : "";
+  return o;
+}
+function qaPreview(o) {
+  if (!o.title) return "";
+  const chip = (txt, hl, act) => act ? `<button type="button" class="chip${hl ? " hl" : ""}" data-qa="${act}">${esc(txt)}</button>` : `<span class="chip${hl ? " hl" : ""}">${esc(txt)}</span>`;
+  return [chip((o.scope === "work" ? "Work · " : "Personal · ") + o.area), chip(rel(o.due)), o.time ? chip(fT(o.time)) : "", o.alert ? chip("Alert", true) : "", o.priority ? chip("High", true) : "", o.owner !== "Me" ? chip("With " + o.owner) : "", chip("More…", false, "more")].join("");
+}
+function qaHtml() { return `<form class="qa" id="qaForm" autocomplete="off"><label class="qa-bar">${ico("plus")}<span class="sr">Quick add</span><input id="qa" type="text" enterkeyhint="done" placeholder="Add: “Call the bank tomorrow 10am”" value="${esc(S.qa || "")}"><button type="submit" class="btn primary" ${S.qa && S.qa.trim() ? "" : "hidden"}>Add</button></label><div class="qa-prev" id="qaPrev">${S.qa ? qaPreview(parseQuick(S.qa)) : ""}</div></form>`; }
+function qaObj() { const p = parseQuick(S.qa || ""); return { ...newTask(), ...p, status: p.owner !== "Me" ? "waiting" : "due" }; }
+
+/* ---------- weekly review ---------- */
+function reviewData() {
+  const d0 = today(), from = add(d0, -7);
+  const late = S.tasks.filter(t => tOpen(t) && mine(t) && t.status !== "waiting" && t.due && t.due < d0).map(tItem).sort(byDate);
+  const chase = S.tasks.filter(t => tOpen(t) && tStatus(t) === "waiting" && t.due && t.due < d0).map(tItem).sort(byDate);
+  const rows = [];
+  let done = 0, total = 0, missed = 0;
+  S.routines.filter(r => r.active !== false).forEach(r => {
+    let n = 0, ok = 0, miss = 0;
+    for (let d = from; d < d0; d = add(d, 1)) {
+      if (!occursOn(r, d) || (r.scope === "work" && isWeekend(d))) continue;
+      const o = occ(r, d); n++;
+      if (o.status === "done") ok++; else if (o.status === "missed") miss++;
+    }
+    if (!n) return;
+    rows.push({ r, n, ok, miss }); done += ok; total += n; missed += miss;
+  });
+  rows.sort((a, b) => a.ok / a.n - b.ok / b.n || b.n - a.n);
+  const doneTasks = S.tasks.filter(t => t.status === "done" && t.updated && t.updated.slice(0, 10) >= from).length;
+  return { late, chase, rows, done, total, missed, doneTasks };
+}
+function reviewSheet() {
+  const v = reviewData(), pct = v.total ? Math.round(v.done / v.total * 100) : 0;
+  const late = v.late.map(it => { const ic = itemIcon(it); return `<div class="rv-row" data-rk="${esc(key(it))}"><span class="itile" style="--ic:var(${ic.c})">${ico(ic.k)}</span><b>${esc(it.title)}</b><small>Was due ${esc(rel(it.date))}${it.t.area ? " · " + esc(it.t.area) : ""}</small><div class="rv-acts"><button type="button" class="btn sm" data-s="rvm" data-d="${today()}">Today</button><button type="button" class="btn sm" data-s="rvm" data-d="${add(today(), 1)}">Tomorrow</button><button type="button" class="btn sm" data-s="rvm" data-d="${nextWorkday()}">Next Workday</button><button type="button" class="btn sm" data-s="rvdone">Done</button><button type="button" class="btn sm" data-s="rvskip">Drop</button></div></div>`; }).join("");
+  const chase = v.chase.map(it => { const ic = itemIcon(it); return `<div class="rv-row" data-rk="${esc(key(it))}"><span class="itile" style="--ic:var(${ic.c})">${ico(ic.k)}</span><b>${esc(it.title)}</b><small>With ${esc(it.t.owner || "Client")} · expected ${esc(rel(it.date))}</small><div class="rv-acts"><button type="button" class="btn sm" data-s="rvm" data-d="${add(today(), 2)}">Chase in 2 Days</button><button type="button" class="btn sm" data-s="rvm" data-d="${add(today(), 7)}">Next Week</button><button type="button" class="btn sm" data-s="rvdone">Received</button></div></div>`; }).join("");
+  const rts = v.rows.map(x => `<div class="rt"><span>${esc(x.r.title)}</span><i><u style="transform:scaleX(${(x.ok / x.n).toFixed(3)})"></u></i><em>${x.ok}/${x.n}</em></div>`).join("");
+  return bar("Weekly Review", "", `<button type="button" class="txtbtn strong" data-s="close">Done</button>`) + `<div class="sh-body">
+    <div class="rv-stat"><div><b>${pct}%</b><span>Routines kept</span></div><div><b>${v.doneTasks}</b><span>Tasks done</span></div><div><b>${v.late.length}</b><span>Overdue</span></div></div>
+    <div class="lbl">Overdue · ${v.late.length}</div><div class="list">${late || `<div class="empty">Nothing overdue. Well kept.</div>`}</div>
+    ${v.chase.length ? `<div class="lbl">To Chase · ${v.chase.length}</div><div class="list">${chase}</div>` : ""}
+    <div class="lbl">Routines, Last 7 Days</div><div class="list">${rts || `<div class="empty">No routines in the last 7 days.</div>`}</div>
+    <p class="foot">Lowest first. Missed: ${v.missed}.</p>
+  </div>`;
+}
+
 /* ---------- Today and Next 7 Days share one structure ---------- */
 function planner(range) {
   const d0 = today();
@@ -548,13 +686,15 @@ function upNext() {
 }
 function viewToday() {
   const p = planner("today"), d = today();
-  return `<header class="navbar"><div><h1>Today</h1><div class="sub">${esc(fDL(d))}</div></div><button type="button" class="icon-btn" data-act="new" aria-label="New task">${ico("plus")}</button></header>
+  return `<header class="navbar"><div><h1>Today</h1><div class="sub">${esc(fDL(d))}</div></div><div style="display:flex;gap:8px"><button type="button" class="icon-btn" data-act="review" aria-label="Weekly review">${ico("chart")}</button><button type="button" class="icon-btn" data-act="new" aria-label="New task">${ico("plus")}</button></div></header>
+  ${qaHtml()}
   ${upNext()}
   <div class="cols two"><div class="col">${p.routineSec}${p.meetSec}</div><div class="col">${p.workSec}${p.persSec}</div></div>`;
 }
 function viewWeek() {
   const p = planner("week"), a = add(today(), 1), b = add(today(), 7);
   return `<header class="navbar"><div><h1>Next 7 Days</h1><div class="sub">${esc(fD(a))} to ${esc(fD(b))}</div></div><button type="button" class="icon-btn" data-act="new" aria-label="New task">${ico("plus")}</button></header>
+  ${qaHtml()}
   <div class="cols two"><div class="col">${p.routineSec}${p.meetSec}</div><div class="col">${p.workSec}${p.persSec}</div></div>`;
 }
 
@@ -602,8 +742,9 @@ function renderMain(keep) {
   if (!ready()) return;
   const html = S.view === "today" ? viewToday() : S.view === "week" ? viewWeek() : viewSide(S.view);
   if (html === lastHtml) return;
-  const y = window.scrollY;
+  const y = window.scrollY, ae = document.activeElement, fid = ae && view.contains(ae) && ae.id, sel = fid && ae.selectionStart;
   view.innerHTML = lastHtml = html;
+  if (fid) { const el = document.getElementById(fid); if (el) { el.focus({ preventScroll: true }); try { el.setSelectionRange(sel, sel); } catch (e) {} } }
   if (shownView !== S.view) { shownView = S.view; view.classList.remove("enter"); void view.offsetWidth; view.classList.add("enter"); }
   else if (keep) window.scrollTo(0, y);
   if (S.just) setTimeout(() => { S.just = null; }, 400);
@@ -614,7 +755,7 @@ let lastMove = 0, touching = false;
 addEventListener("scroll", () => { lastMove = Date.now(); }, { passive: true });
 addEventListener("touchstart", () => { touching = true; }, { passive: true });
 addEventListener("touchend", () => { touching = false; lastMove = Date.now(); }, { passive: true });
-const busy = () => touching || Date.now() - lastMove < 1200 || !!drag || !!S.sheet || (document.activeElement && document.activeElement.id === "q");
+const busy = () => touching || Date.now() - lastMove < 1200 || !!drag || !!S.sheet || (document.activeElement && (document.activeElement.id === "q" || document.activeElement.id === "qa"));
 
 /* ---------- writes ---------- */
 const fail = e => toast((e && e.message) ? e.message : "That change didn't save. Try again.");
@@ -639,11 +780,14 @@ function delay(it, date, time) {
 
 /* ---------- clicks ---------- */
 view.addEventListener("click", e => {
+  const qb = e.target.closest("[data-qa]");
+  if (qb) { const o = qaObj(); o._new = true; S.qa = ""; openSheet({ type: "editTask", obj: o }); return; }
   const nb = e.target.closest("[data-now]");
   if (nb && S.nowKey) { const it = findItem(S.nowKey); if (!it) return; const a = nb.dataset.now; if (a === "done") markDone(it); else if (a === "skip") markSkip(it); else openSheet({ type: "item", key: S.nowKey }); return; }
   const b = e.target.closest("[data-act]"); if (!b || !b.dataset.act) return;
   const a = b.dataset.act;
   if (a === "new") { openSheet({ type: "editTask", obj: newTask() }); return; }
+  if (a === "review") { openSheet({ type: "review" }); return; }
   if (a === "newr") { openSheet({ type: "editRoutine", obj: newRoutine() }); return; }
   if (a === "sub") { S.sub[S.view] = b.dataset.sub; S.swipe = null; persist(); renderMain(); return; }
   const sw = b.closest(".sw"); if (!sw) return;
@@ -654,6 +798,27 @@ view.addEventListener("click", e => {
   if (a === "done") { markDone(it); return; }
   if (a === "skip") { markSkip(it); return; }
   if (a === "open") { if (wasOpen) renderMain(true); openSheet({ type: "item", key: sw.dataset.key }); return; }
+});
+view.addEventListener("input", e => {
+  if (e.target.id === "qa") {
+    S.qa = e.target.value;
+    const pv = document.getElementById("qaPrev"), btn = e.target.parentElement.querySelector("button");
+    if (pv) pv.innerHTML = S.qa.trim() ? qaPreview(parseQuick(S.qa)) : "";
+    if (btn) btn.hidden = !S.qa.trim();
+    return;
+  }
+});
+view.addEventListener("submit", e => {
+  if (e.target.id !== "qaForm") return;
+  e.preventDefault();
+  if (!(S.qa || "").trim()) return;
+  const t = qaObj(); if (!t.title) { toast("Add a title."); return; }
+  delete t._new; S.qa = ""; S.just = "task:" + encodeURIComponent(t.id);
+  saveTask(t);
+  toast("Added for " + rel(t.due).toLowerCase() + (t.time ? ", " + fT(t.time) : ""), () => { S.tasks = S.tasks.filter(x => x.id !== t.id); render(true); api("deleteTask", t.id).catch(fail); });
+  const q = document.getElementById("qa"); if (q) { q.value = ""; q.blur(); }
+  const pv = document.getElementById("qaPrev"); if (pv) pv.innerHTML = "";
+  const btn = e.target.querySelector("button[type=submit]"); if (btn) btn.hidden = true;
 });
 view.addEventListener("input", e => { if (e.target.id === "q") { S.q = e.target.value; const p = e.target.selectionStart; renderMain(true); const q = document.getElementById("q"); if (q) { q.focus(); q.setSelectionRange(p, p); } } });
 
@@ -714,6 +879,7 @@ const opt = (list, sel) => list.map(x => { const [v, l] = Array.isArray(x) ? x :
 function renderSheet() {
   const s = S.sheet; if (!s) return;
   if (s.type === "item") { const it = findItem(s.key); if (!it) { closeSheet(); return; } const b0 = sheet.querySelector(".sh-body"), y = b0 ? b0.scrollTop : 0; sheet.innerHTML = it.kind === "meet" ? meetSheet(it) : s.pick ? pickSheet(it) : itemSheet(it); const b1 = sheet.querySelector(".sh-body"); if (b1 && !s.pick) b1.scrollTop = y; return; }
+  if (s.type === "review") { const b0 = sheet.querySelector(".sh-body"), y = b0 ? b0.scrollTop : 0; sheet.innerHTML = reviewSheet(); const b1 = sheet.querySelector(".sh-body"); if (b1) b1.scrollTop = y; return; }
   if (s.type === "editTask") sheet.innerHTML = taskForm(s.obj);
   if (s.type === "editRoutine") sheet.innerHTML = routineForm(s.obj);
 }
@@ -769,6 +935,25 @@ function checksOf(it) { if (it.kind === "task") return null; const l = S.logs[lo
 function ticked(it, x) { if (it.kind === "task") return !!x.done; return !!checksOf(it)[x.id]; }
 const snap = x => x.sets ? { n: x.name, u: x.unit || "kg", s: clone(x.sets) } : { n: x.name };
 
+function historyFor(name, unit) {
+  const pts = [];
+  Object.values(S.logs).forEach(l => {
+    if (!l.checks) return;
+    Object.values(l.checks).forEach(v => { if (v && v.n === name && v.s && v.s.length) { const w = Math.max(...v.s.map(st => conv(Number(st.w) || 0, v.u || "kg", unit))); if (w > 0) pts.push({ d: l.date, w }); } });
+  });
+  pts.sort((a, b) => a.d.localeCompare(b.d));
+  const byDay = {}; pts.forEach(p => { byDay[p.d] = Math.max(byDay[p.d] || 0, p.w); });
+  return Object.keys(byDay).map(d => ({ d, w: byDay[d] }));
+}
+function progressHtml(name, unit) {
+  const h = historyFor(name, unit); if (h.length < 2) return "";
+  const W = 300, H = 40, ws = h.map(p => p.w), lo = Math.min(...ws), hi = Math.max(...ws), span = hi - lo || 1;
+  const t0 = D(h[0].d).getTime(), t1 = D(h[h.length - 1].d).getTime(), tspan = t1 - t0 || 1;
+  const xy = h.map(p => [((D(p.d).getTime() - t0) / tspan) * W, H - 4 - ((p.w - lo) / span) * (H - 8)]);
+  const line = xy.map(([x, y], i) => (i ? "L" : "M") + x.toFixed(1) + " " + y.toFixed(1)).join(" ");
+  const [lx, ly] = xy[xy.length - 1], gain = h[h.length - 1].w - h[0].w;
+  return `<div class="prog"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><path d="${line} L${W} ${H} L0 ${H} Z" fill="var(--k-gym)" opacity=".12"/><path d="${line}" fill="none" stroke="var(--k-gym)" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="3" fill="var(--k-gym)" vector-effect="non-scaling-stroke"/></svg><small>Top set ${fmtW(h[h.length - 1].w)} ${unit} · best ${fmtW(hi)} ${unit} · ${gain >= 0 ? `<b>+${fmtW(gain)} ${unit}</b>` : `${fmtW(gain)} ${unit}`} over ${h.length} sessions since ${esc(fD(h[0].d))}</small></div>`;
+}
 function lastFor(name, date) {
   let best = null;
   Object.values(S.logs).forEach(l => {
@@ -831,7 +1016,7 @@ function gymHtml(it, items, ed) {
         + `<div class="set-acts"><button type="button" class="btn sm" data-s="setadd" data-id="${esc(x.id)}">${ico("plus")}Set</button>${x.sets.length > 1 ? `<button type="button" class="btn sm" data-s="setrm" data-id="${esc(x.id)}">${ico("skip")}Set</button>` : ""}</div>`
       : `<div class="set note"><input type="text" data-f="note" value="${esc(x.note || "")}" placeholder="Duration, settings" aria-label="${esc(x.name)} details"></div>`;
     const lastTxt = last ? `<div class="ex-last">Last ${esc(rel(last.date))}: ${last.v.s.map(st => `${st.reps} × ${fmtW(conv(Number(st.w) || 0, last.v.u || "kg", u))}`).join(", ")} ${u}</div>` : "";
-    return `<div class="list ex${on ? " on" : ""}" data-li="${esc(x.id)}">${head}${body}${lastTxt}</div>`;
+    return `<div class="list ex${on ? " on" : ""}" data-li="${esc(x.id)}">${head}${body}${lastTxt}${x.sets && !ed ? progressHtml(x.name, u) : ""}</div>`;
   }).join("");
   return `<div class="exs">${ex || `<div class="list"><div class="empty">No exercises yet.</div></div>`}</div><button type="button" class="btn sm" data-s="exadd" style="justify-self:start">${ico("plus")}Add Exercise</button>`;
 }
@@ -966,6 +1151,15 @@ sheet.addEventListener("click", e => {
   const b = e.target.closest("[data-s]"), s = S.sheet; if (!b || !s) return;
   const a = b.dataset.s;
   if (a === "close") { closeSheet(); return; }
+  if (s.type === "review") {
+    const row = b.closest("[data-rk]"), it = row && findItem(row.dataset.rk); if (!it) return;
+    const t = it.t, before = { ...t };
+    if (a === "rvm") saveTask({ ...t, due: b.dataset.d, status: t.status === "waiting" ? "waiting" : "delayed", delayedFrom: t.delayedFrom || t.due });
+    else if (a === "rvdone") saveTask({ ...t, status: "done" });
+    else if (a === "rvskip") saveTask({ ...t, status: "skipped" });
+    toast(a === "rvm" ? "Moved to " + rel(b.dataset.d) : a === "rvdone" ? "Done" : "Dropped", () => { saveTask(before); renderSheet(); });
+    renderSheet(); return;
+  }
   if (s.type === "item") {
     const it = findItem(s.key); if (!it) return;
     if (listClick(a, b, it)) return;
