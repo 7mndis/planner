@@ -620,6 +620,7 @@ function parseQuick(raw) {
   cut(/\bwith (a |an )?(reminder|alert)\b/i);
   cut(/^\s*(please\s+)?(add|create|new|set)\s+(a\s+|an\s+)?(new\s+)?(task|reminder|to-?do|item)?\s*(to|for|:)?\s+/i);
   cut(/^\s*remind me (to|about)\s+/i);
+  cut(/\s(and\s+)?remind me\b/i);
   if (cut(/(\bhigh priority\b|\burgent\b|\s!+\s)/i)) o.priority = true;
   let lm = cut(/\b(\d{1,3}|an?|one)\s*(m|mins?|minutes?|h|hrs?|hours?|d|days?)\s+(before|early|earlier)\b/i);
   if (lm) { const n = /^\d/.test(lm[1]) ? Number(lm[1]) : 1, u = lm[2][0].toLowerCase(); o.lead = String(n * (u === "d" ? 1440 : u === "h" ? 60 : 1)); o.alert = true; }
@@ -1358,7 +1359,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "2026-10-23.3";
+const APP_VERSION = "2026-10-23.4";
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
 let verAt = 0;
 async function checkVersion() {
