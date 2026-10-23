@@ -374,7 +374,7 @@ const CLIENTS = ["Tamkeen", "Ashraq", "Arcapita", "Tayseer", "Internal"];
 const CLIENT_VAR = { Tamkeen: "--c-tamkeen", Ashraq: "--c-ashraq", Arcapita: "--c-arcapita", Tayseer: "--c-tayseer", Internal: "--c-internal" };
 const CATS = ["Gym", "Supplements", "Faith", "Home", "Laundry", "Shopping", "Errands", "Car", "Money", "Self care", "Other"];
 const CAT_VAR = { Gym: "--k-gym", Supplements: "--k-supp", Faith: "--k-faith", Home: "--k-home", Laundry: "--k-laundry", Shopping: "--k-shop", Errands: "--k-errand", Car: "--k-car", Money: "--k-money", "Self care": "--k-self", Other: "--k-other" };
-const OWNERS = ["Me", "Client", "Aysha", "Noor", "Bhavesh", "Shaikha", "Osama", "Abdulrahman"];
+const OWNERS = ["Me", "Client", "Aysha", "Noor", "Bhavish", "Shaikha", "Osama", "Abdulrahman"];
 const FREQ = [["daily", "Every Day"], ["weekly", "Weekly"], ["monthly", "Monthly"], ["lastworkday", "Last Workday of Month"], ["yearly", "Yearly"]];
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const VIEWS = [["today", "Today"], ["week", "Next 7 Days"], ["cal", "Calendar"], ["work", "Work"], ["personal", "Personal"]];
@@ -1359,7 +1359,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "2026-10-23.4";
+const APP_VERSION = "2026-10-23.5";
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
 let verAt = 0;
 async function checkVersion() {
