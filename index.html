@@ -445,7 +445,7 @@ async function flush() {
       catch (e) { if (isNet(e)) break; toast("A saved change was refused: " + (e.message || "error")); }
       outbox.shift(); saveOutbox();
     }
-  } finally { flushing = false; showOffline(); if (!outbox.length && S.ready) loadAll(false); }
+  } finally { flushing = false; showOffline(); if (!outbox.length && S.ready) loadAll(!S.loadedAt); } // first load of the session also fetches meetings
 }
 function api(fn, ...args) {
   if (/^get/.test(fn)) return call(fn, ...args);
@@ -562,7 +562,7 @@ function toast(msg, undo) { const el = document.getElementById("toast"); undoFn 
 document.getElementById("toast").addEventListener("click", e => { if (e.target.id === "undoBtn" && undoFn) { const f = undoFn; undoFn = null; document.getElementById("toast").hidden = true; f(); } });
 
 /* ---------- navigation ---------- */
-function overdueCount() { return S.tasks.filter(t => tOpen(t) && mine(t) && t.due && diff(t.due) < 0).length; }
+function overdueCount() { return S.tasks.filter(t => tOpen(t) && mine(t) && t.status !== "waiting" && t.due && diff(t.due) < 0).length; }
 function renderNav() {
   const od = ready() ? overdueCount() : 0;
   const short = { today: "Today", week: "7 Days", cal: "Calendar", work: "Work", personal: "Personal" };
@@ -719,7 +719,7 @@ function planner(range) {
   routines.sort(byDate);
   const rPers = routines.filter(o => o.scope === "personal"), rWork = routines.filter(o => o.scope === "work");
   // tasks
-  const overdue = range === "today" ? S.tasks.filter(t => tOpen(t) && mine(t) && t.due && diff(t.due) < 0) : [];
+  const overdue = range === "today" ? S.tasks.filter(t => tOpen(t) && mine(t) && t.status !== "waiting" && t.due && diff(t.due) < 0) : [];
   const tasks = S.tasks.filter(t => mine(t) && t.status !== "waiting" && inRange(t.due) && (range === "today" || tOpen(t)));
   const work = isWeekend(d0) && range === "today" ? [] : [...overdue, ...tasks].filter(t => t.scope === "work").map(tItem).sort(byDate);
   const pers = [...overdue, ...tasks].filter(t => t.scope === "personal").map(tItem).sort(byDate);
@@ -753,7 +753,6 @@ function upNext() {
 }
 function dayPlan() {
   const d = today(), n = nowMin(), END = 22 * 60;
-  if (n >= END - 30) return "";
   const items = [];
   (S.meetings[d] || []).forEach(m => { if (m.time) items.push({ s: tm(m.time), e: tm(m.end || m.time) || tm(m.time) + 30, title: m.subject, c: "--i-meet" }); });
   S.tasks.filter(t => tOpen(t) && mine(t) && t.due === d && t.time && !(t.scope === "work" && isWeekend(d))).forEach(t => { const it = tItem(t); items.push({ s: tm(t.time), e: tm(t.time) + 30, title: t.title, c: itemIcon(it).c }); });
