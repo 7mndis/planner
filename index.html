@@ -824,7 +824,8 @@ function viewToday() {
   return `<header class="navbar"><div><h1>Today</h1><div class="sub">${esc(fDL(d))}</div></div><div style="display:flex;gap:8px"><button type="button" class="icon-btn" data-act="review" aria-label="Weekly review">${ico("chart")}</button><button type="button" class="icon-btn" data-act="new" aria-label="New task">${ico("plus")}</button></div></header>
   ${qaHtml()}
   ${upNext()}
-  <div class="cols two"><div class="col">${dayPlan()}${p.routineSec}${p.meetSec}</div><div class="col">${p.workSec}${p.persSec}</div></div>`;
+  <div class="cols two"><div class="col">${dayPlan()}${p.routineSec}${p.meetSec}</div><div class="col">${p.workSec}${p.persSec}</div></div>
+  <p class="foot" style="text-align:center;opacity:.6">Version ${esc(APP_VERSION)}</p>`;
 }
 function viewWeek() {
   const p = planner("week"), a = add(today(), 1), b = add(today(), 7);
@@ -1064,8 +1065,9 @@ function itemSheet(it) {
       <div class="cell"><span></span><button type="button" class="btn sm primary" data-s="delay">Move</button></div></div>`}
     <div class="lbl">Details</div><div class="list">${info.map(([k, v]) => `<div class="cell"><span>${k}</span><span class="v">${esc(v)}</span></div>`).join("")}</div>
     ${isT && it.t.link && /^https:\/\//.test(it.t.link) ? `<a class="btn" href="${esc(it.t.link)}" target="_blank" rel="noopener">${ico("mail")}Open Email in Outlook</a>` : ""}
-    <div class="list"><div class="cell"><label for="alarmSw">Calendar Alert</label><span class="switch"><input type="checkbox" role="switch" id="alarmSw" ${src.alert ? "checked" : ""} ${it.time ? "" : "disabled"}><span></span></span></div></div>
-    <p class="foot" style="margin-top:-10px">${it.time ? "Pops up " + (src.lead ? leadLabel(src.lead).toLowerCase() : "at the item's time") + " from your Planner Alerts calendar. Change it under Edit." : "Give it a time to turn on an alert."}</p>
+    <div class="list"><div class="cell"><label for="alarmSw">Calendar Alert</label><span class="switch"><input type="checkbox" role="switch" id="alarmSw" ${src.alert ? "checked" : ""} ${it.time ? "" : "disabled"}><span></span></span></div>
+      <div class="cell"><label for="leadSel">Alert Time</label><select id="leadSel" ${it.time && src.alert ? "" : "disabled"}>${opt(LEADS, String(src.lead || ""))}</select></div></div>
+    <p class="foot" style="margin-top:-10px">${it.time ? "Pops up " + (src.lead ? leadLabel(src.lead).toLowerCase() : "at the item's time") + " from your Planner Alerts calendar." : "Give it a time to turn on an alert."}</p>
     ${src.notes ? `<div class="lbl">Notes</div><div class="list"><div class="notes">${esc(src.notes)}</div></div>` : ""}
   </div>`;
 }
@@ -1297,6 +1299,7 @@ function readRoutine(f, r) { const d = new FormData(f); return { title: String(d
 sheet.addEventListener("change", e => {
   const s = S.sheet; if (!s) return;
   if (s.type === "item" && e.target.closest("[data-li]")) { listChange(e.target); return; }
+  if (e.target.id === "leadSel" && s.type === "item") { const it = findItem(s.key); if (!it) return; const src = it.kind === "task" ? it.t : it.r, v = e.target.value; if (it.kind === "task") saveTask({ ...src, lead: v }); else saveRoutine({ ...src, lead: v }); renderSheet(); toast("Alert " + leadLabel(v).toLowerCase()); return; }
   if (e.target.id === "alarmSw" && s.type === "item") { const it = findItem(s.key); if (!it) return; const src = it.kind === "task" ? it.t : it.r, v = e.target.checked; if (it.kind === "task") saveTask({ ...src, alert: v }); else saveRoutine({ ...src, alert: v }); renderSheet(); toast(v ? "Alert on" : "Alert off"); return; }
   if ((s.type === "editTask" && e.target.name === "scope") || (s.type === "editRoutine" && (e.target.name === "scope" || e.target.name === "freq"))) { const f = e.target.form; Object.assign(s.obj, s.type === "editTask" ? readTask(f) : readRoutine(f, s.obj)); if (e.target.name === "scope") s.obj.area = s.obj.scope === "work" ? "Internal" : "Other"; renderSheet(); }
 });
@@ -1359,7 +1362,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "2026-10-23.6";
+const APP_VERSION = "2026-10-23.7";
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {});
 let verAt = 0;
 async function checkVersion() {
