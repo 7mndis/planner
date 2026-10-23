@@ -305,6 +305,7 @@ svg.i { width: 1.15em; height: 1.15em; flex: none; }
 .main.enter-l { animation: v-l .28s cubic-bezier(.2, .8, .2, 1) both; }
 .main.enter-r { animation: v-r .28s cubic-bezier(.2, .8, .2, 1) both; }
 /* offline */
+.upd { border: 0; font-family: inherit; cursor: pointer; top: auto !important; bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
 .offline { position: fixed; top: calc(8px + env(safe-area-inset-top, 0px)); left: 50%; transform: translate3d(-50%, 0, 0); z-index: 45; background: var(--label); color: var(--card); font-size: .78rem; font-weight: 600; padding: 6px 12px; border-radius: 14px; }
 /* quick add */
 .qa { display: grid; gap: 8px; }
@@ -378,6 +379,8 @@ const FREQ = [["daily", "Every Day"], ["weekly", "Weekly"], ["monthly", "Monthly
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const VIEWS = [["today", "Today"], ["week", "Next 7 Days"], ["cal", "Calendar"], ["work", "Work"], ["personal", "Personal"]];
 const GRACE = 60;
+const LEADS = [["", "At the Time"], ["5", "5 Min Before"], ["10", "10 Min Before"], ["15", "15 Min Before"], ["30", "30 Min Before"], ["60", "1 Hour Before"], ["120", "2 Hours Before"], ["1440", "1 Day Before"]];
+const leadLabel = m => { const x = LEADS.find(l => l[0] === String(m || "")); return x ? x[1] : Number(m) >= 60 ? dur(Number(m)) + " before" : m + " min before"; };
 const LABEL = { due: "Due", progress: "In-progress", waiting: "Waiting", delayed: "Delayed", done: "Done", skipped: "Skipped", missed: "Missed" };
 
 const P = {
@@ -611,13 +614,15 @@ const WDAY = { sun: 0, sunday: 0, mon: 1, monday: 1, tue: 2, tues: 2, tuesday: 2
 const MON = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, sept: 9, oct: 10, nov: 11, dec: 12 };
 function parseQuick(raw) {
   let t = " " + raw.trim() + " ";
-  const o = { scope: "", area: "", due: "", time: "", alert: false, priority: false, owner: "Me" };
+  const o = { scope: "", area: "", due: "", time: "", alert: false, lead: "", priority: false, owner: "Me" };
   const cut = re => { const m = t.match(re); if (m) t = t.replace(m[0], " "); return m; };
   if (/\bremind(er)?\b/i.test(t) || /\bwith (an )?alert\b/i.test(t)) o.alert = true;
   cut(/\bwith (a |an )?(reminder|alert)\b/i);
   cut(/^\s*(please\s+)?(add|create|new|set)\s+(a\s+|an\s+)?(new\s+)?(task|reminder|to-?do|item)?\s*(to|for|:)?\s+/i);
   cut(/^\s*remind me (to|about)\s+/i);
   if (cut(/(\bhigh priority\b|\burgent\b|\s!+\s)/i)) o.priority = true;
+  let lm = cut(/\b(\d{1,3}|an?|one)\s*(m|mins?|minutes?|h|hrs?|hours?|d|days?)\s+(before|early|earlier)\b/i);
+  if (lm) { const n = /^\d/.test(lm[1]) ? Number(lm[1]) : 1, u = lm[2][0].toLowerCase(); o.lead = String(n * (u === "d" ? 1440 : u === "h" ? 60 : 1)); o.alert = true; }
   // waiting on someone
   const w = cut(new RegExp("\\b(waiting|wait) (on|for) (" + OWNERS.filter(x => x !== "Me").join("|") + ")\\b", "i"));
   if (w) o.owner = OWNERS.find(x => x.toLowerCase() === w[3].toLowerCase());
@@ -663,7 +668,7 @@ function parseQuick(raw) {
 function qaPreview(o) {
   if (!o.title) return "";
   const chip = (txt, hl, act) => act ? `<button type="button" class="chip${hl ? " hl" : ""}" data-qa="${act}">${esc(txt)}</button>` : `<span class="chip${hl ? " hl" : ""}">${esc(txt)}</span>`;
-  return [chip((o.scope === "work" ? "Work · " : "Personal · ") + o.area), chip(rel(o.due)), o.time ? chip(fT(o.time)) : "", o.alert ? chip("Alert", true) : "", o.priority ? chip("High", true) : "", o.owner !== "Me" ? chip("With " + o.owner) : "", chip("More…", false, "more")].join("");
+  return [chip((o.scope === "work" ? "Work · " : "Personal · ") + o.area), chip(rel(o.due)), o.time ? chip(fT(o.time)) : "", o.alert ? chip(o.lead ? "Alert " + leadLabel(o.lead).toLowerCase() : "Alert", true) : "", o.priority ? chip("High", true) : "", o.owner !== "Me" ? chip("With " + o.owner) : "", chip("More…", false, "more")].join("");
 }
 function qaHtml() { return `<form class="qa" id="qaForm" autocomplete="off"><label class="qa-bar">${ico("plus")}<span class="sr">Quick add</span><input id="qa" type="text" enterkeyhint="done" placeholder="Add: “Call the bank tomorrow 10am”" value="${esc(S.qa || "")}"><button type="submit" class="btn primary" ${S.qa && S.qa.trim() ? "" : "hidden"}>Add</button></label><div class="qa-prev" id="qaPrev">${S.qa ? qaPreview(parseQuick(S.qa)) : ""}</div></form>`; }
 function qaObj() { const p = parseQuick(S.qa || ""); return { ...newTask(), ...p, status: p.owner !== "Me" ? "waiting" : "due" }; }
@@ -1059,7 +1064,7 @@ function itemSheet(it) {
     <div class="lbl">Details</div><div class="list">${info.map(([k, v]) => `<div class="cell"><span>${k}</span><span class="v">${esc(v)}</span></div>`).join("")}</div>
     ${isT && it.t.link && /^https:\/\//.test(it.t.link) ? `<a class="btn" href="${esc(it.t.link)}" target="_blank" rel="noopener">${ico("mail")}Open Email in Outlook</a>` : ""}
     <div class="list"><div class="cell"><label for="alarmSw">Calendar Alert</label><span class="switch"><input type="checkbox" role="switch" id="alarmSw" ${src.alert ? "checked" : ""} ${it.time ? "" : "disabled"}><span></span></span></div></div>
-    <p class="foot" style="margin-top:-10px">${it.time ? "Pops up at the item's time from your Planner Alerts calendar." : "Give it a time to turn on an alert."}</p>
+    <p class="foot" style="margin-top:-10px">${it.time ? "Pops up " + (src.lead ? leadLabel(src.lead).toLowerCase() : "at the item's time") + " from your Planner Alerts calendar. Change it under Edit." : "Give it a time to turn on an alert."}</p>
     ${src.notes ? `<div class="lbl">Notes</div><div class="list"><div class="notes">${esc(src.notes)}</div></div>` : ""}
   </div>`;
 }
@@ -1260,7 +1265,8 @@ function taskForm(t) {
       <div class="cell"><label for="f-due">Date</label><input id="f-due" name="due" type="date" value="${esc(t.due)}"></div>
       <div class="cell"><label for="f-time">Time</label><input id="f-time" name="time" type="time" value="${esc(t.time)}"></div>
       <div class="cell"><label for="f-pri">High Priority</label><span class="switch"><input type="checkbox" role="switch" id="f-pri" name="priority" ${t.priority ? "checked" : ""}><span></span></span></div>
-      <div class="cell"><label for="f-al">Calendar Alert</label><span class="switch"><input type="checkbox" role="switch" id="f-al" name="alert" ${t.alert ? "checked" : ""}><span></span></span></div></div>
+      <div class="cell"><label for="f-al">Calendar Alert</label><span class="switch"><input type="checkbox" role="switch" id="f-al" name="alert" ${t.alert ? "checked" : ""}><span></span></span></div>
+      <div class="cell"><label for="f-lead">Alert Time</label><select id="f-lead" name="lead">${opt(LEADS, String(t.lead || ""))}</select></div></div>
     <div class="list"><div class="cell stack"><label for="f-notes">Notes</label><textarea id="f-notes" name="notes">${esc(t.notes)}</textarea></div></div>
     ${t._new ? "" : S.sheet.confirm ? `<div class="chips"><button type="button" class="btn danger grow" data-s="delyes">Delete Task</button><button type="button" class="btn grow" data-s="delno">Keep</button></div>` : `<button type="button" class="btn danger" data-s="del">Delete Task</button>`}
   </div></form>`;
@@ -1279,13 +1285,14 @@ function routineForm(r) {
       ${r.freq === "monthly" || r.freq === "yearly" ? `<div class="cell"><label for="r-dom">Day of Month</label><input id="r-dom" name="dom" type="number" min="1" max="31" inputmode="numeric" value="${esc(r.dom || "")}"></div>` : ""}
       ${r.freq === "yearly" ? `<div class="cell"><label for="r-month">Month</label><select id="r-month" name="month">${opt(Array.from({ length: 12 }, (_, i) => [i + 1, new Date(Date.UTC(2026, i, 1)).toLocaleDateString("en-GB", { month: "long", timeZone: "UTC" })]), r.month || 1)}</select></div>` : ""}
       <div class="cell"><label for="r-time">Usual Time</label><input id="r-time" name="time" type="time" value="${esc(r.time)}"></div>
-      <div class="cell"><label for="r-al">Calendar Alert</label><span class="switch"><input type="checkbox" role="switch" id="r-al" name="alert" ${r.alert ? "checked" : ""}><span></span></span></div></div>
+      <div class="cell"><label for="r-al">Calendar Alert</label><span class="switch"><input type="checkbox" role="switch" id="r-al" name="alert" ${r.alert ? "checked" : ""}><span></span></span></div>
+      <div class="cell"><label for="r-lead">Alert Time</label><select id="r-lead" name="lead">${opt(LEADS, String(r.lead || ""))}</select></div></div>
     <div class="list"><div class="cell stack"><label for="r-notes">Notes</label><textarea id="r-notes" name="notes">${esc(r.notes)}</textarea></div></div>
     ${r._new ? "" : S.sheet.confirm ? `<div class="chips"><button type="button" class="btn danger grow" data-s="delyes">Delete Routine and History</button><button type="button" class="btn grow" data-s="delno">Keep</button></div>` : `<button type="button" class="btn danger" data-s="del">Delete Routine</button>`}
   </div></form>`;
 }
-function readTask(f) { const d = new FormData(f); return { title: String(d.get("title") || "").trim(), scope: d.get("scope"), area: d.get("area"), sub: String(d.get("sub") || "").trim(), owner: d.get("owner"), due: d.get("due") || "", time: d.get("time") || "", next: String(d.get("next") || "").trim(), notes: String(d.get("notes") || "").trim(), priority: d.get("priority") === "on", alert: d.get("alert") === "on" }; }
-function readRoutine(f, r) { const d = new FormData(f); return { title: String(d.get("title") || "").trim(), scope: d.get("scope"), area: d.get("area"), block: d.get("block") || "", freq: d.get("freq"), days: d.getAll("days").map(Number), dom: d.has("dom") ? (Number(d.get("dom")) || "") : r.dom, month: d.has("month") ? Number(d.get("month")) : r.month, time: d.get("time") || "", notes: String(d.get("notes") || "").trim(), alert: d.get("alert") === "on" }; }
+function readTask(f) { const d = new FormData(f); return { title: String(d.get("title") || "").trim(), scope: d.get("scope"), area: d.get("area"), sub: String(d.get("sub") || "").trim(), owner: d.get("owner"), due: d.get("due") || "", time: d.get("time") || "", next: String(d.get("next") || "").trim(), notes: String(d.get("notes") || "").trim(), priority: d.get("priority") === "on", alert: d.get("alert") === "on", lead: String(d.get("lead") || "") }; }
+function readRoutine(f, r) { const d = new FormData(f); return { title: String(d.get("title") || "").trim(), scope: d.get("scope"), area: d.get("area"), block: d.get("block") || "", freq: d.get("freq"), days: d.getAll("days").map(Number), dom: d.has("dom") ? (Number(d.get("dom")) || "") : r.dom, month: d.has("month") ? Number(d.get("month")) : r.month, time: d.get("time") || "", notes: String(d.get("notes") || "").trim(), alert: d.get("alert") === "on", lead: String(d.get("lead") || "") }; }
 sheet.addEventListener("change", e => {
   const s = S.sheet; if (!s) return;
   if (s.type === "item" && e.target.closest("[data-li]")) { listChange(e.target); return; }
@@ -1350,6 +1357,21 @@ view.addEventListener("submit", e => {
   loadAll(true);
 });
 
+/* ---------- offline copy and update notice ---------- */
+const APP_VERSION = "2026-10-23.3";
+if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+let verAt = 0;
+async function checkVersion() {
+  if (Date.now() - verAt < 600000) return; verAt = Date.now();
+  try { const h = await fetch("index.html", { cache: "no-store" }).then(r => r.ok ? r.text() : ""); const m = h.match(/const APP_VERSION = "([^"]+)"/); if (m && m[1] !== APP_VERSION) showUpdate(); } catch (e) {}
+}
+function showUpdate() {
+  if (document.getElementById("upd")) return;
+  const b = document.createElement("button"); b.type = "button"; b.id = "upd"; b.className = "offline upd"; b.textContent = "New version ready · Tap to update";
+  b.addEventListener("click", () => location.reload()); document.body.appendChild(b);
+}
+setTimeout(checkVersion, 8000);
+
 /* ---------- boot ---------- */
 function applyData(d) {
   S.tasks = d.tasks; S.routines = d.routines;
@@ -1387,6 +1409,7 @@ document.addEventListener("visibilitychange", () => {
   if (!S.sheet) loadAll(false);
   if (outbox.length) flush();
   if (Date.now() - S.loadedAt > 600000) loadMeetings();
+  checkVersion();
 });
 </script>
 </body>
