@@ -100,8 +100,13 @@ svg.i { width: 1.15em; height: 1.15em; flex: none; }
 .subh { display: flex; align-items: center; justify-content: space-between; width: 100%; border-left: 0; border-right: 0; border-bottom: 0; background: none; font-family: inherit; text-align: left; cursor: pointer; padding: 10px 16px 4px 16px; font-size: .74rem; font-weight: 700; color: var(--label2); text-transform: uppercase; letter-spacing: .04em; border-top: .5px solid var(--sep); }
 .ch + .subh, .fb > .sg:first-child > .subh { border-top: 0; padding-top: 2px; }
 .sg.folded > .subh { padding-bottom: 10px; }
-.dayh { padding: 10px 16px 4px 100px; font-size: .78rem; font-weight: 600; color: var(--label2); border-top: .5px solid var(--sep); }
-.card > .dayh:first-child, .ch + .dayh { border-top: 0; }
+.dayh { display: flex; align-items: center; gap: 8px; width: 100%; border-left: 0; border-right: 0; border-bottom: 0; background: none; font-family: inherit; text-align: left; cursor: pointer; padding: 10px 16px 4px 100px; font-size: .78rem; font-weight: 600; color: var(--label2); border-top: .5px solid var(--sep); }
+.card > .dayh:first-child, .ch + .dayh, .card > .dg:first-child > .dayh, .fb > .dg:first-child > .dayh { border-top: 0; }
+.dayh .chev { margin-left: auto; }
+.dayh .cnt { margin-left: auto; font-variant-numeric: tabular-nums; }
+.dayh .cnt + .chev { margin-left: 2px; }
+.dg.folded > .dayh { padding-bottom: 10px; }
+.folded > .dayh .chev { transform: rotate(-90deg); }
 .empty { padding: 18px 16px; color: var(--label2); font-size: .94rem; }
 .foot { font-size: .78rem; color: var(--label2); padding: 0 4px; max-width: 70ch; }
 
@@ -647,7 +652,10 @@ function sectionHtml(title, icon, inner, n) { const k = fk("s", title), f = fold
 const cardHtml = (inner, head) => { const m = head && head.match(/data-f="([^"]+)"/), f = m && folded(m[1].replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">")); return `<div class="card${f ? " folded" : ""}">${head || ""}${m ? `<div class="fb">${inner}</div>` : inner}</div>`; };
 const chHead = (label, dot, cnt, fid) => { const k = fk("c", fid || label), f = folded(k); return `<button type="button" class="ch" data-act="fold" data-f="${esc(k)}" aria-expanded="${!f}">${dot ? `<span class="dot" style="background:var(${dot})"></span>` : ""}${esc(label)}${cnt !== undefined ? `<span class="cnt">${cnt}</span>` : ""}${chev}</button>`; };
 const subGroup = (label, rows, scope) => { const k = fk("g", scope, label), f = folded(k); return `<div class="sg${f ? " folded" : ""}"><button type="button" class="subh" data-act="fold" data-f="${esc(k)}" aria-expanded="${!f}">${esc(label)}${chev}</button><div class="fb">${rows}</div></div>`; };
-function rowsByDay(items) { let out = "", last = null; items.forEach(it => { if (it.date !== last) { out += `<div class="dayh">${esc(rel(it.date))}</div>`; last = it.date; } out += rowHtml(it); }); return out; }
+function rowsByDay(items, scope) {
+  const days = []; items.forEach(it => { const g = days[days.length - 1]; if (g && g.d === it.date) g.li.push(it); else days.push({ d: it.date, li: [it] }); });
+  return days.map(({ d, li }) => { const k = fk("d", scope || "", "d:" + d), f = folded(k); return `<div class="sg dg${f ? " folded" : ""}"><button type="button" class="dayh" data-act="fold" data-f="${esc(k)}" aria-expanded="${!f}"><span>${esc(rel(d))}</span>${f ? `<span class="cnt">${li.length}</span>` : ""}${chev}</button><div class="fb">${li.map(rowHtml).join("")}</div></div>`; }).join("");
+}
 
 /* ---------- quick add: "pick up lunch at 12pm", "Tamkeen send IIR tomorrow 10am with reminder" ---------- */
 const CAT_WORDS = [
@@ -777,20 +785,20 @@ function planner(range) {
   const tasks = S.tasks.filter(t => mine(t) && t.status !== "waiting" && inRange(t.due) && (range === "today" || tOpen(t)));
   const work = isWeekend(d0) && range === "today" ? [] : [...overdue, ...tasks].filter(t => t.scope === "work").map(tItem).sort(byDate);
   const pers = [...overdue, ...tasks].filter(t => t.scope === "personal").map(tItem).sort(byDate);
-  const list = items => multi ? rowsByDay(items) : items.map(rowHtml).join("");
+  const list = (items, sc) => multi ? rowsByDay(items, sc) : items.map(rowHtml).join("");
 
-  const meetSec = meets.length ? sectionHtml("Meetings", "meet", cardHtml(list(meets)), meets.length) : S.meetNote ? sectionHtml("Meetings", "meet", cardHtml(`<div class="empty">${esc(S.meetNote)}</div>`)) : "";
+  const meetSec = meets.length ? sectionHtml("Meetings", "meet", cardHtml(list(meets, "meet")), meets.length) : S.meetNote ? sectionHtml("Meetings", "meet", cardHtml(`<div class="empty">${esc(S.meetNote)}</div>`)) : "";
   const blocks = [];
   if (!multi) {
     const by = { morning: [], day: [], night: [] }; rPers.forEach(o => by[o.r.block || "day"].push(o));
     [["morning", "Morning"], ["day", "During the Day"], ["night", "Night"]].forEach(([k, l]) => { if (by[k].length) blocks.push(cardHtml(by[k].map(rowHtml).join(""), chHead(l, null, `${by[k].filter(o => o.status === "done").length}/${by[k].length}`, "r:" + k))); });
-  } else if (rPers.length || dailyNote) blocks.push(cardHtml(list(rPers) + dailyNote, chHead("Personal", null, undefined, "r:personal")));
-  if (rWork.length) blocks.push(cardHtml(list(rWork), chHead("Work", null, undefined, "r:work")));
+  } else if (rPers.length || dailyNote) blocks.push(cardHtml(list(rPers, "rp") + dailyNote, chHead("Personal", null, undefined, "r:personal")));
+  if (rWork.length) blocks.push(cardHtml(list(rWork, "rw"), chHead("Work", null, undefined, "r:work")));
   const routineSec = sectionHtml("Routines", "repeat", blocks.join("") || cardHtml(`<div class="empty">No routines ${multi ? "this week" : "today"}.</div>`), routines.length);
   const clientCards = CLIENTS.map(c => [c, work.filter(i => i.area === c)]).concat([["Other", work.filter(i => !CLIENTS.includes(i.area))]]).filter(x => x[1].length)
-    .map(([c, items]) => cardHtml(list(items), chHead(c, CLIENT_VAR[c] || "--i-work", items.length))).join("");
+    .map(([c, items]) => cardHtml(list(items, c), chHead(c, CLIENT_VAR[c] || "--i-work", items.length))).join("");
   const workSec = range === "today" && isWeekend(d0) ? "" : sectionHtml("Work", "work", clientCards || cardHtml(`<div class="empty">No work tasks ${multi ? "in the next 7 days" : "today"}.</div>`), work.filter(i => i.status !== "done" && i.status !== "skipped").length);
-  const persSec = sectionHtml("Personal", "personal", cardHtml(list(pers) || `<div class="empty">No personal tasks ${multi ? "in the next 7 days" : "today"}.</div>`), pers.filter(i => i.status !== "done" && i.status !== "skipped").length);
+  const persSec = sectionHtml("Personal", "personal", cardHtml(list(pers, "pers") || `<div class="empty">No personal tasks ${multi ? "in the next 7 days" : "today"}.</div>`), pers.filter(i => i.status !== "done" && i.status !== "skipped").length);
   return { meetSec, routineSec, workSec, persSec };
 }
 function upNext() {
@@ -1044,7 +1052,7 @@ view.addEventListener("click", e => {
   if (a === "newday") { const t = newTask(); t.due = S.calDay || today(); openSheet({ type: "editTask", obj: t }); return; }
   if (a === "slot") { const t = newTask(); t.due = today(); t.time = b.dataset.t; openSheet({ type: "editTask", obj: t }); return; }
   if (a === "newr") { openSheet({ type: "editRoutine", obj: newRoutine() }); return; }
-  if (a === "fold") { const k = b.dataset.f; if (S.fold[k]) delete S.fold[k]; else S.fold[k] = 1; S.swipe = null; persist(); renderMain(true); return; }
+  if (a === "fold") { const k = b.dataset.f; if (S.fold[k]) delete S.fold[k]; else S.fold[k] = 1; S.swipe = null; saveFold(); renderMain(true); return; }
   if (a === "dayopen") { if (findItem(b.dataset.k)) openSheet({ type: "item", key: b.dataset.k }); return; }
   if (a === "sub") { S.sub[S.view] = b.dataset.sub; S.swipe = null; persist(); renderMain(); return; }
   const sw = b.closest(".sw"); if (!sw) return;
@@ -1537,7 +1545,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "2026-10-24.7";
+const APP_VERSION = "2026-10-24.8";
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {});
 let verAt = 0;
 async function checkVersion() {
@@ -1552,9 +1560,19 @@ function showUpdate() {
 setTimeout(checkVersion, 8000);
 
 /* ---------- boot ---------- */
+/* Folded groups sync across devices through one Log row ("ui_fold") that the server already stores and returns. */
+const FOLD_ID = "ui_fold", FOLD_ROW = { id: FOLD_ID, routineId: "_ui", date: "9999-12-31", status: "", to: "" };
+let foldT = 0, foldBusy = false, foldSeq = 0;
+function saveFold() {
+  const t0 = today(); Object.keys(S.fold).forEach(k => { const m = k.match(/\|d:(\d{4}-\d{2}-\d{2})$/); if (m && m[1] < t0) delete S.fold[k]; }); // past days drop off
+  S.logs[FOLD_ID] = { ...FOLD_ROW, checks: { ...S.fold } }; persist();
+  foldBusy = true; clearTimeout(foldT); const n = ++foldSeq;
+  foldT = setTimeout(() => { api("setChecks", { ...FOLD_ROW, checks: { ...S.fold } }).catch(fail).finally(() => { if (n === foldSeq) foldBusy = false; }); }, 500);
+}
 function applyData(d) {
   S.tasks = d.tasks; S.routines = d.routines;
   const L = {}; d.log.forEach(l => { L[l.id] = l; }); S.logs = L;
+  if (!foldBusy) { const f = L[FOLD_ID]; if (f && f.checks && typeof f.checks === "object") { S.fold = { ...f.checks }; persist(); } else if (Object.keys(S.fold).length) saveFold(); }
   S.ready = true;
 }
 /* The last copy is kept on the phone so the planner opens instantly; the server copy replaces it a moment later. */
@@ -1593,8 +1611,7 @@ async function poll(force) {
   polling = true;
   try {
     const st = String(await call("getStamp"));
-    if (force || (stamp !== null && st !== stamp)) { if (await loadAll(false)) stamp = st; }
-    else if (stamp === null) stamp = st;
+    if (force || st !== stamp) { if (await loadAll(false)) stamp = st; } // the first check also reloads, so nothing saved meanwhile is missed
   } catch (e) {} finally { polling = false; }
 }
 setInterval(() => poll(false), 6000);
