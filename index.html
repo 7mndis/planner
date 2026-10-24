@@ -434,7 +434,7 @@ async function call(fn, ...args) {
   if (!j.ok) { if (j.error === "auth") { showSetup("That key wasn't accepted."); } throw new Error(j.error === "auth" ? "Key not accepted." : j.error || "That didn't work."); }
   return j.data;
 }
-let queue = Promise.resolve(), pending = 0;
+let queue = Promise.resolve(), pending = 0, writes = 0;
 const OUTBOX = "pa-outbox";
 let outbox = []; try { outbox = JSON.parse(localStorage.getItem(OUTBOX) || "[]"); } catch (e) {}
 const saveOutbox = () => { try { localStorage.setItem(OUTBOX, JSON.stringify(outbox)); } catch (e) {} showOffline(); };
@@ -459,7 +459,7 @@ async function flush() {
 }
 function api(fn, ...args) {
   if (/^get/.test(fn)) return call(fn, ...args);
-  pending++;
+  pending++; writes++;
   const p = queue.then(() => {
     if (outbox.length) { outbox.push([fn, args]); saveOutbox(); return args[0]; } // keep the order behind waiting changes
     return call(fn, ...args).catch(e => { if (!isNet(e)) throw e; outbox.push([fn, args]); saveOutbox(); return args[0]; });
@@ -947,7 +947,8 @@ const fail = e => toast((e && e.message) ? e.message : "That change didn't save.
 function saveTask(t) { const i = S.tasks.findIndex(x => x.id === t.id); if (i >= 0) S.tasks[i] = t; else S.tasks.push(t); render(true); api("saveTask", t).then(n => { const x = S.tasks.find(y => y.id === n.id); if (x) x.eventId = n.eventId; }).catch(fail); }
 function saveRoutine(r) { const i = S.routines.findIndex(x => x.id === r.id); if (i >= 0) S.routines[i] = r; else S.routines.push(r); render(true); api("saveRoutine", r).then(n => { const x = S.routines.find(y => y.id === n.id); if (x) x.eventId = n.eventId; }).catch(fail); }
 function setLog(rid, d, status, to) { const id = logId(rid, d), prev = S.logs[id] ? { ...S.logs[id] } : null, obj = { ...(prev || {}), id, routineId: rid, date: d, status, to: to || "" }; S.logs[id] = obj; render(true); api("setLog", obj).catch(fail); return prev; }
-function restoreLog(rid, d, prev) { const id = logId(rid, d), cur = S.logs[id]; if (!prev && cur && cur.checks && Object.keys(cur.checks).length) prev = { ...cur, status: "", to: "" }; else if (prev && cur) prev = { ...prev, checks: cur.checks }; if (prev) { S.logs[id] = prev; render(true); api("setLog", prev).catch(fail); } else { delete S.logs[id]; render(true); api("clearLog", id).catch(fail); } }
+const realChecks = c => { if (!c) return c; const o = {}; Object.keys(c).forEach(k => { if (!(c[k] && c[k].a)) o[k] = c[k]; }); return o; };
+function restoreLog(rid, d, prev) { const id = logId(rid, d), cur0 = S.logs[id], cur = cur0 && { ...cur0, checks: realChecks(cur0.checks) }; if (!prev && cur && cur.checks && Object.keys(cur.checks).length) prev = { ...cur, status: "", to: "" }; else if (prev && cur) prev = { ...prev, checks: cur.checks }; if (prev) { S.logs[id] = prev; render(true); api("setLog", prev).catch(fail); } else { delete S.logs[id]; render(true); api("clearLog", id).catch(fail); } }
 function findItem(k) {
   const [kind, rawId, date] = k.split(":"), id = decodeURIComponent(rawId);
   if (kind === "task") { const t = S.tasks.find(x => x.id === id); return t ? tItem(t) : null; }
@@ -1182,15 +1183,31 @@ function checksOf(it) { if (it.kind === "task") return null; const l = S.logs[lo
 function ticked(it, x) { if (it.kind === "task") return !!x.done && !x.skip; const v = checksOf(it)[x.id]; return !!v && !v.skip; }
 function skippedX(it, x) { if (it.kind === "task") return !!x.skip; const v = checksOf(it)[x.id]; return !!v && !!v.skip; }
 const settled = (it, x) => ticked(it, x) || skippedX(it, x);
+/* A list is finished when every item is ticked or skipped and at least one is ticked. */
+const allSettled = it => { const all = itemsOf(it); return all.length > 0 && all.every(y => settled(it, y)) && all.some(y => ticked(it, y)); };
 function finishIfAll(it) {
   const fresh = findItem(S.sheet.key);
-  if (fresh && fresh.status !== "done" && fresh.status !== "skipped") { const all = itemsOf(fresh); if (all.length && all.every(y => settled(fresh, y)) && all.some(y => ticked(fresh, y))) { markDone(fresh); return true; } }
+  if (fresh && fresh.status !== "done" && fresh.status !== "skipped" && allSettled(fresh)) { markDone(fresh); return true; }
   return false;
+}
+/* Unticking an item on a finished list puts the whole item back to In-progress. */
+function reopenIfDone() {
+  const f = findItem(S.sheet.key); if (!f || f.status !== "done") return;
+  if (f.kind === "task") saveTask({ ...f.t, status: "progress" });
+  else { const lg = S.logs[logId(f.r.id, f.date)]; setLog(f.r.id, f.date, "progress", (lg && lg.to) || ""); }
+  toast("Back to In-progress");
+}
+/* Catches lists that were finished on another device or before this rule existed: today's routines and open tasks. */
+function autoFinish() {
+  const d = today();
+  S.tasks.filter(t => tOpen(t) && Array.isArray(t.items) && t.items.length).map(tItem).forEach(it => { if (allSettled(it)) saveTask({ ...it.t, status: "done" }); });
+  occsOn(d).forEach(it => { if (it.status !== "done" && it.status !== "skipped" && !(planOf(it.r) && balOf(it.r) > 0) && allSettled(it)) setLog(it.r.id, it.date, "done"); });
 }
 function setSkip(it, x, on) {
   if (it.kind === "task") saveItems(it, itemsOf(it).map(y => y.id === x.id ? { ...y, skip: on, done: false } : y));
   else { const c = { ...checksOf(it) }; if (on) c[x.id] = { n: x.name, skip: true }; else delete c[x.id]; writeChecks(it, c); }
   toast(on ? "Skipped " + x.name : x.name + " back on");
+  if (!on) reopenIfDone();
   if (!(on && finishIfAll(it))) render(true);
 }
 const snap = x => x.sets ? { n: x.name, u: x.unit || "kg", s: clone(x.sets) } : { n: x.name };
@@ -1233,7 +1250,7 @@ function recordAll(it) {
   if (!isGym(it) || it.kind !== "routine") return;
   const id = logId(it.r.id, it.date), cur = S.logs[id], had = (cur && cur.checks) || {};
   if (Object.values(had).some(v => v && !v.skip)) return;
-  const checks = { ...had }; itemsOf(it).forEach(x => { if (!checks[x.id]) checks[x.id] = snap(x); });
+  const checks = { ...had }; itemsOf(it).forEach(x => { if (!checks[x.id]) checks[x.id] = { ...snap(x), a: 1 }; }); // a: filled in by Done, removed again if Done is undone
   if (Object.keys(checks).length) S.logs[id] = { ...(cur || { id, routineId: it.r.id, date: it.date, status: "", to: "" }), checks };
 }
 function setTick(it, x, on) {
@@ -1241,6 +1258,7 @@ function setTick(it, x, on) {
   if (it.kind === "task") saveItems(it, itemsOf(it).map(y => y.id === x.id ? { ...y, done: on, skip: false } : y));
   else { const c = { ...checksOf(it) }; if (on) c[x.id] = isGym(it) ? snap(x) : true; else delete c[x.id]; writeChecks(it, c); }
   if (on && finishIfAll(it)) return;
+  if (!on) reopenIfDone();
   render(true);
 }
 
@@ -1492,7 +1510,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "2026-10-24.4";
+const APP_VERSION = "2026-10-24.5";
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {});
 let verAt = 0;
 async function checkVersion() {
@@ -1523,10 +1541,11 @@ async function loadAll(first) {
       const r = await api("getAll");
       applyData(r.data); applyMeetings(r.meetings, r.from, r.to);
     } else {
-      const d = await api("getData");
-      if (pending || outbox.length || drag || typing()) return false; // a save is on its way, or you are typing; the next check picks it up
+      const w0 = writes, d = await api("getData");
+      if (pending || writes !== w0 || outbox.length || drag || typing()) return false; // a save is on its way, landed while this copy was read, or you are typing; the next check picks it up
       applyData(d);
     }
+    autoFinish();
     saveCache();
     if (S.sheet) { renderNav(); if (S.sheet.type === "item" || S.sheet.type === "review") renderSheet(); } else render(true);
     return true;
