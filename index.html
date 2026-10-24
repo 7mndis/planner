@@ -78,17 +78,28 @@ svg.i { width: 1.15em; height: 1.15em; flex: none; }
 .cols { display: grid; gap: 24px; align-items: start; }
 .col { display: grid; gap: 24px; min-width: 0; align-content: start; }
 .section { display: grid; gap: 8px; min-width: 0; }
-.sh { display: flex; align-items: center; gap: 10px; padding: 0 4px; }
+.sh { display: flex; align-items: center; gap: 10px; padding: 0 4px; width: 100%; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.chev { width: 16px; height: 16px; flex: none; color: var(--label2); transition: transform .25s cubic-bezier(.2,.8,.2,1); }
+.folded > .sh .chev, .folded > .ch .chev, .folded > .subh .chev { transform: rotate(-90deg); }
+.folded > .fb { display: none; }
+.section.folded { gap: 0; }
+.dl .go { width: 14px; height: 14px; color: var(--label3, var(--label2)); opacity: .6; flex: none; }
+.dl[data-act] { grid-template-columns: 74px minmax(0, 1fr) auto; cursor: pointer; color: inherit; font: inherit; }
+.dl[data-act]:active { background: var(--fill, rgba(127,127,127,.12)); }
 .sh .tile { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; background: var(--card); color: var(--label); flex: none; }
 .sh .tile svg { width: 18px; height: 18px; }
 .sh h2 { margin: 0; font-size: 1.24rem; font-weight: 700; letter-spacing: -.01em; flex: 1; }
 .sh .n { font-size: .88rem; color: var(--label2); font-variant-numeric: tabular-nums; }
 .card { background: var(--card); border-radius: var(--r); overflow: hidden; }
-.ch { display: flex; align-items: center; gap: 8px; padding: 12px 16px 6px; font-size: .82rem; font-weight: 600; color: var(--label2); text-transform: uppercase; letter-spacing: .05em; }
+.ch { width: 100%; border: 0; background: none; font-family: inherit; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 12px 16px 6px; font-size: .82rem; font-weight: 600; color: var(--label2); text-transform: uppercase; letter-spacing: .05em; }
 .ch .dot { width: 9px; height: 9px; border-radius: 50%; }
+.card.folded > .ch { padding-bottom: 12px; }
+.ch .chev { margin-left: auto; }
+.ch .cnt + .chev { margin-left: 2px; }
 .ch .cnt { margin-left: auto; font-variant-numeric: tabular-nums; letter-spacing: 0; }
-.subh { padding: 10px 16px 4px 16px; font-size: .74rem; font-weight: 700; color: var(--label2); text-transform: uppercase; letter-spacing: .04em; border-top: .5px solid var(--sep); }
-.ch + .subh { border-top: 0; padding-top: 2px; }
+.subh { display: flex; align-items: center; justify-content: space-between; width: 100%; border-left: 0; border-right: 0; border-bottom: 0; background: none; font-family: inherit; text-align: left; cursor: pointer; padding: 10px 16px 4px 16px; font-size: .74rem; font-weight: 700; color: var(--label2); text-transform: uppercase; letter-spacing: .04em; border-top: .5px solid var(--sep); }
+.ch + .subh, .fb > .sg:first-child > .subh { border-top: 0; padding-top: 2px; }
+.sg.folded > .subh { padding-bottom: 10px; }
 .dayh { padding: 10px 16px 4px 100px; font-size: .78rem; font-weight: 600; color: var(--label2); border-top: .5px solid var(--sep); }
 .card > .dayh:first-child, .ch + .dayh { border-top: 0; }
 .empty { padding: 18px 16px; color: var(--label2); font-size: .94rem; }
@@ -423,7 +434,7 @@ const P = {
 const ico = k => `<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[k] || P.Other}</svg>`;
 
 /* ---------- state ---------- */
-const S = { tasks: [], routines: [], logs: {}, ready: false, view: "today", sub: { work: "tasks", personal: "tasks" }, q: "", meetings: {}, meetNote: "", loadedAt: 0, sheet: null, swipe: null, just: null };
+const S = { tasks: [], routines: [], logs: {}, ready: false, view: "today", sub: { work: "tasks", personal: "tasks" }, q: "", meetings: {}, meetNote: "", loadedAt: 0, sheet: null, swipe: null, just: null, fold: {} };
 
 /* Calls go to Apps Script as plain-text POSTs (no CORS preflight). Writes run one at a time, in order,
    so a quick tick and untick can never arrive at the server in the wrong order. */
@@ -470,8 +481,8 @@ function api(fn, ...args) {
 addEventListener("online", () => { showOffline(); flush(); });
 addEventListener("offline", showOffline);
 setInterval(() => { if (outbox.length) flush(); }, 30000);
-try { const v = JSON.parse(localStorage.getItem("pa4") || "{}"); if (v.view && VIEWS.some(x => x[0] === v.view)) S.view = v.view; if (v.sub) Object.assign(S.sub, v.sub); } catch (e) {}
-const persist = () => { try { localStorage.setItem("pa4", JSON.stringify({ view: S.view, sub: S.sub })); } catch (e) {} };
+try { const v = JSON.parse(localStorage.getItem("pa4") || "{}"); if (v.view && VIEWS.some(x => x[0] === v.view)) S.view = v.view; if (v.sub) Object.assign(S.sub, v.sub); if (v.fold && typeof v.fold === "object") S.fold = v.fold; } catch (e) {}
+const persist = () => { try { localStorage.setItem("pa4", JSON.stringify({ view: S.view, sub: S.sub, fold: S.fold })); } catch (e) {} };
 
 /* ---------- time, Bahrain ---------- */
 const pad = n => String(n).padStart(2, "0");
@@ -628,9 +639,14 @@ function rowHtml(it) {
     </div>
   </div>`;
 }
-function sectionHtml(title, icon, inner, n) { return `<section class="section"><div class="sh"><span class="tile">${ico(icon)}</span><h2>${esc(title)}</h2>${n !== undefined ? `<span class="n">${n}</span>` : ""}</div>${inner}</section>`; }
-const cardHtml = (inner, head) => `<div class="card">${head || ""}${inner}</div>`;
-const chHead = (label, dot, cnt) => `<div class="ch">${dot ? `<span class="dot" style="background:var(${dot})"></span>` : ""}${esc(label)}${cnt !== undefined ? `<span class="cnt">${cnt}</span>` : ""}</div>`;
+/* ---------- collapsible groups: state kept per tab on this device ---------- */
+const fk = (...p) => S.view + "|" + p.join("|");
+const folded = k => !!S.fold[k];
+const chev = `<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>`;
+function sectionHtml(title, icon, inner, n) { const k = fk("s", title), f = folded(k); return `<section class="section${f ? " folded" : ""}"><button type="button" class="sh" data-act="fold" data-f="${esc(k)}" aria-expanded="${!f}"><span class="tile">${ico(icon)}</span><h2>${esc(title)}</h2>${n !== undefined ? `<span class="n">${n}</span>` : ""}${chev}</button><div class="fb">${inner}</div></section>`; }
+const cardHtml = (inner, head) => { const m = head && head.match(/data-f="([^"]+)"/), f = m && folded(m[1].replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">")); return `<div class="card${f ? " folded" : ""}">${head || ""}${m ? `<div class="fb">${inner}</div>` : inner}</div>`; };
+const chHead = (label, dot, cnt, fid) => { const k = fk("c", fid || label), f = folded(k); return `<button type="button" class="ch" data-act="fold" data-f="${esc(k)}" aria-expanded="${!f}">${dot ? `<span class="dot" style="background:var(${dot})"></span>` : ""}${esc(label)}${cnt !== undefined ? `<span class="cnt">${cnt}</span>` : ""}${chev}</button>`; };
+const subGroup = (label, rows, scope) => { const k = fk("g", scope, label), f = folded(k); return `<div class="sg${f ? " folded" : ""}"><button type="button" class="subh" data-act="fold" data-f="${esc(k)}" aria-expanded="${!f}">${esc(label)}${chev}</button><div class="fb">${rows}</div></div>`; };
 function rowsByDay(items) { let out = "", last = null; items.forEach(it => { if (it.date !== last) { out += `<div class="dayh">${esc(rel(it.date))}</div>`; last = it.date; } out += rowHtml(it); }); return out; }
 
 /* ---------- quick add: "pick up lunch at 12pm", "Tamkeen send IIR tomorrow 10am with reminder" ---------- */
@@ -767,9 +783,9 @@ function planner(range) {
   const blocks = [];
   if (!multi) {
     const by = { morning: [], day: [], night: [] }; rPers.forEach(o => by[o.r.block || "day"].push(o));
-    [["morning", "Morning"], ["day", "During the Day"], ["night", "Night"]].forEach(([k, l]) => { if (by[k].length) blocks.push(cardHtml(by[k].map(rowHtml).join(""), chHead(l, null, `${by[k].filter(o => o.status === "done").length}/${by[k].length}`))); });
-  } else if (rPers.length || dailyNote) blocks.push(cardHtml(list(rPers) + dailyNote, chHead("Personal")));
-  if (rWork.length) blocks.push(cardHtml(list(rWork), chHead("Work")));
+    [["morning", "Morning"], ["day", "During the Day"], ["night", "Night"]].forEach(([k, l]) => { if (by[k].length) blocks.push(cardHtml(by[k].map(rowHtml).join(""), chHead(l, null, `${by[k].filter(o => o.status === "done").length}/${by[k].length}`, "r:" + k))); });
+  } else if (rPers.length || dailyNote) blocks.push(cardHtml(list(rPers) + dailyNote, chHead("Personal", null, undefined, "r:personal")));
+  if (rWork.length) blocks.push(cardHtml(list(rWork), chHead("Work", null, undefined, "r:work")));
   const routineSec = sectionHtml("Routines", "repeat", blocks.join("") || cardHtml(`<div class="empty">No routines ${multi ? "this week" : "today"}.</div>`), routines.length);
   const clientCards = CLIENTS.map(c => [c, work.filter(i => i.area === c)]).concat([["Other", work.filter(i => !CLIENTS.includes(i.area))]]).filter(x => x[1].length)
     .map(([c, items]) => cardHtml(list(items), chHead(c, CLIENT_VAR[c] || "--i-work", items.length))).join("");
@@ -789,12 +805,13 @@ function upNext() {
   const when = isNow ? (it.kind === "meet" ? `Now · <b>${dur(tm(it.end) - n)}</b> left` : "Now") : `Up next · <b>in ${dur(tm(it.time) - n)}</b>`;
   return `<section class="next" aria-label="Up next"><span class="big" style="--ic:var(${ic.c})">${ico(ic.k)}</span><span class="ey">${when}</span><h2>${esc(it.title)}</h2>${it.kind === "meet" ? "" : `<div class="acts"><button type="button" class="btn primary grow" data-now="done">Done</button><button type="button" class="btn grow" data-now="open">Delay</button>${it.kind === "routine" ? `<button type="button" class="btn grow" data-now="skip">Skip</button>` : ""}</div>`}</section>`;
 }
+const chevR = `<svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>`;
 function dayPlan() {
   const d = today(), n = nowMin(), END = 22 * 60;
   const items = [];
-  (S.meetings[d] || []).forEach(m => { if (m.time) items.push({ s: tm(m.time), e: tm(m.end || m.time) || tm(m.time) + 30, title: m.subject, c: "--i-meet" }); });
-  S.tasks.filter(t => tOpen(t) && mine(t) && t.due === d && t.time && !(t.scope === "work" && isWeekend(d))).forEach(t => { const it = tItem(t); items.push({ s: tm(t.time), e: tm(t.time) + (gymArea(t) ? gymMins(d, t) : 30), title: t.title, c: itemIcon(it).c }); });
-  occsOn(d).filter(o => o.time && (o.status === "due" || o.status === "delayed" || o.status === "progress") && !(o.scope === "work" && isWeekend(d))).forEach(o => items.push({ s: tm(o.time), e: tm(o.time) + (gymArea(o.r) ? gymMins(d, o.r) : 15), title: o.title, c: itemIcon(o).c }));
+  (S.meetings[d] || []).forEach(m => { if (m.time) items.push({ s: tm(m.time), e: tm(m.end || m.time) || tm(m.time) + 30, title: m.subject, c: "--i-meet", k: key(mItem(m, d)) }); });
+  S.tasks.filter(t => tOpen(t) && mine(t) && t.due === d && t.time && !(t.scope === "work" && isWeekend(d))).forEach(t => { const it = tItem(t); items.push({ s: tm(t.time), e: tm(t.time) + (gymArea(t) ? gymMins(d, t) : 30), title: t.title, c: itemIcon(it).c, k: key(it) }); });
+  occsOn(d).filter(o => o.time && (o.status === "due" || o.status === "delayed" || o.status === "progress") && !(o.scope === "work" && isWeekend(d))).forEach(o => items.push({ s: tm(o.time), e: tm(o.time) + (gymArea(o.r) ? gymMins(d, o.r) : 15), title: o.title, c: itemIcon(o).c, k: key(o) }));
   const left = items.filter(x => x.e > n).sort((a, b) => a.s - b.s);
   if (!left.length) return "";
   const rows = []; let cur = Math.max(n, 7 * 60);
@@ -802,11 +819,11 @@ function dayPlan() {
   left.forEach(x => {
     gap(cur, x.s);
     const live = x.s <= n && x.e > n;
-    rows.push(`<div class="dl${live ? " now" : ""}" style="--ic:var(${x.c})"><time>${live ? "Now" : fT(hhmm(x.s))}</time><span><i></i>${esc(x.title)}</span></div>`);
+    rows.push(`<button type="button" class="dl${live ? " now" : ""}" style="--ic:var(${x.c})" data-act="dayopen" data-k="${esc(x.k)}"><time>${live ? "Now" : fT(hhmm(x.s))}</time><span><i></i>${esc(x.title)}</span>${chevR}</button>`);
     cur = Math.max(cur, x.e);
   });
   gap(cur, END);
-  return `<section class="section"><div class="sh"><span class="tile">${ico("clock")}</span><h2>Your Day</h2></div><div class="day">${rows.slice(0, 10).join("")}</div></section>`;
+  return sectionHtml("Your Day", "clock", `<div class="day">${rows.slice(0, 10).join("")}</div>`);
 }
 /* ---------- Calendar tab ---------- */
 const monthStart = d => d.slice(0, 8) + "01";
@@ -878,17 +895,17 @@ function viewSide(side) {
     ...S.routines.filter(r => r.scope === side && r.active === false && match(r)).map(r => ({ ...occ(r, today()), status: "ended" })),
     ...S.tasks.filter(t => t.scope === side && !tOpen(t) && match(t)).sort((a, b) => String(b.updated || "").localeCompare(String(a.updated || ""))).map(tItem)];
   else items = S.tasks.filter(t => t.scope === side && tOpen(t) && match(t)).map(tItem).sort(byDate);
-  const body = li => {
+  const body = (li, g) => {
     if (side !== "work" || s !== "tasks") return li.map(rowHtml).join("");
     const own = li.filter(i => i.status !== "waiting"), chase = li.filter(i => i.status === "waiting");
     const subs = [...new Set(own.map(i => i.t.sub || ""))].sort((a, b) => (a === "") - (b === "") || a.localeCompare(b));
     const many = subs.length > 1 || (subs.length === 1 && subs[0] !== "");
-    let out = subs.map(sb => (many ? `<div class="subh">${esc(sb || "General")}</div>` : "") + own.filter(i => (i.t.sub || "") === sb).map(rowHtml).join("")).join("");
-    if (chase.length) out += `<div class="subh">To Chase</div>` + chase.map(rowHtml).join("");
+    let out = subs.map(sb => { const rows = own.filter(i => (i.t.sub || "") === sb).map(rowHtml).join(""); return many ? subGroup(sb || "General", rows, g) : rows; }).join("");
+    if (chase.length) out += subGroup("To Chase", chase.map(rowHtml).join(""), g);
     return out;
   };
   const cards = groups.map(g => [g, items.filter(i => i.area === g)]).concat([["Other ", items.filter(i => !groups.includes(i.area))]]).filter(x => x[1].length)
-    .map(([g, li]) => cardHtml(body(li), chHead(g.trim(), vars[g.trim()] || null, li.length)));
+    .map(([g, li]) => cardHtml(body(li, g.trim()), chHead(g.trim(), vars[g.trim()] || null, li.length, s + ":" + g.trim())));
   const empty = S.q ? "Nothing matches your search." : s === "routines" ? "No routines yet. Tap + to add one." : s === "done" ? "Completed tasks and ended routines appear here." : "Nothing open. Tap + to add a task.";
   const half = Math.ceil(cards.length / 2);
   return head + (cards.length ? `<div class="cols two"><div class="col">${cards.slice(0, half).join("")}</div><div class="col">${cards.slice(half).join("")}</div></div>` : cardHtml(`<div class="empty">${empty}</div>`));
@@ -1027,6 +1044,8 @@ view.addEventListener("click", e => {
   if (a === "newday") { const t = newTask(); t.due = S.calDay || today(); openSheet({ type: "editTask", obj: t }); return; }
   if (a === "slot") { const t = newTask(); t.due = today(); t.time = b.dataset.t; openSheet({ type: "editTask", obj: t }); return; }
   if (a === "newr") { openSheet({ type: "editRoutine", obj: newRoutine() }); return; }
+  if (a === "fold") { const k = b.dataset.f; if (S.fold[k]) delete S.fold[k]; else S.fold[k] = 1; S.swipe = null; persist(); renderMain(true); return; }
+  if (a === "dayopen") { if (findItem(b.dataset.k)) openSheet({ type: "item", key: b.dataset.k }); return; }
   if (a === "sub") { S.sub[S.view] = b.dataset.sub; S.swipe = null; persist(); renderMain(); return; }
   const sw = b.closest(".sw"); if (!sw) return;
   const it = findItem(sw.dataset.key); if (!it) return;
@@ -1518,7 +1537,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "2026-10-24.6";
+const APP_VERSION = "2026-10-24.7";
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {});
 let verAt = 0;
 async function checkVersion() {
