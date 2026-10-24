@@ -81,6 +81,7 @@ svg.i { width: 1.15em; height: 1.15em; flex: none; }
 .sh { display: flex; align-items: center; gap: 10px; padding: 0 4px; width: 100%; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .chev { width: 16px; height: 16px; flex: none; color: var(--label2); transition: transform .25s cubic-bezier(.2,.8,.2,1); }
 .folded > .sh .chev, .folded > .ch .chev, .folded > .subh .chev { transform: rotate(-90deg); }
+.section > .fb { display: grid; gap: 8px; min-width: 0; }
 .folded > .fb { display: none; }
 .section.folded { gap: 0; }
 .dl .go { width: 14px; height: 14px; color: var(--label3, var(--label2)); opacity: .6; flex: none; }
@@ -1545,7 +1546,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "2026-10-24.8";
+const APP_VERSION = "2026-10-24.9";
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {});
 let verAt = 0;
 async function checkVersion() {
