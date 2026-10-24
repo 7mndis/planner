@@ -141,7 +141,28 @@ svg.i { width: 1.15em; height: 1.15em; flex: none; }
 .flag svg { width: 18px; height: 18px; }
 .flag.late { color: var(--late); }
 
-/* up next */
+/* up next: Last, Now and Up Next in one card */
+.next.trio { display: block; padding: 0; overflow: hidden; }
+.tr-row { width: 100%; border: 0; background: none; color: inherit; font: inherit; text-align: left; display: grid; grid-template-columns: 38px minmax(0, 1fr) auto auto; align-items: center; gap: 0 12px; padding: 10px 16px; min-height: 60px; cursor: pointer; }
+.tr-row:active { background: var(--fill); }
+.tr-row .go { width: 14px; height: 14px; color: var(--label2); opacity: .7; }
+.tr-t { display: grid; gap: 1px; min-width: 0; }
+.tr-t b { font-weight: 600; overflow-wrap: anywhere; }
+.tr-row .ey, .tr-now .ey { font-size: .82rem; font-weight: 600; color: var(--label2); }
+.tr-row .ey b { font-family: var(--font-round); color: var(--label); font-variant-numeric: tabular-nums; }
+.tr-s { font-size: .8rem; font-weight: 600; color: var(--label2); background: var(--fill); border-radius: 10px; padding: 3px 8px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tr-s.late { color: var(--late); }
+.tr-s.ok { color: var(--done); }
+.tr-last .tr-t b { color: var(--label2); font-weight: 500; }
+.tr-now { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 4px 14px; align-items: center; padding: 16px; border-top: .5px solid var(--sep); border-bottom: .5px solid var(--sep); }
+.trio > .tr-now:first-child { border-top: 0; }
+.trio > .tr-now:last-child { border-bottom: 0; }
+.tr-now .big { grid-row: span 2; width: 52px; height: 52px; border-radius: 14px; background: var(--fill2); display: grid; place-items: center; color: var(--ic, var(--label)); }
+.tr-now .big svg { width: 26px; height: 26px; }
+.tr-now .ey b { font-family: var(--font-round); color: var(--label); font-variant-numeric: tabular-nums; }
+.tr-now h2 { margin: 0; font-size: 1.24rem; font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
+.tr-now.free h2 { color: var(--done); }
+.tr-now .acts { grid-column: 1 / -1; display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 .next { background: var(--card); border-radius: 18px; padding: 16px; display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 4px 14px; align-items: center; }
 .next .big { grid-row: span 2; width: 52px; height: 52px; border-radius: 14px; background: var(--fill2); display: grid; place-items: center; color: var(--ic, var(--label)); }
 .next .big svg { width: 26px; height: 26px; }
@@ -819,17 +840,33 @@ function planner(range) {
   const persSec = sectionHtml("Personal", "personal", cardHtml(list(pers, "pers") || `<div class="empty">No personal tasks ${multi ? "in the next 7 days" : "today"}.</div>`), pers.filter(i => i.status !== "done" && i.status !== "skipped").length);
   return { meetSec, routineSec, workSec, persSec };
 }
+/* Last, Now and Up Next in one card: what just happened, what is on now, and what comes next today. */
 function upNext() {
-  const d = today(), n = nowMin();
-  const items = [...S.tasks.filter(t => tOpen(t) && mine(t) && t.due === d).map(tItem), ...occsOn(d), ...(S.meetings[d] || []).map(m => mItem(m, d))].filter(it => it.time && ["due", "delayed", "progress", "meet"].includes(it.status) && !(it.scope === "work" && isWeekend(d)));
-  const live = items.filter(it => it.kind === "meet" ? tm(it.time) <= n && tm(it.end || it.time) > n : tm(it.time) <= n && (it.status === "progress" || tm(it.time) + graceOf(it.kind === "task" ? it.t : it.r, d) >= n)).sort(byTime);
-  const up = items.filter(it => tm(it.time) > n).sort(byTime);
-  const it = live[0] || up[0];
-  if (!it) return "";
-  const isNow = it === live[0], ic = itemIcon(it);
-  S.nowKey = key(it);
-  const when = isNow ? (it.kind === "meet" ? `Now · <b>${dur(tm(it.end) - n)}</b> left` : "Now") : `Up next · <b>in ${dur(tm(it.time) - n)}</b>`;
-  return `<section class="next" aria-label="Up next"><span class="big" style="--ic:var(${ic.c})">${ico(ic.k)}</span><span class="ey">${when}</span><h2>${esc(it.title)}</h2>${it.kind === "meet" ? "" : `<div class="acts"><button type="button" class="btn primary grow" data-now="done">Done</button><button type="button" class="btn grow" data-now="open">Delay</button>${it.kind === "routine" ? `<button type="button" class="btn grow" data-now="skip">Skip</button>` : ""}</div>`}</section>`;
+  const d = today(), n = nowMin(), wk = isWeekend(d);
+  const span = it => it.kind === "meet" ? Math.max(tm(it.end || it.time), tm(it.time) + 1) : tm(it.time) + (gymArea(it.kind === "task" ? it.t : it.r) ? gymMins(d, it.kind === "task" ? it.t : it.r) : it.kind === "task" ? 30 : 15);
+  const all = [...S.tasks.filter(t => mine(t) && t.due === d).map(tItem), ...occsOn(d), ...(S.meetings[d] || []).map(m => mItem(m, d))]
+    .filter(it => it.time && !(it.scope === "work" && wk));
+  const open = it => ["due", "delayed", "progress", "meet"].includes(it.status);
+  const live = all.filter(it => open(it) && (it.kind === "meet" ? tm(it.time) <= n && span(it) > n : tm(it.time) <= n && (it.status === "progress" || tm(it.time) + graceOf(it.kind === "task" ? it.t : it.r, d) >= n))).sort(byTime);
+  const nowIt = live[0] || null;
+  const up = all.filter(it => open(it) && tm(it.time) > n && it !== nowIt).sort(byTime)[0] || null;
+  const last = all.filter(it => it !== nowIt && !live.includes(it) && tm(it.time) <= n).sort((a, b) => tm(b.time) - tm(a.time) || String(a.title).localeCompare(String(b.title)))[0] || null;
+  if (!nowIt && !up && !last) { S.nowKey = null; return ""; }
+  S.nowKey = nowIt ? key(nowIt) : null;
+  const stateOf = it => it.kind === "meet" ? "Ended" : ({ done: "Done", skipped: "Skipped", missed: "Missed", ended: "Ended" })[it.status] || LABEL[it.status] || "";
+  const slim = (it, lbl, sub, cls) => { const ic = itemIcon(it); return `<button type="button" class="tr-row ${cls}" data-act="dayopen" data-k="${esc(key(it))}"><span class="itile" style="--ic:var(${ic.c})">${ico(ic.k)}</span><span class="tr-t"><span class="ey">${lbl}</span><b>${esc(it.title)}</b></span>${sub}${chevR}</button>`; };
+  let lastRow = "";
+  if (last) { const st = stateOf(last), late = st === "Missed"; lastRow = slim(last, `Last · ${fT(last.time)}`, `<span class="tr-s${late ? " late" : st === "Done" ? " ok" : ""}">${esc(st)}</span>`, "tr-last"); }
+  let nowRow;
+  if (nowIt) {
+    const ic = itemIcon(nowIt), left = span(nowIt) - n;
+    nowRow = `<div class="tr-now"><span class="big" style="--ic:var(${ic.c})">${ico(ic.k)}</span><span class="ey">Now${left > 0 && nowIt.kind === "meet" ? ` · <b>${dur(left)}</b> left` : nowIt.status === "progress" ? " · In-progress" : ""}</span><h2>${esc(nowIt.title)}</h2>${nowIt.kind === "meet" ? "" : `<div class="acts"><button type="button" class="btn primary grow" data-now="done">Done</button><button type="button" class="btn grow" data-now="open">Delay</button>${nowIt.kind === "routine" ? `<button type="button" class="btn grow" data-now="skip">Skip</button>` : ""}</div>`}</div>`;
+  } else {
+    const free = up ? `Free until ${fT(up.time)}` : "Free for the rest of the day";
+    nowRow = `<div class="tr-now free"><span class="big">${ico("clock")}</span><span class="ey">Now</span><h2>${free}</h2></div>`;
+  }
+  const upRow = up ? slim(up, `Up Next · <b>in ${dur(tm(up.time) - n)}</b>`, `<span class="tr-s">${fT(up.time)}</span>`, "tr-up") : "";
+  return `<section class="next trio" aria-label="Last, now and up next">${lastRow}${nowRow}${upRow}</section>`;
 }
 const chevR = `<svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>`;
 function dayPlan() {
@@ -1564,7 +1601,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "2026-10-24.11";
+const APP_VERSION = "2026-10-24.12";
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {});
 let verAt = 0;
 async function checkVersion() {
