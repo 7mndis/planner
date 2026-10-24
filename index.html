@@ -1492,7 +1492,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "2026-10-24.3";
+const APP_VERSION = "2026-10-24.4";
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {});
 let verAt = 0;
 async function checkVersion() {
@@ -1524,11 +1524,12 @@ async function loadAll(first) {
       applyData(r.data); applyMeetings(r.meetings, r.from, r.to);
     } else {
       const d = await api("getData");
-      if (pending || outbox.length || drag || S.sheet) return; // a save is on its way; the next refresh picks it up
+      if (pending || outbox.length || drag || typing()) return false; // a save is on its way, or you are typing; the next check picks it up
       applyData(d);
     }
     saveCache();
-    if (S.sheet) renderNav(); else render(true);
+    if (S.sheet) { renderNav(); if (S.sheet.type === "item" || S.sheet.type === "review") renderSheet(); } else render(true);
+    return true;
   } catch (e) {
     if (first && S.ready) { toast("Offline: showing your last saved copy."); return; }
     if (first && KEY) view.innerHTML = lastHtml = `<div class="card"><div class="empty">${esc((e && e.message) || "Your planner couldn't load. Reload to try again.")}</div></div>`;
@@ -1537,10 +1538,24 @@ async function loadAll(first) {
 renderNav();
 if (!KEY) showSetup(); else { if (readCache()) render(); showOffline(); if (outbox.length) flush(); else loadAll(true); }
 setInterval(() => { if (!S.ready) return; if (busy()) { renderNav(); return; } render(true); }, 60000);
-setInterval(() => { if (document.visibilityState === "visible" && S.ready && !busy()) loadAll(false); }, 120000);
+/* Near-live sync between devices: every few seconds ask the server for its change stamp (a tiny call)
+   and reload only when another device has saved something. A full reload still runs every 5 minutes as a safety net. */
+const typing = () => { const a = document.activeElement; return !!a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName); };
+let stamp = null, polling = false;
+async function poll(force) {
+  if (polling || document.visibilityState !== "visible" || !S.ready || pending || outbox.length) return;
+  polling = true;
+  try {
+    const st = String(await call("getStamp"));
+    if (force || (stamp !== null && st !== stamp)) { if (await loadAll(false)) stamp = st; }
+    else if (stamp === null) stamp = st;
+  } catch (e) {} finally { polling = false; }
+}
+setInterval(() => poll(false), 6000);
+setInterval(() => poll(true), 300000);
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState !== "visible" || !S.ready) return;
-  if (!S.sheet) loadAll(false);
+  poll(true);
   if (outbox.length) flush();
   if (Date.now() - S.loadedAt > 600000) loadMeetings();
   checkVersion();
