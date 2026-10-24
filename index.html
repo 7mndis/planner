@@ -115,7 +115,9 @@ svg.i { width: 1.15em; height: 1.15em; flex: none; }
 .itile svg { width: 20px; height: 20px; }
 .ttl { border: 0; background: none; text-align: left; padding: 10px 0; min-width: 0; font-size: 1rem; overflow-wrap: anywhere; cursor: pointer; }
 .row.meet .ttl { cursor: pointer; }
-.row.s-done .ttl, .row.s-skipped .ttl { color: var(--label2); text-decoration: line-through; text-decoration-thickness: 1px; }
+.row.s-ended .check i { border-style: solid; opacity: .45; }
+.row.s-ended .check i::after { content: ""; width: 10px; height: 5px; border-left: 2.5px solid var(--label2); border-bottom: 2.5px solid var(--label2); transform: rotate(-45deg) translate(1px, -1px); }
+.row.s-done .ttl, .row.s-skipped .ttl, .row.s-ended .ttl { color: var(--label2); text-decoration: line-through; text-decoration-thickness: 1px; }
 .flag { display: inline-grid; place-items: center; width: 24px; height: 24px; color: var(--label2); }
 .flag svg { width: 18px; height: 18px; }
 .flag.late { color: var(--late); }
@@ -542,6 +544,28 @@ function freqText(r) {
   if (r.freq === "yearly") return "Every year on " + new Date(Date.UTC(2026, (r.month || 1) - 1, r.dom || 1)).toLocaleDateString("en-GB", { day: "numeric", month: "long", timeZone: "UTC" });
   return "";
 }
+/* ---------- amounts owed: a running balance kept on a repeating item ----------
+   Stored inside the routine's items list, so the Sheet needs no new columns:
+   { kind: "plan", total, tpl } where tpl is the title with {bal} where the balance goes, plus one { kind: "pay", amt, date } per payment. */
+const ledgerOf = src => Array.isArray(src.items) ? src.items : [];
+const isLedger = x => !!x && (x.kind === "plan" || x.kind === "pay");
+const plainItems = src => ledgerOf(src).filter(x => !isLedger(x));
+const planOf = src => ledgerOf(src).find(x => x && x.kind === "plan") || null;
+const paysOf = src => ledgerOf(src).filter(x => x && x.kind === "pay").sort((a, b) => String(a.date).localeCompare(String(b.date)));
+const r3 = n => Math.round((Number(n) || 0) * 1000) / 1000;
+const fAmt = n => String(r3(n));
+const sumPays = ps => r3(ps.reduce((s, p) => s + (Number(p.amt) || 0), 0));
+const balOf = src => { const p = planOf(src); return p ? r3(Math.max(0, (Number(p.total) || 0) - sumPays(paysOf(src)))) : null; };
+const titleWith = (tpl, bal) => String(tpl).split("{bal}").join(fAmt(bal));
+function tplFrom(title, bal) {
+  const n = fAmt(bal), re = new RegExp("(^|[^\\d.])" + n.replace(".", "\\.") + "(?![\\d.])");
+  return re.test(title) ? title.replace(re, (m, a) => a + "{bal}") : title + " · {bal} BHD";
+}
+/* Rebuilds a routine around a new payment list: balance, title (so the reminder shows what is left) and whether it has ended. */
+function withPays(r, pays) {
+  const p = planOf(r), left = r3(Math.max(0, (Number(p.total) || 0) - sumPays(pays)));
+  return { ...r, items: [...plainItems(r), p, ...pays], title: titleWith(p.tpl || r.title, left), active: left > 0 };
+}
 function nextOcc(r) { let d = today(); for (let i = 0; i < 400; i++) { if (occursOn(r, d)) { const o = occ(r, d); if (o.status === "due" || o.status === "delayed") return o; } d = add(d, 1); } return null; }
 
 /* ---------- tasks ---------- */
@@ -584,12 +608,12 @@ document.getElementById("side").addEventListener("click", e => { const b = e.tar
 const key = it => it.kind + ":" + encodeURIComponent(it.id) + (it.kind !== "task" ? ":" + it.date : "");
 function rowHtml(it) {
   const k = key(it), ic = itemIcon(it), sw = S.swipe === k;
-  const canSwipe = it.kind !== "meet" && it.status !== "done" && it.status !== "skipped";
+  const canSwipe = it.kind !== "meet" && it.status !== "done" && it.status !== "skipped" && it.status !== "ended";
   const flag = it.kind === "meet" ? `<span class="when-t">${it.time ? fT(it.time) : "All day"}</span>` : it.status === "missed" ? `<span class="flag late" title="Missed">${ico("alert")}<span class="sr">Missed</span></span>` : it.status === "delayed" ? `<span class="flag" title="Delayed">${ico("clock")}<span class="sr">Delayed</span></span>` : it.status === "waiting" ? `<span class="flag" title="Waiting on others">${ico("people")}<span class="sr">Waiting</span></span>` : "";
   return `<div class="sw" data-key="${esc(k)}">
     ${canSwipe ? `<div class="sw-under" aria-hidden="${!sw}"><div><button type="button" class="u-done" data-act="done" tabindex="${sw ? 0 : -1}">${ico("check")}Done</button></div><div><button type="button" class="u-delay" data-act="open" tabindex="${sw ? 0 : -1}">${ico("clock")}Delay</button><button type="button" class="u-skip" data-act="skip" tabindex="${sw ? 0 : -1}">${ico("skip")}Skip</button></div></div>` : ""}
     <div class="row ${it.kind} s-${it.status}${S.just === k ? " just" : ""}" ${sw ? 'style="transform:translate3d(-152px, 0, 0)"' : ""}>
-      <button type="button" class="check" data-act="${it.kind === "meet" ? "" : "toggle"}" ${it.kind === "meet" ? 'tabindex="-1" aria-hidden="true"' : `aria-label="${it.status === "done" ? "Mark not done" : "Mark done"}: ${esc(it.title)}"`}><i></i></button>
+      <button type="button" class="check" data-act="${it.kind === "meet" ? "" : it.status === "ended" ? "open" : "toggle"}" ${it.kind === "meet" ? 'tabindex="-1" aria-hidden="true"' : `aria-label="${it.status === "ended" ? "Ended" : it.status === "done" ? "Mark not done" : "Mark done"}: ${esc(it.title)}"`}><i></i></button>
       <span class="itile" style="--ic:var(${ic.c})">${ico(ic.k)}</span>
       <button type="button" class="ttl" data-act="open">${esc(it.title)}</button>
       ${flag}
@@ -841,8 +865,10 @@ function viewSide(side) {
   const head = `<header class="navbar"><div><h1>${side === "work" ? "Work" : "Personal"}</h1></div><button type="button" class="icon-btn" data-act="${s === "routines" ? "newr" : "new"}" aria-label="New ${s === "routines" ? "routine" : "task"}">${ico("plus")}</button></header>
   <div class="tools"><div class="seg" role="group" aria-label="Show">${[["tasks", "Tasks"], ["routines", "Routines"], ["done", "Done"]].map(([k, l]) => `<button type="button" data-act="sub" data-sub="${k}" aria-pressed="${s === k}">${l}</button>`).join("")}</div><label class="search">${ico("search")}<span class="sr">Search</span><input id="q" type="search" placeholder="Search" value="${esc(S.q)}"></label></div>`;
   let items;
-  if (s === "routines") items = S.routines.filter(r => r.scope === side && match(r)).map(r => nextOcc(r) || occ(r, today())).sort(byTime);
-  else if (s === "done") items = S.tasks.filter(t => t.scope === side && !tOpen(t) && match(t)).sort((a, b) => String(b.updated || "").localeCompare(String(a.updated || ""))).map(tItem);
+  if (s === "routines") items = S.routines.filter(r => r.scope === side && r.active !== false && match(r)).map(r => nextOcc(r) || occ(r, today())).sort(byTime);
+  else if (s === "done") items = [
+    ...S.routines.filter(r => r.scope === side && r.active === false && match(r)).map(r => ({ ...occ(r, today()), status: "ended" })),
+    ...S.tasks.filter(t => t.scope === side && !tOpen(t) && match(t)).sort((a, b) => String(b.updated || "").localeCompare(String(a.updated || ""))).map(tItem)];
   else items = S.tasks.filter(t => t.scope === side && tOpen(t) && match(t)).map(tItem).sort(byDate);
   const body = li => {
     if (side !== "work" || s !== "tasks") return li.map(rowHtml).join("");
@@ -855,7 +881,7 @@ function viewSide(side) {
   };
   const cards = groups.map(g => [g, items.filter(i => i.area === g)]).concat([["Other ", items.filter(i => !groups.includes(i.area))]]).filter(x => x[1].length)
     .map(([g, li]) => cardHtml(body(li), chHead(g.trim(), vars[g.trim()] || null, li.length)));
-  const empty = S.q ? "Nothing matches your search." : s === "routines" ? "No routines yet. Tap + to add one." : s === "done" ? "Completed tasks appear here." : "Nothing open. Tap + to add a task.";
+  const empty = S.q ? "Nothing matches your search." : s === "routines" ? "No routines yet. Tap + to add one." : s === "done" ? "Completed tasks and ended routines appear here." : "Nothing open. Tap + to add a task.";
   const half = Math.ceil(cards.length / 2);
   return head + (cards.length ? `<div class="cols two"><div class="col">${cards.slice(0, half).join("")}</div><div class="col">${cards.slice(half).join("")}</div></div>` : cardHtml(`<div class="empty">${empty}</div>`));
 }
@@ -921,9 +947,49 @@ function findItem(k) {
   if (kind === "meet") { const m = (S.meetings[date] || []).find(x => x.id === id); return m ? mItem(m, date) : null; }
   return null;
 }
-function markDone(it) { S.just = key(it); if (it.kind === "task") { const b = { ...it.t }; saveTask({ ...it.t, status: "done" }); toast("Done", () => saveTask(b)); } else { recordAll(it); const p = setLog(it.r.id, it.date, "done"); toast("Done", () => restoreLog(it.r.id, it.date, p)); } }
+/* Returns true when it opened the payment sheet instead of finishing straight away. */
+function markDone(it) {
+  if (it.kind === "routine" && it.r.active !== false && planOf(it.r) && balOf(it.r) > 0) { openSheet({ type: "pay", key: key(it) }); return true; }
+  S.just = key(it); if (it.kind === "task") { const b = { ...it.t }; saveTask({ ...it.t, status: "done" }); toast("Done", () => saveTask(b)); } else { recordAll(it); const p = setLog(it.r.id, it.date, "done"); toast("Done", () => restoreLog(it.r.id, it.date, p)); }
+  return false;
+}
 function markSkip(it) { if (it.kind === "task") { const b = { ...it.t }; saveTask({ ...it.t, status: "skipped" }); toast("Skipped", () => saveTask(b)); } else { const p = setLog(it.r.id, it.date, "skipped"); toast("Skipped", () => restoreLog(it.r.id, it.date, p)); } }
-function unmark(it) { if (it.kind === "task") saveTask({ ...it.t, status: "due" }); else restoreLog(it.r.id, it.date, null); }
+function unmark(it) {
+  if (it.kind === "task") { saveTask({ ...it.t, status: "due" }); return; }
+  const r = it.r; if (planOf(r) && paysOf(r).some(x => x.date === it.date)) saveRoutine(withPays(r, paysOf(r).filter(x => x.date !== it.date)));
+  restoreLog(r.id, it.date, null);
+}
+/* Records what was paid for one occurrence. The routine's title, and so its next reminder, then shows the new balance; at zero it ends. */
+function payNow(it, amt) {
+  const r = it.r, before = clone(r);
+  const next = withPays(r, [...paysOf(r).filter(x => x.date !== it.date), { id: uid("p"), kind: "pay", amt: r3(amt), date: it.date }]);
+  S.just = key(it);
+  saveRoutine(next); // first, so the day's alert is cleared under the new title
+  const prev = setLog(r.id, it.date, "done");
+  toast(next.active ? `Paid ${fAmt(amt)} BHD · ${fAmt(balOf(next))} left` : "Fully paid · routine ended", () => { saveRoutine(before); restoreLog(r.id, it.date, prev); });
+}
+function endRoutine(r) { const b = clone(r); saveRoutine({ ...r, active: false }); toast("Routine ended", () => saveRoutine(b)); }
+function restartRoutine(r) { saveRoutine({ ...r, active: true, start: today(), startTime: hhmm(nowMin()) }); toast("Routine restarted"); }
+/* A task turned into a repeating routine: same details, monthly on its due day by default. */
+function routineFromTask(t) {
+  const d = t.due && diff(t.due) >= 0 ? t.due : today();
+  const amt = t.area === "Money" ? ((String(t.title).match(/\d+(?:\.\d+)?/) || [])[0] || "") : "";
+  return { ...newRoutine(), title: t.title, scope: t.scope, area: t.area, freq: "monthly", dom: Number(d.slice(8)), month: Number(d.slice(5, 7)), days: [wd(d)], time: t.time || "", notes: t.notes || "", alert: !!t.alert || !!amt, lead: t.lead || "", items: plainItems(t).map(({ done, ...x }) => x), start: today(), startTime: hhmm(nowMin()), _bal: amt };
+}
+/* Applies the Amount Owed field from the routine form: starts, changes or stops tracking a balance. */
+function applyBalance(o) {
+  const raw = o._bal; delete o._bal;
+  const p = planOf(o), pays = paysOf(o);
+  if (raw === undefined && !p) return o;
+  const v = raw === undefined ? balOf(o) : raw === "" ? null : r3(Math.max(0, Number(raw) || 0));
+  if (v === null || (!p && !(v > 0))) { if (p) o.items = plainItems(o); return o; } // cleared: stop tracking
+  const b0 = p ? balOf(o) : v;
+  const tpl = p && p.tpl && o.title === titleWith(p.tpl, b0) ? p.tpl : tplFrom(o.title, b0);
+  o.items = [...plainItems(o), { id: "plan", kind: "plan", total: r3(v + (p ? sumPays(pays) : 0)), tpl }, ...(p ? pays : [])];
+  o.title = titleWith(tpl, v);
+  if (v <= 0) o.active = false; else if (b0 <= 0) o.active = true;
+  return o;
+}
 function delay(it, date, time) {
   if (it.kind === "task") { const t = it.t, b = { ...t }; saveTask({ ...t, delayedFrom: t.delayedFrom || ((t.due || today()) + (t.time ? "T" + t.time : "")), due: date, time, status: "delayed" }); toast("Moved to " + rel(date) + (time ? ", " + fT(time) : ""), () => saveTask(b)); }
   else { const p = setLog(it.r.id, it.date, "delayed", time); toast("Moved to " + fT(time), () => restoreLog(it.r.id, it.date, p)); }
@@ -1036,6 +1102,7 @@ function renderSheet() {
   const s = S.sheet; if (!s) return;
   if (s.type === "item") { const it = findItem(s.key); if (!it) { closeSheet(); return; } const b0 = sheet.querySelector(".sh-body"), y = b0 ? b0.scrollTop : 0; sheet.innerHTML = it.kind === "meet" ? meetSheet(it) : s.pick ? pickSheet(it) : itemSheet(it); const b1 = sheet.querySelector(".sh-body"); if (b1 && !s.pick) b1.scrollTop = y; return; }
   if (s.type === "review") { const b0 = sheet.querySelector(".sh-body"), y = b0 ? b0.scrollTop : 0; sheet.innerHTML = reviewSheet(); const b1 = sheet.querySelector(".sh-body"); if (b1) b1.scrollTop = y; return; }
+  if (s.type === "pay") { const it = findItem(s.key); if (!it) { closeSheet(); return; } sheet.innerHTML = paySheet(it); return; }
   if (s.type === "editTask") sheet.innerHTML = taskForm(s.obj);
   if (s.type === "editRoutine") sheet.innerHTML = routineForm(s.obj);
 }
@@ -1046,20 +1113,21 @@ function meetSheet(it) {
 function itemSheet(it) {
   const isT = it.kind === "task", src = isT ? it.t : it.r, ic = itemIcon(it);
   const when = isT ? (it.date ? rel(it.date) + (it.time ? ", " + fT(it.time) : "") : "No date") : rel(it.date) + (it.time ? ", " + fT(it.time) : "");
-  const doneLike = it.status === "done" || it.status === "skipped";
-  const banner = it.status === "missed" ? `<div class="banner">${ico("alert")}Missed${isT ? ", was due " + rel(it.date).toLowerCase() : ""}.</div>` : it.status === "delayed" ? `<div class="banner">${ico("clock")}Delayed${isT && it.t.delayedFrom ? " from " + esc(rel(it.t.delayedFrom.split("T")[0])) : !isT ? " from " + fT(it.origTime) + ", today only" : ""}.</div>` : "";
+  const ended = !isT && it.r.active === false, plan = isT ? null : planOf(it.r), pays = plan ? paysOf(it.r) : [];
+  const doneLike = !ended && (it.status === "done" || it.status === "skipped");
+  const banner = ended ? `<div class="banner" style="--late:var(--done)">${ico("check")}${plan && balOf(it.r) <= 0 ? "Fully paid. " : ""}Ended. It no longer repeats or alerts.</div>` : it.status === "missed" ? `<div class="banner">${ico("alert")}Missed${isT ? ", was due " + rel(it.date).toLowerCase() : ""}.</div>` : it.status === "delayed" ? `<div class="banner">${ico("clock")}Delayed${isT && it.t.delayedFrom ? " from " + esc(rel(it.t.delayedFrom.split("T")[0])) : !isT ? " from " + fT(it.origTime) + ", today only" : ""}.</div>` : "";
   const base = isT ? (it.date && diff(it.date) >= 0 ? it.date : today()) : it.date;
   const t0 = it.time && diff(base) === 0 ? Math.max(tm(it.time), nowMin()) : nowMin();
   const quick = isT ? [["+1 Hour", today(), hhmm(Math.min(t0 + 60, 1439))], ["Tonight", today(), "20:00"], ["Tomorrow", add(today(), 1), it.time || ""], ["Next Workday", nextWorkday(), it.time || ""]] : [["+15 Min", it.date, hhmm(Math.min(t0 + 15, 1439))], ["+1 Hour", it.date, hhmm(Math.min(t0 + 60, 1439))], ["Tonight", it.date, "21:00"]];
   const info = isT
     ? [[it.scope === "work" ? "Client" : "Category", it.t.area], [it.scope === "work" ? "Audit Area" : "List", it.t.sub], ["Status", LABEL[it.status]], ["With", mine(it.t) ? "" : it.t.owner], ["Next Step", it.t.next], ["Priority", it.t.priority ? "High" : ""]].filter(x => x[1])
-    : [[it.scope === "work" ? "Client" : "Category", it.area], ["Repeats", freqText(it.r)], ["Usual Time", it.r.time ? fT(it.r.time) : "Any time"], ["Status", LABEL[it.status]], ["Block", it.r.block ? it.r.block[0].toUpperCase() + it.r.block.slice(1) : ""]].filter(x => x[1]);
+    : [[it.scope === "work" ? "Client" : "Category", it.area], ["Repeats", freqText(it.r)], ["Usual Time", it.r.time ? fT(it.r.time) : "Any time"], ["Status", ended ? "Ended" : LABEL[it.status]], ["Block", it.r.block ? it.r.block[0].toUpperCase() + it.r.block.slice(1) : ""], ["Remaining", plan ? fAmt(balOf(it.r)) + " BHD" : ""], ["Paid So Far", plan && pays.length ? fAmt(sumPays(pays)) + " BHD" : ""]].filter(x => x[1]);
   return bar(isT ? "Task" : "Routine", `<button type="button" class="txtbtn" data-s="edit">Edit</button>`, `<button type="button" class="txtbtn strong" data-s="close">Done</button>`) + `<div class="sh-body">
-    <div class="hero"><span class="big" style="--ic:var(${ic.c})">${ico(ic.k)}</span><h3>${esc(it.title)}</h3><span class="when">${esc(when)}</span></div>
+    <div class="hero"><span class="big" style="--ic:var(${ic.c})">${ico(ic.k)}</span><h3>${esc(it.title)}</h3><span class="when">${esc(ended ? freqText(it.r) : when)}</span></div>
     ${banner}
-    ${doneLike ? `<button type="button" class="btn" data-s="undo">Mark as Not ${it.status === "done" ? "Done" : "Skipped"}</button>` : `<div class="chips"><button type="button" class="btn primary grow" data-s="done">${ico("check")}Done</button>${isT ? `<button type="button" class="btn grow" data-s="progress">${it.status === "progress" ? "Back to Due" : "In-progress"}</button>` : ""}<button type="button" class="btn grow" data-s="skip">Skip</button></div>`}
-    ${listSection(it)}
-    ${doneLike ? "" : `<div class="lbl">Delay${isT ? "" : " (today only)"}</div><div class="list"><div class="cell stack"><div class="chips">${quick.map(([l, d, t]) => `<button type="button" class="btn sm" data-s="q" data-d="${d}" data-t="${t}">${l}</button>`).join("")}</div></div>
+    ${ended ? `<button type="button" class="btn primary" data-s="restart">${ico("repeat")}Restart Routine</button>` : doneLike ? `<button type="button" class="btn" data-s="undo">Mark as Not ${it.status === "done" ? "Done" : "Skipped"}</button>` : `<div class="chips"><button type="button" class="btn primary grow" data-s="done">${ico("check")}Done</button>${isT ? `<button type="button" class="btn grow" data-s="progress">${it.status === "progress" ? "Back to Due" : "In-progress"}</button>` : ""}<button type="button" class="btn grow" data-s="skip">Skip</button></div>`}
+    ${ended ? "" : listSection(it)}
+    ${doneLike || ended ? "" : `<div class="lbl">Delay${isT ? "" : " (today only)"}</div><div class="list"><div class="cell stack"><div class="chips">${quick.map(([l, d, t]) => `<button type="button" class="btn sm" data-s="q" data-d="${d}" data-t="${t}">${l}</button>`).join("")}</div></div>
       ${isT ? `<div class="cell"><label for="dlD">Date</label><input id="dlD" type="date" value="${esc(base)}"></div>` : ""}
       <div class="cell"><label for="dlT">Time</label><input id="dlT" type="time" value="${esc(it.time || "")}"></div>
       <div class="cell"><span></span><button type="button" class="btn sm primary" data-s="delay">Move</button></div></div>`}
@@ -1069,7 +1137,22 @@ function itemSheet(it) {
       <div class="cell"><label for="leadSel">Alert Time</label><select id="leadSel" ${it.time && src.alert ? "" : "disabled"}>${opt(LEADS, String(src.lead || ""))}</select></div></div>
     <p class="foot" style="margin-top:-10px">${it.time ? "Pops up " + (src.lead ? leadLabel(src.lead).toLowerCase() : "at the item's time") + " from your Planner Alerts calendar." : "Give it a time to turn on an alert."}</p>
     ${src.notes ? `<div class="lbl">Notes</div><div class="list"><div class="notes">${esc(src.notes)}</div></div>` : ""}
+    ${pays.length ? `<div class="lbl">Payments</div><div class="list">${pays.slice().reverse().map(x => `<div class="cell"><span>${esc(fD(x.date))}</span><span class="v">${fAmt(x.amt)} BHD</span></div>`).join("")}</div>` : ""}
+    ${isT ? (doneLike ? "" : `<button type="button" class="btn" data-s="torout">${ico("repeat")}Make It Repeat</button><p class="foot" style="margin-top:-10px">Turns this task into a routine, for example monthly${it.t.area === "Money" ? ", with a balance that drops each time a payment is made" : ""}.</p>`)
+      : ended ? "" : S.sheet.endc ? `<div class="chips"><button type="button" class="btn danger grow" data-s="endyes">End for Good</button><button type="button" class="btn grow" data-s="endno">Keep</button></div><p class="foot" style="margin-top:-10px">It stops repeating and its alerts are removed. Its history stays, and you can restart it from Done.</p>` : `<button type="button" class="btn danger" data-s="end">End Routine</button>`}
   </div>`;
+}
+function paySheet(it) {
+  const r = it.r, bal = balOf(r), last = paysOf(r).slice(-1)[0], ic = itemIcon(it);
+  const sug = last ? fAmt(Math.min(Number(last.amt) || 0, bal)) : "";
+  return `<form id="pf">` + bar("Record Payment", `<button type="button" class="txtbtn" data-s="close">Cancel</button>`, `<button type="submit" class="txtbtn strong">Save</button>`) + `<div class="sh-body">
+    <div class="hero"><span class="big" style="--ic:var(${ic.c})">${ico(ic.k)}</span><h3>${esc(r.title)}</h3><span class="when">${esc(fAmt(bal))} BHD left · ${esc(rel(it.date))}</span></div>
+    <div class="list"><div class="cell"><label for="payAmt">Amount Paid (BHD)</label><input id="payAmt" name="amt" type="number" inputmode="decimal" min="0" step="0.001" class="r" placeholder="0" value="${esc(sug)}" autofocus></div></div>
+    <div class="chips"><button type="button" class="btn sm" data-s="payfull">Paid in Full (${esc(fAmt(bal))})</button>${last ? `<button type="button" class="btn sm" data-s="paylast" data-v="${esc(fAmt(Math.min(Number(last.amt) || 0, bal)))}">Same as Last (${esc(fAmt(Math.min(Number(last.amt) || 0, bal)))})</button>` : ""}</div>
+    <button type="submit" class="btn primary">${ico("check")}Save Payment</button>
+    <button type="button" class="btn" data-s="payskip">Nothing Paid This Time</button>
+    <p class="foot">The title and the next reminder will show the new balance. When it reaches zero the routine ends by itself.</p>
+  </div></form>`;
 }
 /* ---------- item lists: gym sessions, supplements, recitations, shopping and checklists ---------- */
 const GROUPS = ["Push", "Pull", "Legs", "Core", "Cardio", "Other"];
@@ -1086,7 +1169,7 @@ const half = x => Math.round(x * 2) / 2;
 const conv = (w, from, to) => from === to || !w ? w : half(from === "kg" ? w * KG_LB : w / KG_LB);
 const isGym = it => it.kind === "routine" && it.r.area === "Gym";
 const srcOf = it => it.kind === "task" ? it.t : it.r;
-const itemsOf = it => Array.isArray(srcOf(it).items) ? srcOf(it).items : [];
+const itemsOf = it => plainItems(srcOf(it));
 const clone = o => JSON.parse(JSON.stringify(o));
 const fmtW = w => String(Math.round(Number(w || 0) * 10) / 10);
 function checksOf(it) { if (it.kind === "task") return null; const l = S.logs[logId(it.r.id, it.date)]; return (l && l.checks) || {}; }
@@ -1120,7 +1203,7 @@ function lastFor(name, date) {
   });
   return best;
 }
-function saveItems(it, items) { const src = srcOf(it); if (it.kind === "task") saveTask({ ...src, items }); else saveRoutine({ ...src, items }); }
+function saveItems(it, items) { const src = srcOf(it); items = [...items, ...ledgerOf(src).filter(isLedger)]; if (it.kind === "task") saveTask({ ...src, items }); else saveRoutine({ ...src, items }); }
 function writeChecks(it, checks) {
   const id = logId(it.r.id, it.date), cur = S.logs[id] || { id, routineId: it.r.id, date: it.date, status: "", to: "" };
   S.logs[id] = { ...cur, checks };
@@ -1275,8 +1358,10 @@ function taskForm(t) {
   </div></form>`;
 }
 function routineForm(r) {
-  const areas = r.scope === "personal" ? CATS : CLIENTS;
-  return `<form id="rf">` + bar(r._new ? "New Routine" : "Edit Routine", `<button type="button" class="txtbtn" data-s="${r._new ? "close" : "back"}">Cancel</button>`, `<button type="submit" class="txtbtn strong">${r._new ? "Add" : "Save"}</button>`) + `<div class="sh-body">
+  const areas = r.scope === "personal" ? CATS : CLIENTS, conv = !!S.sheet.convert, plan = planOf(r);
+  const showBal = plan || r.area === "Money" || (r._bal !== undefined && r._bal !== "");
+  const balVal = r._bal !== undefined ? r._bal : plan ? fAmt(balOf(r)) : "";
+  return `<form id="rf">` + bar(conv ? "Make It Repeat" : r._new ? "New Routine" : "Edit Routine", `<button type="button" class="txtbtn" data-s="${r._new && !conv ? "close" : "back"}">Cancel</button>`, `<button type="submit" class="txtbtn strong">${r._new && !conv ? "Add" : "Save"}</button>`) + `<div class="sh-body">
     <div class="list"><div class="cell"><label class="sr" for="r-title">Title</label><input id="r-title" name="title" type="text" placeholder="Title" value="${esc(r.title)}" autofocus required></div></div>
     <div class="list">
       <div class="cell"><label for="r-scope">Side</label><select id="r-scope" name="scope">${opt([["work", "Work"], ["personal", "Personal"]], r.scope)}</select></div>
@@ -1290,23 +1375,34 @@ function routineForm(r) {
       <div class="cell"><label for="r-time">Usual Time</label><input id="r-time" name="time" type="time" value="${esc(r.time)}"></div>
       <div class="cell"><label for="r-al">Calendar Alert</label><span class="switch"><input type="checkbox" role="switch" id="r-al" name="alert" ${r.alert ? "checked" : ""}><span></span></span></div>
       <div class="cell"><label for="r-lead">Alert Time</label><select id="r-lead" name="lead">${opt(LEADS, String(r.lead || ""))}</select></div></div>
+    ${showBal ? `<div class="list"><div class="cell"><label for="r-bal">Amount Owed (BHD)</label><input id="r-bal" name="bal" type="number" inputmode="decimal" min="0" step="0.001" class="r" placeholder="Optional" value="${esc(balVal)}"></div></div>
+    <p class="foot" style="margin-top:-10px">${plan ? "What is still owed. " : ""}Each time you tick it Done you enter what was paid; the title and the next reminder show what is left, and it ends at zero. Leave empty to not track an amount.</p>` : ""}
     <div class="list"><div class="cell stack"><label for="r-notes">Notes</label><textarea id="r-notes" name="notes">${esc(r.notes)}</textarea></div></div>
-    ${r._new ? "" : S.sheet.confirm ? `<div class="chips"><button type="button" class="btn danger grow" data-s="delyes">Delete Routine and History</button><button type="button" class="btn grow" data-s="delno">Keep</button></div>` : `<button type="button" class="btn danger" data-s="del">Delete Routine</button>`}
+    ${r._new || conv ? "" : S.sheet.confirm ? `<div class="chips"><button type="button" class="btn danger grow" data-s="delyes">Delete Routine and History</button><button type="button" class="btn grow" data-s="delno">Keep</button></div>` : `<button type="button" class="btn danger" data-s="del">Delete Routine</button>`}
   </div></form>`;
 }
 function readTask(f) { const d = new FormData(f); return { title: String(d.get("title") || "").trim(), scope: d.get("scope"), area: d.get("area"), sub: String(d.get("sub") || "").trim(), owner: d.get("owner"), due: d.get("due") || "", time: d.get("time") || "", next: String(d.get("next") || "").trim(), notes: String(d.get("notes") || "").trim(), priority: d.get("priority") === "on", alert: d.get("alert") === "on", lead: String(d.get("lead") || "") }; }
-function readRoutine(f, r) { const d = new FormData(f); return { title: String(d.get("title") || "").trim(), scope: d.get("scope"), area: d.get("area"), block: d.get("block") || "", freq: d.get("freq"), days: d.getAll("days").map(Number), dom: d.has("dom") ? (Number(d.get("dom")) || "") : r.dom, month: d.has("month") ? Number(d.get("month")) : r.month, time: d.get("time") || "", notes: String(d.get("notes") || "").trim(), alert: d.get("alert") === "on", lead: String(d.get("lead") || "") }; }
+function readRoutine(f, r) { const d = new FormData(f); return { title: String(d.get("title") || "").trim(), scope: d.get("scope"), area: d.get("area"), block: d.get("block") || "", freq: d.get("freq"), days: d.getAll("days").map(Number), dom: d.has("dom") ? (Number(d.get("dom")) || "") : r.dom, month: d.has("month") ? Number(d.get("month")) : r.month, time: d.get("time") || "", notes: String(d.get("notes") || "").trim(), alert: d.get("alert") === "on", lead: String(d.get("lead") || ""), _bal: d.has("bal") ? String(d.get("bal") || "").trim() : r._bal }; }
 sheet.addEventListener("change", e => {
   const s = S.sheet; if (!s) return;
   if (s.type === "item" && e.target.closest("[data-li]")) { listChange(e.target); return; }
   if (e.target.id === "leadSel" && s.type === "item") { const it = findItem(s.key); if (!it) return; const src = it.kind === "task" ? it.t : it.r, v = e.target.value; if (it.kind === "task") saveTask({ ...src, lead: v }); else saveRoutine({ ...src, lead: v }); renderSheet(); toast("Alert " + leadLabel(v).toLowerCase()); return; }
   if (e.target.id === "alarmSw" && s.type === "item") { const it = findItem(s.key); if (!it) return; const src = it.kind === "task" ? it.t : it.r, v = e.target.checked; if (it.kind === "task") saveTask({ ...src, alert: v }); else saveRoutine({ ...src, alert: v }); renderSheet(); toast(v ? "Alert on" : "Alert off"); return; }
-  if ((s.type === "editTask" && e.target.name === "scope") || (s.type === "editRoutine" && (e.target.name === "scope" || e.target.name === "freq"))) { const f = e.target.form; Object.assign(s.obj, s.type === "editTask" ? readTask(f) : readRoutine(f, s.obj)); if (e.target.name === "scope") s.obj.area = s.obj.scope === "work" ? "Internal" : "Other"; renderSheet(); }
+  if ((s.type === "editTask" && e.target.name === "scope") || (s.type === "editRoutine" && (e.target.name === "scope" || e.target.name === "freq" || e.target.name === "area"))) { const f = e.target.form; Object.assign(s.obj, s.type === "editTask" ? readTask(f) : readRoutine(f, s.obj)); if (e.target.name === "scope") s.obj.area = s.obj.scope === "work" ? "Internal" : "Other"; renderSheet(); }
 });
 sheet.addEventListener("submit", e => {
   e.preventDefault(); const s = S.sheet; if (!s) return;
   if (s.type === "editTask") { const v = readTask(e.target); if (!v.title) { toast("Add a title."); return; } const o = { ...s.obj, ...v }; if (o.owner !== "Me" && (o.status === "due" || !o.status)) o.status = "waiting"; if (o.owner === "Me" && o.status === "waiting") o.status = "due"; const isNew = o._new; delete o._new; saveTask(o); toast(isNew ? "Task added" : "Saved"); closeSheet(); return; }
-  if (s.type === "editRoutine") { const v = readRoutine(e.target, s.obj); if (!v.title) { toast("Add a title."); return; } if (v.freq === "weekly" && !v.days.length) { toast("Pick at least one day."); return; } if ((v.freq === "monthly" || v.freq === "yearly") && !v.dom) { toast("Set the day of the month."); return; } const o = { ...s.obj, ...v }; const isNew = o._new; delete o._new; saveRoutine(o); toast(isNew ? "Routine added" : "Saved"); closeSheet(); }
+  if (s.type === "pay") { const it = findItem(s.key); if (!it) { closeSheet(); return; } const amt = r3(document.getElementById("payAmt").value), bal = balOf(it.r); if (!(amt > 0)) { toast("Enter the amount paid."); return; } if (amt > bal) { toast("That is more than the " + fAmt(bal) + " BHD left."); return; } payNow(it, amt); closeSheet(); return; }
+  if (s.type === "editRoutine") {
+    const v = readRoutine(e.target, s.obj); if (!v.title) { toast("Add a title."); return; } if (v.freq === "weekly" && !v.days.length) { toast("Pick at least one day."); return; } if ((v.freq === "monthly" || v.freq === "yearly") && !v.dom) { toast("Set the day of the month."); return; }
+    if (v._bal !== undefined && v._bal !== "" && !(Number(v._bal) >= 0)) { toast("Check the amount owed."); return; }
+    if (s.convert && v.alert && !v.time) { toast("Set a time so the reminder can alert you."); return; }
+    const o = applyBalance({ ...s.obj, ...v }); const isNew = o._new; delete o._new; saveRoutine(o);
+    if (s.convert) { const t = S.tasks.find(x => x.id === s.convert); S.tasks = S.tasks.filter(x => x.id !== s.convert); api("deleteTask", s.convert).catch(fail); render(true); toast("Now a routine: " + freqText(o).toLowerCase(), t ? () => { S.routines = S.routines.filter(x => x.id !== o.id); api("deleteRoutine", o.id).catch(fail); saveTask(t); } : undefined); }
+    else toast(isNew ? "Routine added" : "Saved");
+    closeSheet();
+  }
 });
 sheet.addEventListener("click", e => {
   const b = e.target.closest("[data-s]"), s = S.sheet; if (!b || !s) return;
@@ -1321,11 +1417,23 @@ sheet.addEventListener("click", e => {
     toast(a === "rvm" ? "Moved to " + rel(b.dataset.d) : a === "rvdone" ? "Done" : "Dropped", () => { saveTask(before); renderSheet(); });
     renderSheet(); return;
   }
+  if (s.type === "pay") {
+    const it = findItem(s.key); if (!it) return; const el = document.getElementById("payAmt");
+    if (a === "payfull") { el.value = fAmt(balOf(it.r)); return; }
+    if (a === "paylast") { el.value = b.dataset.v; return; }
+    if (a === "payskip") { markSkip(it); closeSheet(); return; }
+    return;
+  }
   if (s.type === "item") {
     const it = findItem(s.key); if (!it) return;
     if (listClick(a, b, it)) return;
+    if (a === "torout") { S.sheet = { type: "editRoutine", obj: routineFromTask(it.t), from: s.key, convert: it.t.id }; renderSheet(); return; }
+    if (a === "end") { s.endc = true; renderSheet(); return; }
+    if (a === "endno") { s.endc = false; renderSheet(); return; }
+    if (a === "endyes") { endRoutine(it.r); closeSheet(); return; }
+    if (a === "restart") { restartRoutine(it.r); closeSheet(); return; }
     if (a === "edit") { S.sheet = it.kind === "task" ? { type: "editTask", obj: { ...it.t }, from: s.key } : { type: "editRoutine", obj: { ...it.r }, from: s.key }; renderSheet(); return; }
-    if (a === "done") { markDone(it); closeSheet(); return; }
+    if (a === "done") { if (!markDone(it)) closeSheet(); return; }
     if (a === "skip") { markSkip(it); closeSheet(); return; }
     if (a === "undo") { unmark(it); renderSheet(); return; }
     if (a === "progress") { saveTask({ ...it.t, status: it.status === "progress" ? "due" : "progress" }); renderSheet(); return; }
@@ -1362,7 +1470,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "2026-10-23.7";
+const APP_VERSION = "2026-10-24.1";
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {});
 let verAt = 0;
 async function checkVersion() {
