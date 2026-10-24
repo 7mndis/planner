@@ -154,6 +154,12 @@ svg.i { width: 1.15em; height: 1.15em; flex: none; }
 .tr-s.late { color: var(--late); }
 .tr-s.ok { color: var(--done); }
 .tr-last .tr-t b { color: var(--label2); font-weight: 500; }
+.tr-miss { grid-template-columns: minmax(0, 1fr) auto; cursor: default; padding-right: 12px; }
+.tr-miss:active { background: none; }
+.tr-open { border: 0; background: none; color: inherit; font: inherit; text-align: left; display: grid; grid-template-columns: 38px minmax(0, 1fr); align-items: center; gap: 0 12px; padding: 0; min-height: 44px; cursor: pointer; min-width: 0; }
+.tr-open:active { opacity: .6; }
+.tr-miss .tr-t b { color: var(--label); font-weight: 600; }
+.tr-miss .ey em { font-style: normal; color: var(--late); }
 .tr-now { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 4px 14px; align-items: center; padding: 16px; border-top: .5px solid var(--sep); border-bottom: .5px solid var(--sep); }
 .trio > .tr-now:first-child { border-top: 0; }
 .trio > .tr-now:last-child { border-bottom: 0; }
@@ -856,7 +862,11 @@ function upNext() {
   const stateOf = it => it.kind === "meet" ? "Ended" : ({ done: "Done", skipped: "Skipped", missed: "Missed", ended: "Ended" })[it.status] || LABEL[it.status] || "";
   const slim = (it, lbl, sub, cls) => { const ic = itemIcon(it); return `<button type="button" class="tr-row ${cls}" data-act="dayopen" data-k="${esc(key(it))}"><span class="itile" style="--ic:var(${ic.c})">${ico(ic.k)}</span><span class="tr-t"><span class="ey">${lbl}</span><b>${esc(it.title)}</b></span>${sub}${chevR}</button>`; };
   let lastRow = "";
-  if (last) { const st = stateOf(last), late = st === "Missed"; lastRow = slim(last, `Last · ${fT(last.time)}`, `<span class="tr-s${late ? " late" : st === "Done" ? " ok" : ""}">${esc(st)}</span>`, "tr-last"); }
+  if (last) {
+    const st = stateOf(last), late = st === "Missed";
+    if (late && last.kind !== "meet") { const ic = itemIcon(last); lastRow = `<div class="tr-row tr-last tr-miss"><button type="button" class="tr-open" data-act="dayopen" data-k="${esc(key(last))}"><span class="itile" style="--ic:var(${ic.c})">${ico(ic.k)}</span><span class="tr-t"><span class="ey">Last · ${fT(last.time)} · <em>Missed</em></span><b>${esc(last.title)}</b></span></button><button type="button" class="btn sm" data-act="lastdone" data-k="${esc(key(last))}" aria-label="Mark ${esc(last.title)} done">Done</button></div>`; }
+    else lastRow = slim(last, `Last · ${fT(last.time)}`, `<span class="tr-s${st === "Done" ? " ok" : ""}">${esc(st)}</span>`, "tr-last");
+  }
   let nowRow;
   if (nowIt) {
     const ic = itemIcon(nowIt), left = span(nowIt) - n;
@@ -1102,6 +1112,7 @@ view.addEventListener("click", e => {
   if (a === "new") { openSheet({ type: "editTask", obj: newTask() }); return; }
   if (a === "review") { openSheet({ type: "review" }); return; }
   if (a === "refresh") { refreshNow(); return; }
+  if (a === "lastdone") { const it = findItem(b.dataset.k); if (it) markDone(it); return; }
   if (a === "calday") { S.calDay = b.dataset.d; if (S.calDay.slice(0, 7) !== (S.calMonth || "").slice(0, 7)) S.calMonth = monthStart(S.calDay); renderMain(true); return; }
   if (a === "calnav") { const m = S.calMonth || monthStart(S.calDay || today()), dt = D(m); dt.setUTCMonth(dt.getUTCMonth() + Number(b.dataset.n)); S.calMonth = iso(dt); S.calDay = S.calMonth.slice(0, 7) === today().slice(0, 7) ? today() : S.calMonth; renderMain(true); return; }
   if (a === "caltoday") { S.calDay = today(); S.calMonth = monthStart(today()); renderMain(true); return; }
@@ -1601,7 +1612,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "2026-10-24.12";
+const APP_VERSION = "2026-10-24.13";
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {});
 let verAt = 0;
 async function checkVersion() {
