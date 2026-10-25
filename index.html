@@ -37,7 +37,7 @@
   --done: #1E7A53;
   --accent: #111114;
   --i-work: #3A62D6; --i-personal: #A2477E; --i-meet: #5E6577;
-  --c-tamkeen: #7A4CC2; --c-ashraq: #C9621B; --c-arcapita: #2A6FD0; --c-tayseer: #0B8584; --c-internal: #6E6A80;
+  --c-tamkeen: #7A4CC2; --c-ashraq: #C9621B; --c-arcapita: #2A6FD0; --c-tayseer: #0B8584; --c-ram: #2E8A4F; --c-dwe: #B23A5B; --c-internal: #6E6A80;
   --k-gym: #C0297A; --k-supp: #6E8B12; --k-faith: #3F4AA8; --k-home: #0E7FA6; --k-laundry: #5F7FA8; --k-shop: #A84F2A; --k-errand: #9A7300; --k-car: #7A6A58; --k-money: #3B7A2A; --k-self: #DB4E95; --k-other: #7C818A;
   --glass: rgba(249, 249, 251, .78);
   --shadow: 0 10px 30px rgba(0, 0, 0, .12);
@@ -50,7 +50,7 @@
   --late: #FF6961; --done: #4CD38A;
   --accent: #F5F5F7;
   --i-work: #8DA4E7; --i-personal: #C994B4; --i-meet: #A2A6B0;
-  --c-tamkeen: #B297DC; --c-ashraq: #E0A47B; --c-arcapita: #83ABE4; --c-tayseer: #71B8B8; --c-internal: #ABA9B5;
+  --c-tamkeen: #B297DC; --c-ashraq: #E0A47B; --c-arcapita: #83ABE4; --c-tayseer: #71B8B8; --c-ram: #86CBA0; --c-dwe: #E395AC; --c-internal: #ABA9B5;
   --k-gym: #DA83B2; --k-supp: #ABBC76; --k-faith: #9096CD; --k-home: #73B5CB; --k-laundry: #A2B5CD; --k-shop: #CD9983; --k-errand: #C4AE6B; --k-car: #B2A99E; --k-money: #8DB283; --k-self: #EA98C2; --k-other: #B3B6BB;
   --glass: rgba(28, 28, 30, .78); --shadow: 0 10px 30px rgba(0, 0, 0, .6);
   color-scheme: dark;
@@ -132,11 +132,21 @@ svg.i { width: 1.15em; height: 1.15em; flex: none; }
 .row.meet .check { visibility: hidden; }
 .itile { width: 38px; height: 38px; border-radius: 10px; background: var(--fill2); display: grid; place-items: center; color: var(--ic, var(--label2)); }
 .itile svg { width: 20px; height: 20px; }
-.ttl { border: 0; background: none; text-align: left; padding: 10px 0; min-width: 0; font-size: 1rem; overflow-wrap: anywhere; cursor: pointer; }
+.ttl { border: 0; background: none; text-align: left; padding: 8px 0; min-width: 0; font-size: 1rem; overflow-wrap: anywhere; cursor: pointer; display: grid; gap: 1px; }
+.ttl .tt { display: block; }
+.ttl .meta { display: block; font-size: .76rem; line-height: 1.3; color: var(--label2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.ttl .meta .late { color: var(--late); font-weight: 600; }
+.ttl .meta .sep { opacity: .55; margin: 0 4px; }
+/* priority marker beside the title: an up chevron in the accent colour for high, a muted down chevron for low */
+.pri { display: inline-block; width: 14px; height: 14px; margin: 0 0 2px 4px; vertical-align: middle; color: var(--accent); }
+.pri.low { color: var(--label2); opacity: .7; }
+.pri svg { width: 14px; height: 14px; display: block; }
 .row.meet .ttl { cursor: pointer; }
+.row.meet .meta .chip { font-size: .68rem; padding: 1px 6px; margin-right: 4px; vertical-align: 1px; }
 .row.s-ended .check i { border-style: solid; opacity: .45; }
 .row.s-ended .check i::after { content: ""; width: 10px; height: 5px; border-left: 2.5px solid var(--label2); border-bottom: 2.5px solid var(--label2); transform: rotate(-45deg) translate(1px, -1px); }
-.row.s-done .ttl, .row.s-skipped .ttl, .row.s-ended .ttl { color: var(--label2); text-decoration: line-through; text-decoration-thickness: 1px; }
+.row.s-done .ttl, .row.s-skipped .ttl, .row.s-ended .ttl { color: var(--label2); }
+.row.s-done .tt, .row.s-skipped .tt, .row.s-ended .tt { text-decoration: line-through; text-decoration-thickness: 1px; }
 .flag { display: inline-grid; place-items: center; width: 24px; height: 24px; color: var(--label2); }
 .flag svg { width: 18px; height: 18px; }
 .flag.late { color: var(--late); }
@@ -196,6 +206,38 @@ svg.i { width: 1.15em; height: 1.15em; flex: none; }
 .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--fill); border-radius: 10px; padding: 2px; }
 .seg button { border: 0; background: none; border-radius: 8px; font-size: .88rem; font-weight: 600; min-height: 32px; padding: 0 10px; }
 .seg button[aria-pressed="true"] { background: var(--card); box-shadow: 0 1px 3px rgba(0, 0, 0, .15); }
+.seg label { display: grid; position: relative; }
+.seg label input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+.seg label span { display: grid; place-items: center; border-radius: 8px; font-size: .88rem; font-weight: 600; min-height: 32px; padding: 0 10px; cursor: pointer; }
+.seg label input:checked + span { background: var(--card); box-shadow: 0 1px 3px rgba(0, 0, 0, .15); }
+.seg label input:focus-visible + span { outline: 3px solid var(--accent); }
+.cell .seg { flex: 1; max-width: 62%; }
+/* client filter chips */
+.cfrow { display: flex; gap: 8px; overflow-x: auto; padding: 2px 4px 6px; margin: -8px 0 -6px; scrollbar-width: none; -webkit-overflow-scrolling: touch; touch-action: pan-x; }
+.cfrow::-webkit-scrollbar { display: none; }
+.cfc { flex: none; border: 0; border-radius: 16px; min-height: 32px; padding: 0 12px; background: var(--card); color: var(--label2); font-size: .82rem; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+.cfc .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ic, var(--label2)); }
+.cfc[aria-pressed="true"] { background: var(--ic, var(--label)); color: var(--bg); }
+.cfc.all[aria-pressed="true"] { background: var(--label); color: var(--card); }
+.cfc[aria-pressed="true"] .dot { background: var(--bg); opacity: .85; }
+/* failed saves: a slim banner at the top of the current tab */
+.failed { position: fixed; top: calc(8px + env(safe-area-inset-top, 0px)); left: 50%; transform: translate3d(-50%, 0, 0); z-index: 46; background: var(--card); color: var(--label); font-size: .82rem; font-weight: 600; padding: 6px 6px 6px 14px; border-radius: 16px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 8px; max-width: calc(100% - 24px); white-space: nowrap; }
+.failed .btn.sm { min-height: 30px; padding: 0 10px; font-size: .8rem; border-radius: 15px; }
+.offline ~ .failed { top: calc(44px + env(safe-area-inset-top, 0px)); }
+/* second badge on the Today tab: items to chase */
+.badge-n.chase { right: auto; left: -11px; background: var(--label2); }
+/* touches on a task */
+.hist .kind { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--label2); background: var(--fill); border-radius: 8px; padding: 2px 7px; margin-left: 6px; vertical-align: 1px; }
+.cell .v.late { color: var(--late); }
+.cell .v .src { margin-left: 6px; }
+/* history and details labels */
+.src { display: inline-block; font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--label2); background: var(--fill); border-radius: 8px; padding: 2px 7px; }
+.hist { display: grid; grid-template-columns: 78px minmax(0, 1fr) auto; gap: 2px 10px; padding: 10px 16px; align-items: start; font-size: .94rem; }
+.hist + .hist { border-top: .5px solid var(--sep); }
+.hist time { color: var(--label2); font-size: .82rem; font-weight: 600; font-variant-numeric: tabular-nums; padding-top: 2px; }
+.hist b { font-weight: 600; }
+.hist small { grid-column: 2 / -1; color: var(--label2); font-size: .82rem; overflow-wrap: anywhere; }
+.hist .rm { grid-row: span 2; align-self: center; width: 32px; height: 32px; }
 .search { display: flex; align-items: center; gap: 6px; background: var(--fill); border-radius: 10px; padding: 0 10px; min-height: 38px; color: var(--label2); }
 .search input { border: 0; background: none; flex: 1; min-width: 0; padding: 8px 0; font-size: 1rem; color: var(--label); outline: none; }
 .tools { display: grid; gap: 10px; }
@@ -440,8 +482,19 @@ function readKey() {
 let KEY = readKey();
 
 /* ---------- constants ---------- */
-const CLIENTS = ["Tamkeen", "Ashraq", "Arcapita", "Tayseer", "Internal"];
-const CLIENT_VAR = { Tamkeen: "--c-tamkeen", Ashraq: "--c-ashraq", Arcapita: "--c-arcapita", Tayseer: "--c-tayseer", Internal: "--c-internal" };
+const CLIENTS = ["Tamkeen", "Ashraq", "Arcapita", "Tayseer", "RAM Clinics", "DWE", "Internal"];
+const CLIENT_VAR = { Tamkeen: "--c-tamkeen", Ashraq: "--c-ashraq", Arcapita: "--c-arcapita", Tayseer: "--c-tayseer", "RAM Clinics": "--c-ram", DWE: "--c-dwe", Internal: "--c-internal" };
+/* Other names a client goes by in quick add. */
+const CLIENT_ALIAS = { "RAM Clinics": ["RAM Clinics", "RAM"], DWE: ["DWE", "Dar Wa Emaar"] };
+const SOURCES = { chat: "Chat", email: "Email", review: "Review", scan: "Scan", manual: "Manual" };
+const KINDS = [["chased", "Chased"], ["sent", "Sent"], ["received", "Received"], ["note", "Note"], ["meeting", "Meeting"]];
+/* Priority is stored as a string: "" normal, "TRUE" high, "low" low. Older rows may hold "true" or a boolean; all of those read as high. */
+const PRI = [["low", "Low"], ["", "Normal"], ["TRUE", "High"]];
+const priOf = t => { const p = t && t.priority; return p === true || p === "TRUE" || p === "true" || p === "high" ? "high" : p === "low" ? "low" : ""; };
+const priOut = p => p === true || p === "TRUE" || p === "true" || p === "high" ? "TRUE" : p === "low" ? "low" : "";
+const priRank = t => priOf(t) === "high" ? 0 : priOf(t) === "low" ? 2 : 1;
+/* Fields the page may send to the server on a task. outlookEventId is read only and never counts as a change. */
+const TASK_RO = ["outlookEventId"];
 const CATS = ["Gym", "Supplements", "Faith", "Home", "Laundry", "Shopping", "Errands", "Car", "Money", "Self care", "Other"];
 const CAT_VAR = { Gym: "--k-gym", Supplements: "--k-supp", Faith: "--k-faith", Home: "--k-home", Laundry: "--k-laundry", Shopping: "--k-shop", Errands: "--k-errand", Car: "--k-car", Money: "--k-money", "Self care": "--k-self", Other: "--k-other" };
 const OWNERS = ["Me", "Client", "Aysha", "Noor", "Bhavish", "Shaikha", "Osama", "Abdulrahman"];
@@ -486,7 +539,7 @@ const P = {
 const ico = k => `<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[k] || P.Other}</svg>`;
 
 /* ---------- state ---------- */
-const S = { tasks: [], routines: [], logs: {}, ready: false, view: "today", sub: { work: "tasks", personal: "tasks" }, q: "", meetings: {}, meetNote: "", loadedAt: 0, sheet: null, swipe: null, just: null, fold: {} };
+const S = { tasks: [], routines: [], logs: {}, touches: [], ready: false, view: "today", sub: { work: "tasks", personal: "tasks" }, q: "", meetings: {}, meetNote: "", loadedAt: 0, sheet: null, swipe: null, just: null, fold: {}, cf: "" };
 
 /* Calls go to Apps Script as plain-text POSTs (no CORS preflight). Writes run one at a time, in order,
    so a quick tick and untick can never arrive at the server in the wrong order. */
@@ -508,6 +561,33 @@ function showOffline() {
   if (!el) { el = document.createElement("div"); el.id = "offline"; el.className = "offline"; el.setAttribute("role", "status"); document.body.appendChild(el); }
   el.textContent = navigator.onLine ? `Sending ${outbox.length} change${outbox.length > 1 ? "s" : ""}…` : `Offline · ${outbox.length} change${outbox.length > 1 ? "s" : ""} waiting`;
 }
+/* Writes the server refused (not a connection problem) are kept here with Retry and Discard, so a change is never silently dropped. */
+const FAILED = "pa-failed";
+let failed = []; try { failed = JSON.parse(localStorage.getItem(FAILED) || "[]"); } catch (e) {}
+const isAuth = e => /Key not accepted/.test(e && e.message || "");
+function keepFailed(fn, args, e) { if (isAuth(e)) return; failed.push({ fn, args, msg: (e && e.message) || "refused", at: Date.now() }); saveFailed(); }
+function saveFailed() { try { localStorage.setItem(FAILED, JSON.stringify(failed)); } catch (e) {} showFailed(); }
+function showFailed() {
+  let el = document.getElementById("failed");
+  if (!failed.length) { if (el) el.remove(); return; }
+  if (!el) { el = document.createElement("div"); el.id = "failed"; el.className = "failed"; el.setAttribute("role", "status"); document.body.appendChild(el); }
+  el.innerHTML = `<span>${failed.length} change${failed.length > 1 ? "s" : ""} not saved</span><span aria-hidden="true">·</span><button type="button" class="btn sm primary" data-fs="retry">Retry</button><button type="button" class="btn sm" data-fs="discard" aria-label="Discard unsaved changes">Discard</button>`;
+}
+let retrying = false;
+/* Resends refused changes in the order they were made; each one is removed as soon as the server accepts it. */
+async function retryFailed() {
+  if (retrying || !failed.length) return; retrying = true;
+  try {
+    while (failed.length) {
+      const x = failed[0];
+      try { const n = await call(x.fn, ...x.args); if (x.fn === "saveTask" && n && n.id) snapTask(n); }
+      catch (e) { if (isNet(e)) { outbox.push([x.fn, x.args]); saveOutbox(); failed.shift(); saveFailed(); continue; } x.msg = (e && e.message) || x.msg; x.tries = (x.tries || 0) + 1; saveFailed(); toast(x.msg); break; }
+      failed.shift(); saveFailed();
+    }
+  } finally { retrying = false; showFailed(); if (!failed.length) { toast("Saved"); if (S.ready) loadAll(false); } }
+}
+function discardFailed() { failed = []; saveFailed(); toast("Discarded. Reloading from the server."); if (S.ready) loadAll(false); }
+document.body.addEventListener("click", e => { const b = e.target.closest("[data-fs]"); if (!b) return; if (b.dataset.fs === "retry") retryFailed(); else discardFailed(); });
 let flushing = false;
 async function flush() {
   if (flushing || !outbox.length) return; flushing = true;
@@ -515,7 +595,7 @@ async function flush() {
     while (outbox.length) {
       const [fn, args] = outbox[0];
       try { await call(fn, ...args); }
-      catch (e) { if (isNet(e)) break; toast("A saved change was refused: " + (e.message || "error")); }
+      catch (e) { if (isNet(e)) break; keepFailed(fn, args, e); toast("A saved change was refused: " + (e.message || "error")); }
       outbox.shift(); saveOutbox();
     }
   } finally { flushing = false; showOffline(); if (!outbox.length && S.ready) loadAll(!S.loadedAt); } // first load of the session also fetches meetings
@@ -525,7 +605,7 @@ function api(fn, ...args) {
   pending++; writes++;
   const p = queue.then(() => {
     if (outbox.length) { outbox.push([fn, args]); saveOutbox(); return args[0]; } // keep the order behind waiting changes
-    return call(fn, ...args).catch(e => { if (!isNet(e)) throw e; outbox.push([fn, args]); saveOutbox(); return args[0]; });
+    return call(fn, ...args).catch(e => { if (!isNet(e)) { keepFailed(fn, args, e); throw e; } outbox.push([fn, args]); saveOutbox(); return args[0]; });
   });
   queue = p.catch(() => {}).then(() => { pending--; });
   return p;
@@ -533,8 +613,8 @@ function api(fn, ...args) {
 addEventListener("online", () => { showOffline(); flush(); });
 addEventListener("offline", showOffline);
 setInterval(() => { if (outbox.length) flush(); }, 30000);
-try { const v = JSON.parse(localStorage.getItem("pa4") || "{}"); if (v.view && VIEWS.some(x => x[0] === v.view)) S.view = v.view; if (v.sub) Object.assign(S.sub, v.sub); if (v.fold && typeof v.fold === "object") S.fold = v.fold; } catch (e) {}
-const persist = () => { try { localStorage.setItem("pa4", JSON.stringify({ view: S.view, sub: S.sub, fold: S.fold })); } catch (e) {} };
+try { const v = JSON.parse(localStorage.getItem("pa4") || "{}"); if (v.view && VIEWS.some(x => x[0] === v.view)) S.view = v.view; if (v.sub) Object.assign(S.sub, v.sub); if (v.fold && typeof v.fold === "object") S.fold = v.fold; if (typeof v.cf === "string" && CLIENTS.includes(v.cf)) S.cf = v.cf; } catch (e) {}
+const persist = () => { try { localStorage.setItem("pa4", JSON.stringify({ view: S.view, sub: S.sub, fold: S.fold, cf: S.cf })); } catch (e) {} };
 
 /* ---------- time, Bahrain ---------- */
 const pad = n => String(n).padStart(2, "0");
@@ -556,6 +636,24 @@ const lastWork = (y, m) => { const d = new Date(Date.UTC(y, m + 1, 0)); while (d
 const weekStart = s => add(s, -wd(s));
 const isWeekend = s => wd(s) === 5 || wd(s) === 6;
 const nextWorkday = () => { let d = add(today(), 1); while (wd(d) === 5 || wd(d) === 6) d = add(d, 1); return d; };
+/* n workdays after s, skipping Friday and Saturday. */
+const addWork = (s, n) => { let d = s; while (n > 0) { d = add(d, 1); if (!isWeekend(d)) n--; } return d; };
+/* Compact relative date for a row: Today 14:00, Tomorrow, Tue 27, Overdue 2d, 12 Nov. */
+function relShort(s, t) {
+  if (!s) return "";
+  const x = diff(s), hm = t ? " " + t : "";
+  if (x < 0) return "Overdue " + (-x) + "d";
+  if (x === 0) return "Today" + hm;
+  if (x === 1) return "Tomorrow" + hm;
+  if (x < 7) return DAYS[wd(s)] + " " + Number(s.slice(8)) + hm;
+  return D(s).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" }) + hm;
+}
+const fDM = s => s ? D(s).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" }) : "";
+const fDMY = s => s ? D(s).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : "";
+const isoDay = v => String(v || "").slice(0, 10);
+const isDay = v => /^\d{4}-\d{2}-\d{2}$/.test(String(v || ""));
+/* Row date line: "Tue 28 Oct" or "Tue 28 Oct, 10:00 AM". */
+const rowDate = (s, t) => isDay(s) ? fD(s) + (t ? ", " + fT(t) : "") : "";
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const uid = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const dur = m => { m = Math.max(0, Math.round(m)); const h = Math.floor(m / 60), r = m % 60; return h ? h + "h" + (r ? " " + r + "m" : "") : r + "m"; };
@@ -649,9 +747,27 @@ function tStatus(t) {
   return t.status || "due";
 }
 const tItem = t => ({ kind: "task", t, id: t.id, date: t.due, time: t.time || "", status: tStatus(t), scope: t.scope, title: t.title, area: t.area });
-const mItem = (m, d) => ({ kind: "meet", id: m.id, date: d, title: m.subject, time: m.time, end: m.end, loc: m.loc, cal: m.cal, status: "meet", scope: "meet" });
+const mItem = (m, d) => ({ kind: "meet", id: m.id, date: d, title: m.subject, time: m.time, end: m.end, loc: m.loc, cal: m.cal || "Google", link: m.link || "", organizer: m.organizer || "", attendees: m.attendees || "", mstatus: m.status || "", status: "meet", scope: "meet" });
 const byTime = (a, b) => tm(a.time) - tm(b.time) || String(a.title).localeCompare(String(b.title));
 const byDate = (a, b) => String(a.date || "9999").localeCompare(String(b.date || "9999")) || byTime(a, b);
+const priCmp = (a, b) => a.kind === "task" && b.kind === "task" ? priRank(a.t) - priRank(b.t) : 0;
+/* Within a client card or audit area: high first, then normal, then low, then by date. */
+const byPri = (a, b) => priCmp(a, b) || byDate(a, b);
+/* Within one day (Next 7 Days groups rows by day): date first, then priority, then time. */
+const byDayPri = (a, b) => String(a.date || "9999").localeCompare(String(b.date || "9999")) || priCmp(a, b) || byTime(a, b);
+/* Waiting items: the chase date is nextChase, else the due date. */
+const isWaiting = t => tOpen(t) && (t.status === "waiting" || !mine(t));
+const chaseDate = t => (isDay(t.nextChase) ? t.nextChase : "") || (isDay(t.due) ? t.due : "");
+const chaseItem = t => ({ ...tItem(t), date: chaseDate(t) });
+/* Waiting items whose chase date is today or has passed: the second badge on the Today tab. */
+const chaseCount = () => S.tasks.filter(t => isWaiting(t) && chaseDate(t) && diff(chaseDate(t)) <= 0).length;
+const touchesOf = id => (S.touches || []).filter(x => x.taskId === id).sort((a, b) => String(b.date).localeCompare(String(a.date)) || String(b.at || "").localeCompare(String(a.at || "")));
+/* Client filter: applies to work items only. */
+const cfOk = t => !S.cf || t.scope !== "work" || t.area === S.cf;
+function chipRow() {
+  const ch = (v, l, c) => `<button type="button" class="cfc${c ? "" : " all"}" data-act="cf" data-cf="${esc(v)}" aria-pressed="${S.cf === v}"${c ? ` style="--ic:var(${c})"` : ""}>${c ? '<span class="dot"></span>' : ""}${esc(l)}</button>`;
+  return `<div class="cfrow" role="group" aria-label="Filter by client">${ch("", "All")}${CLIENTS.map(c => ch(c, c, CLIENT_VAR[c])).join("")}</div>`;
+}
 const ready = () => S.ready;
 
 /* ---------- toast ---------- */
@@ -662,10 +778,12 @@ document.getElementById("toast").addEventListener("click", e => { if (e.target.i
 /* ---------- navigation ---------- */
 function overdueCount() { return S.tasks.filter(t => tOpen(t) && mine(t) && t.status !== "waiting" && t.due && diff(t.due) < 0).length; }
 function renderNav() {
-  const od = ready() ? overdueCount() : 0;
+  const od = ready() ? overdueCount() : 0, ch = ready() ? chaseCount() : 0;
   const short = { today: "Today", week: "7 Days", cal: "Calendar", work: "Work", personal: "Personal" };
-  const tb = VIEWS.map(([k]) => `<button type="button" data-view="${k}" ${S.view === k ? 'aria-current="page"' : ""}><span class="b">${ico(k)}${k === "today" && od ? `<span class="badge-n">${od}</span><span class="sr">${od} overdue</span>` : ""}</span>${short[k]}</button>`).join("");
-  const sd = `<div class="brand">Personal Assistant</div>` + VIEWS.map(([k, l]) => `<button type="button" data-view="${k}" ${S.view === k ? 'aria-current="page"' : ""}>${ico(k)}${l}${k === "today" && od ? `<span class="n">${od} overdue</span>` : ""}</button>`).join("");
+  const badges = `${od ? `<span class="badge-n">${od}</span><span class="sr">${od} overdue</span>` : ""}${ch ? `<span class="badge-n chase">${ch}</span><span class="sr">${ch} to chase</span>` : ""}`;
+  const sideN = [od ? od + " overdue" : "", ch ? ch + " to chase" : ""].filter(Boolean).join(" · ");
+  const tb = VIEWS.map(([k]) => `<button type="button" data-view="${k}" ${S.view === k ? 'aria-current="page"' : ""}><span class="b">${ico(k)}${k === "today" ? badges : ""}</span>${short[k]}</button>`).join("");
+  const sd = `<div class="brand">Personal Assistant</div>` + VIEWS.map(([k, l]) => `<button type="button" data-view="${k}" ${S.view === k ? 'aria-current="page"' : ""}>${ico(k)}${l}${k === "today" && sideN ? `<span class="n">${sideN}</span>` : ""}</button>`).join("");
   if (tb + sd === navHtml) return;
   navHtml = tb + sd;
   document.getElementById("tabbar").innerHTML = tb;
@@ -677,16 +795,38 @@ document.getElementById("side").addEventListener("click", e => { const b = e.tar
 
 /* ---------- rows: icon and title only ---------- */
 const key = it => it.kind + ":" + encodeURIComponent(it.id) + (it.kind !== "task" ? ":" + it.date : "");
+/* Second line under a task title: the due date (red when it has passed), who holds a waiting item and its chase date. Done rows show when they were finished. */
+function metaHtml(it) {
+  if (it.kind === "meet") return it.cal === "Outlook" ? `<span class="meta"><span class="chip">Outlook</span>${it.organizer ? esc(it.organizer) : ""}</span>` : "";
+  if (it.kind !== "task") return "";
+  const t = it.t, parts = [], planner = S.view === "today" || S.view === "week";
+  if (it.status === "done" || it.status === "skipped") { const d = isoDay(t.updated); parts.push((it.status === "done" ? "Done" : "Skipped") + (isDay(d) ? " " + fD(d) : "")); }
+  else {
+    if (isDay(t.due)) {
+      const late = diff(t.due) < 0;
+      if (late) parts.push(`<span class="late">${esc(rowDate(t.due, t.time))}</span>`); // Today and Next 7 Days already group rows by day, so there only the time is repeated
+      else if (!planner) parts.push(esc(rowDate(t.due, t.time)));
+      else if (t.time) parts.push(esc(fT(t.time)));
+    }
+    if (it.status === "waiting") {
+      parts.push("Waiting: " + esc(mine(t) ? "Client" : t.owner));
+      if (isDay(t.nextChase) && t.nextChase !== t.due && !(planner && it.date === t.nextChase)) parts.push("Chase " + esc(relShort(t.nextChase)));
+    }
+  }
+  return parts.length ? `<span class="meta">${parts.join('<span class="sep">·</span>')}</span>` : "";
+}
+const priMark = p => p === "high" ? `<span class="pri" title="High priority"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></span><span class="sr">High priority</span>` : p === "low" ? `<span class="pri low" title="Low priority"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span><span class="sr">Low priority</span>` : "";
 function rowHtml(it) {
   const k = key(it), ic = itemIcon(it), sw = S.swipe === k;
   const canSwipe = it.kind !== "meet" && it.status !== "done" && it.status !== "skipped" && it.status !== "ended";
+  const hi = it.kind === "task" && tOpen(it.t) ? priMark(priOf(it.t)) : "";
   const flag = it.kind === "meet" ? `<span class="when-t">${it.time ? fT(it.time) : "All day"}</span>` : it.status === "missed" ? `<span class="flag late" title="Missed">${ico("alert")}<span class="sr">Missed</span></span>` : it.status === "delayed" ? `<span class="flag" title="Delayed">${ico("clock")}<span class="sr">Delayed</span></span>` : it.status === "waiting" ? `<span class="flag" title="Waiting on others">${ico("people")}<span class="sr">Waiting</span></span>` : it.status === "progress" ? `<span class="prog-t">In-progress</span>` : "";
   return `<div class="sw" data-key="${esc(k)}">
     ${canSwipe ? `<div class="sw-under" aria-hidden="${!sw}"><div><button type="button" class="u-done" data-act="done" tabindex="${sw ? 0 : -1}">${ico("check")}Done</button></div><div><button type="button" class="u-delay" data-act="open" tabindex="${sw ? 0 : -1}">${ico("clock")}Delay</button><button type="button" class="u-skip" data-act="skip" tabindex="${sw ? 0 : -1}">${ico("skip")}Skip</button></div></div>` : ""}
     <div class="row ${it.kind} s-${it.status}${S.just === k ? " just" : ""}" ${sw ? 'style="transform:translate3d(-152px, 0, 0)"' : ""}>
       <button type="button" class="check" data-act="${it.kind === "meet" ? "" : it.status === "ended" ? "open" : "toggle"}" ${it.kind === "meet" ? 'tabindex="-1" aria-hidden="true"' : `aria-label="${it.status === "ended" ? "Ended" : it.status === "done" ? "Mark not done" : "Mark done"}: ${esc(it.title)}"`}><i></i></button>
       <span class="itile" style="--ic:var(${ic.c})">${ico(ic.k)}</span>
-      <button type="button" class="ttl" data-act="open">${esc(it.title)}</button>
+      <button type="button" class="ttl" data-act="open"><span class="tt">${esc(it.title)}${hi}</span>${metaHtml(it)}</button>
       ${flag}
     </div>
   </div>`;
@@ -717,14 +857,15 @@ const WDAY = { sun: 0, sunday: 0, mon: 1, monday: 1, tue: 2, tues: 2, tuesday: 2
 const MON = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, sept: 9, oct: 10, nov: 11, dec: 12 };
 function parseQuick(raw) {
   let t = " " + raw.trim() + " ";
-  const o = { scope: "", area: "", due: "", time: "", alert: false, lead: "", priority: false, owner: "Me" };
+  const o = { scope: "", area: "", due: "", time: "", alert: false, lead: "", priority: "", owner: "Me" };
   const cut = re => { const m = t.match(re); if (m) t = t.replace(m[0], " "); return m; };
   if (/\bremind(er)?\b/i.test(t) || /\bwith (an )?alert\b/i.test(t)) o.alert = true;
   cut(/\bwith (a |an )?(reminder|alert)\b/i);
   cut(/^\s*(please\s+)?(add|create|new|set)\s+(a\s+|an\s+)?(new\s+)?(task|reminder|to-?do|item)?\s*(to|for|:)?\s+/i);
   cut(/^\s*remind me (to|about)\s+/i);
   cut(/\s(and\s+)?remind me\b/i);
-  if (cut(/(\bhigh priority\b|\burgent\b|\s!+\s)/i)) o.priority = true;
+  if (cut(/(\blow priority\b|\bwhenever\b)/i)) o.priority = "low";
+  if (cut(/(\bhigh priority\b|\bhigh\b|\burgent\b|\basap\b|\s!+\s)/i)) o.priority = "TRUE";
   let lm = cut(/\b(\d{1,3}|an?|one)\s*(m|mins?|minutes?|h|hrs?|hours?|d|days?)\s+(before|early|earlier)\b/i);
   if (lm) { const n = /^\d/.test(lm[1]) ? Number(lm[1]) : 1, u = lm[2][0].toLowerCase(); o.lead = String(n * (u === "d" ? 1440 : u === "h" ? 60 : 1)); o.alert = true; }
   // waiting on someone
@@ -758,8 +899,9 @@ function parseQuick(raw) {
   }
   if (!o.due) o.due = o.time && tm(o.time) <= nowMin() ? add(d0, 1) : d0; // a time that has passed means tomorrow
   // client or category
-  const cl = CLIENTS.find(c => new RegExp("\\b" + c + "\\b", "i").test(t));
-  if (cl) { o.scope = "work"; o.area = cl; t = t.replace(new RegExp("\\s*\\b(for\\s+)?" + cl + "\\b\\s*:?", "i"), " "); }
+  let cl = "", clw = "";
+  for (const c of CLIENTS) { const w = (CLIENT_ALIAS[c] || [c]).find(a => new RegExp("\\b" + a + "\\b", a === "RAM" ? "" : "i").test(t)); if (w) { cl = c; clw = w; break; } }
+  if (cl) { o.scope = "work"; o.area = cl; t = t.replace(new RegExp("\\s*\\b(for\\s+)?" + clw + "\\b\\s*:?", clw === "RAM" ? "" : "i"), " "); }
   else {
     const cat = CAT_WORDS.find(([, re]) => re.test(t));
     if (WORK_WORDS.test(t) && !cat) { o.scope = "work"; o.area = "Internal"; }
@@ -772,7 +914,7 @@ function parseQuick(raw) {
 function qaPreview(o) {
   if (!o.title) return "";
   const chip = (txt, hl, act) => act ? `<button type="button" class="chip${hl ? " hl" : ""}" data-qa="${act}">${esc(txt)}</button>` : `<span class="chip${hl ? " hl" : ""}">${esc(txt)}</span>`;
-  return [chip((o.scope === "work" ? "Work · " : "Personal · ") + o.area), chip(rel(o.due)), o.time ? chip(fT(o.time)) : "", o.alert ? chip(o.lead ? "Alert " + leadLabel(o.lead).toLowerCase() : "Alert", true) : "", o.priority ? chip("High", true) : "", o.owner !== "Me" ? chip("With " + o.owner) : "", chip("More…", false, "more")].join("");
+  return [chip((o.scope === "work" ? "Work · " : "Personal · ") + o.area), chip(rel(o.due)), o.time ? chip(fT(o.time)) : "", o.alert ? chip(o.lead ? "Alert " + leadLabel(o.lead).toLowerCase() : "Alert", true) : "", priOf(o) === "high" ? chip("High", true) : priOf(o) === "low" ? chip("Low") : "", o.owner !== "Me" ? chip("With " + o.owner) : "", chip("More…", false, "more")].join("");
 }
 function qaHtml() { return `<form class="qa" id="qaForm" autocomplete="off"><label class="qa-bar">${ico("plus")}<span class="sr">Quick add</span><input id="qa" type="text" enterkeyhint="done" placeholder="Add: “Call the bank tomorrow 10am”" value="${esc(S.qa || "")}"><button type="submit" class="btn primary" ${S.qa && S.qa.trim() ? "" : "hidden"}>Add</button></label><div class="qa-prev" id="qaPrev">${S.qa ? qaPreview(parseQuick(S.qa)) : ""}</div></form>`; }
 function qaObj() { const p = parseQuick(S.qa || ""); return { ...newTask(), ...p, status: p.owner !== "Me" ? "waiting" : "due" }; }
@@ -822,16 +964,19 @@ function planner(range) {
   const meets = days.flatMap(d => (S.meetings[d] || []).map(m => mItem(m, d))).sort(byDate);
   // routines
   const off = it => it.scope === "work" && isWeekend(it.date || d0); // no work on Friday or Saturday
-  let routines = days.flatMap(d => occsOn(d)).filter(o => !off(o));
+  let routines = days.flatMap(d => occsOn(d)).filter(o => !off(o) && cfOk(o.r));
   let dailyNote = "";
-  if (multi) { const daily = S.routines.filter(r => r.freq === "daily" && r.active !== false); routines = routines.filter(o => o.r.freq !== "daily"); if (daily.length) dailyNote = `<div class="dayh">Plus ${daily.length} daily routines every day</div>`; }
+  if (multi) { const daily = S.routines.filter(r => r.freq === "daily" && r.active !== false && cfOk(r)); routines = routines.filter(o => o.r.freq !== "daily"); if (daily.length) dailyNote = `<div class="dayh">Plus ${daily.length} daily routines every day</div>`; }
   routines.sort(byDate);
   const rPers = routines.filter(o => o.scope === "personal"), rWork = routines.filter(o => o.scope === "work");
   // tasks
+  const sortP = multi ? byDayPri : byPri;
   const overdue = range === "today" ? S.tasks.filter(t => tOpen(t) && mine(t) && t.status !== "waiting" && t.due && diff(t.due) < 0) : [];
   const tasks = S.tasks.filter(t => mine(t) && t.status !== "waiting" && inRange(t.due) && (range === "today" || tOpen(t)));
-  const work = isWeekend(d0) && range === "today" ? [] : [...overdue, ...tasks].filter(t => t.scope === "work").map(tItem).sort(byDate);
-  const pers = [...overdue, ...tasks].filter(t => t.scope === "personal").map(tItem).sort(byDate);
+  const work = isWeekend(d0) && range === "today" ? [] : [...overdue, ...tasks].filter(t => t.scope === "work" && cfOk(t)).map(tItem).sort(sortP);
+  const pers = [...overdue, ...tasks].filter(t => t.scope === "personal").map(tItem).sort(sortP);
+  // waiting items to chase: by their chase date (nextChase, else due); on Today anything already past is included
+  const chase = S.tasks.filter(t => isWaiting(t) && cfOk(t) && chaseDate(t) && (inRange(chaseDate(t)) || (range === "today" && diff(chaseDate(t)) < 0))).map(chaseItem).sort(byDayPri);
   const list = (items, sc) => multi ? rowsByDay(items, sc) : items.map(rowHtml).join("");
 
   const meetSec = meets.length ? sectionHtml("Meetings", "meet", cardHtml(list(meets, "meet")), meets.length) : S.meetNote ? sectionHtml("Meetings", "meet", cardHtml(`<div class="empty">${esc(S.meetNote)}</div>`)) : "";
@@ -843,8 +988,9 @@ function planner(range) {
   if (rWork.length) blocks.push(cardHtml(list(rWork, "rw"), chHead("Work", null, undefined, "r:work")));
   const routineSec = sectionHtml("Routines", "repeat", blocks.join("") || cardHtml(`<div class="empty">No routines ${multi ? "this week" : "today"}.</div>`), routines.length);
   const clientCards = CLIENTS.map(c => [c, work.filter(i => i.area === c)]).concat([["Other", work.filter(i => !CLIENTS.includes(i.area))]]).filter(x => x[1].length)
-    .map(([c, items]) => cardHtml(list(items, c), chHead(c, CLIENT_VAR[c] || "--i-work", items.length))).join("");
-  const workSec = range === "today" && isWeekend(d0) ? "" : sectionHtml("Work", "work", clientCards || cardHtml(`<div class="empty">No work tasks ${multi ? "in the next 7 days" : "today"}.</div>`), work.filter(i => i.status !== "done" && i.status !== "skipped").length);
+    .map(([c, items]) => cardHtml(list(items, c), chHead(c, CLIENT_VAR[c] || "--i-work", items.length))).join("")
+    + (chase.length ? cardHtml(multi ? rowsByDay(chase, "chase") : chase.map(rowHtml).join(""), chHead("To Chase", "--i-meet", chase.length, "chase")) : "");
+  const workSec = range === "today" && isWeekend(d0) ? "" : sectionHtml("Work", "work", clientCards || cardHtml(`<div class="empty">No work tasks ${multi ? "in the next 7 days" : "today"}${S.cf ? " for " + esc(S.cf) : ""}.</div>`), work.filter(i => i.status !== "done" && i.status !== "skipped").length + chase.length);
   const persSec = sectionHtml("Personal", "personal", cardHtml(list(pers, "pers") || `<div class="empty">No personal tasks ${multi ? "in the next 7 days" : "today"}.</div>`), pers.filter(i => i.status !== "done" && i.status !== "skipped").length);
   return { meetSec, routineSec, workSec, persSec };
 }
@@ -885,7 +1031,7 @@ function dayPlan() {
   const d = today(), n = nowMin(), END = 22 * 60;
   const items = [];
   (S.meetings[d] || []).forEach(m => { if (m.time) items.push({ s: tm(m.time), e: tm(m.end || m.time) || tm(m.time) + 30, title: m.subject, c: "--i-meet", k: key(mItem(m, d)) }); });
-  S.tasks.filter(t => tOpen(t) && mine(t) && t.due === d && t.time && !(t.scope === "work" && isWeekend(d))).forEach(t => { const it = tItem(t); items.push({ s: tm(t.time), e: tm(t.time) + (gymArea(t) ? gymMins(d, t) : 30), title: t.title, c: itemIcon(it).c, k: key(it) }); });
+  S.tasks.filter(t => tOpen(t) && mine(t) && t.status !== "waiting" && t.due === d && t.time && !(t.scope === "work" && isWeekend(d))).forEach(t => { const it = tItem(t); items.push({ s: tm(t.time), e: tm(t.time) + (gymArea(t) ? gymMins(d, t) : 30), title: t.title, c: itemIcon(it).c, k: key(it) }); });
   occsOn(d).filter(o => o.time && (o.status === "due" || o.status === "delayed" || o.status === "progress") && !(o.scope === "work" && isWeekend(d))).forEach(o => items.push({ s: tm(o.time), e: tm(o.time) + (gymArea(o.r) ? gymMins(d, o.r) : 15), title: o.title, c: itemIcon(o).c, k: key(o) }));
   const left = items.filter(x => x.e > n).sort((a, b) => a.s - b.s);
   if (!left.length) return "";
@@ -946,6 +1092,7 @@ function viewCal() {
 function viewToday() {
   const p = planner("today"), d = today();
   return `<header class="navbar"><div><h1>Today</h1><div class="sub">${esc(fDL(d))}</div></div><div style="display:flex;gap:8px">${rfBtn()}<button type="button" class="icon-btn" data-act="review" aria-label="Weekly review">${ico("chart")}</button><button type="button" class="icon-btn" data-act="new" aria-label="New task">${ico("plus")}</button></div></header>
+  ${chipRow()}
   ${qaHtml()}
   ${upNext()}
   <div class="cols two"><div class="col">${dayPlan()}${p.routineSec}${p.meetSec}</div><div class="col">${p.workSec}${p.persSec}</div></div>
@@ -954,22 +1101,24 @@ function viewToday() {
 function viewWeek() {
   const p = planner("week"), a = add(today(), 1), b = add(today(), 7);
   return `<header class="navbar"><div><h1>Next 7 Days</h1><div class="sub">${esc(fD(a))} to ${esc(fD(b))}</div></div><div style="display:flex;gap:8px">${rfBtn()}<button type="button" class="icon-btn" data-act="new" aria-label="New task">${ico("plus")}</button></div></header>
+  ${chipRow()}
   ${qaHtml()}
   <div class="cols two"><div class="col">${p.routineSec}${p.meetSec}</div><div class="col">${p.workSec}${p.persSec}</div></div>`;
 }
 
 /* ---------- Work and Personal ---------- */
-const match = o => { const q = S.q.trim().toLowerCase(); return !q || [o.title, o.next, o.notes, o.area, o.sub, o.owner].join(" ").toLowerCase().includes(q); };
+const match = o => { const q = S.q.trim().toLowerCase(); return !q || [o.title, o.next, o.notes, o.area, o.sub, o.owner, o.requestedBy, o.contact].join(" ").toLowerCase().includes(q); };
 function viewSide(side) {
   const s = S.sub[side], groups = side === "work" ? CLIENTS : CATS, vars = side === "work" ? CLIENT_VAR : CAT_VAR;
   const head = `<header class="navbar"><div><h1>${side === "work" ? "Work" : "Personal"}</h1></div><div style="display:flex;gap:8px">${rfBtn()}<button type="button" class="icon-btn" data-act="${s === "routines" ? "newr" : "new"}" aria-label="New ${s === "routines" ? "routine" : "task"}">${ico("plus")}</button></div></header>
+  ${side === "work" ? chipRow() : ""}
   <div class="tools"><div class="seg" role="group" aria-label="Show">${[["tasks", "Tasks"], ["routines", "Routines"], ["done", "Done"]].map(([k, l]) => `<button type="button" data-act="sub" data-sub="${k}" aria-pressed="${s === k}">${l}</button>`).join("")}</div><label class="search">${ico("search")}<span class="sr">Search</span><input id="q" type="search" placeholder="Search" value="${esc(S.q)}"></label></div>`;
   let items;
-  if (s === "routines") items = S.routines.filter(r => r.scope === side && r.active !== false && match(r)).map(r => nextOcc(r) || occ(r, today())).sort(byTime);
+  if (s === "routines") items = S.routines.filter(r => r.scope === side && r.active !== false && cfOk(r) && match(r)).map(r => nextOcc(r) || occ(r, today())).sort(byTime);
   else if (s === "done") items = [
-    ...S.routines.filter(r => r.scope === side && r.active === false && match(r)).map(r => ({ ...occ(r, today()), status: "ended" })),
-    ...S.tasks.filter(t => t.scope === side && !tOpen(t) && match(t)).sort((a, b) => String(b.updated || "").localeCompare(String(a.updated || ""))).map(tItem)];
-  else items = S.tasks.filter(t => t.scope === side && tOpen(t) && match(t)).map(tItem).sort(byDate);
+    ...S.routines.filter(r => r.scope === side && r.active === false && cfOk(r) && match(r)).map(r => ({ ...occ(r, today()), status: "ended" })),
+    ...S.tasks.filter(t => t.scope === side && !tOpen(t) && cfOk(t) && match(t)).sort((a, b) => String(b.updated || "").localeCompare(String(a.updated || ""))).map(tItem)];
+  else items = S.tasks.filter(t => t.scope === side && tOpen(t) && cfOk(t) && match(t)).map(tItem).sort(byPri);
   const body = (li, g) => {
     if (side !== "work" || s !== "tasks") return li.map(rowHtml).join("");
     const own = li.filter(i => i.status !== "waiting"), chase = li.filter(i => i.status === "waiting");
@@ -981,7 +1130,7 @@ function viewSide(side) {
   };
   const cards = groups.map(g => [g, items.filter(i => i.area === g)]).concat([["Other ", items.filter(i => !groups.includes(i.area))]]).filter(x => x[1].length)
     .map(([g, li]) => cardHtml(body(li, g.trim()), chHead(g.trim(), vars[g.trim()] || null, li.length, s + ":" + g.trim())));
-  const empty = S.q ? "Nothing matches your search." : s === "routines" ? "No routines yet. Tap + to add one." : s === "done" ? "Completed tasks and ended routines appear here." : "Nothing open. Tap + to add a task.";
+  const empty = S.q ? "Nothing matches your search." : S.cf && side === "work" ? `Nothing here for ${esc(S.cf)}.` : s === "routines" ? "No routines yet. Tap + to add one." : s === "done" ? "Completed tasks and ended routines appear here." : "Nothing open. Tap + to add a task.";
   const half = Math.ceil(cards.length / 2);
   return head + (cards.length ? `<div class="cols two"><div class="col">${cards.slice(0, half).join("")}</div><div class="col">${cards.slice(half).join("")}</div></div>` : cardHtml(`<div class="empty">${empty}</div>`));
 }
@@ -1005,7 +1154,9 @@ function renderMain(keep) {
   const html = S.view === "today" ? viewToday() : S.view === "week" ? viewWeek() : S.view === "cal" ? viewCal() : viewSide(S.view);
   if (html === lastHtml) return;
   const y = window.scrollY, ae = document.activeElement, fid = ae && view.contains(ae) && ae.id, sel = fid && ae.selectionStart;
+  const cf0 = view.querySelector(".cfrow"), cfx = cf0 ? cf0.scrollLeft : 0;
   view.innerHTML = lastHtml = html;
+  const cf1 = view.querySelector(".cfrow"); if (cf1 && cfx) cf1.scrollLeft = cfx;
   if (fid) { const el = document.getElementById(fid); if (el) { el.focus({ preventScroll: true }); try { el.setSelectionRange(sel, sel); } catch (e) {} } }
   if (shownView !== S.view) { shownView = S.view; const c = S.dir ? (S.dir > 0 ? "enter-l" : "enter-r") : "enter"; S.dir = 0; view.classList.remove("enter", "enter-l", "enter-r"); void view.offsetWidth; view.classList.add(c); }
   else if (keep) window.scrollTo(0, y);
@@ -1036,7 +1187,23 @@ const busy = () => touching || Date.now() - lastMove < 1200 || !!drag || !!S.she
 
 /* ---------- writes ---------- */
 const fail = e => toast((e && e.message) ? e.message : "That change didn't save. Try again.");
-function saveTask(t) { const i = S.tasks.findIndex(x => x.id === t.id); if (i >= 0) S.tasks[i] = t; else S.tasks.push(t); render(true); api("saveTask", t).then(n => { const x = S.tasks.find(y => y.id === n.id); if (x) x.eventId = n.eventId; }).catch(fail); }
+/* Last copy of each task as the server holds it (from getAll, getData or a saveTask reply). A save sends only the fields that differ from it, so two devices editing different fields of one task never overwrite each other. */
+const SNAP = {};
+const snapTask = t => { SNAP[t.id] = clone(t); };
+const sameVal = (a, b) => JSON.stringify(a === undefined ? "" : a) === JSON.stringify(b === undefined ? "" : b);
+function changedKeys(t) {
+  const s = SNAP[t.id]; if (!s) return undefined;
+  return [...new Set([...Object.keys(t), ...Object.keys(s)])].filter(k => !k.startsWith("_") && !TASK_RO.includes(k) && !sameVal(t[k], s[k]));
+}
+/* The copy sent to the server: no page-only fields, priority always a string. */
+function outTask(t) { const o = {}; Object.keys(t).forEach(k => { if (!k.startsWith("_")) o[k] = t[k]; }); o.priority = priOut(t.priority); return o; }
+function saveTask(t) {
+  t = { ...t, priority: priOut(t.priority) };
+  const i = S.tasks.findIndex(x => x.id === t.id); if (i >= 0) S.tasks[i] = t; else S.tasks.push(t); render(true);
+  const o = outTask(t), keys = changedKeys(o);
+  if (keys && !keys.length) return; // nothing differs from the server copy
+  (keys ? api("saveTask", o, keys) : api("saveTask", o)).then(n => { if (!n || !n.id) return; snapTask(n); const x = S.tasks.find(y => y.id === n.id); if (x) { x.eventId = n.eventId; if (n.outlookEventId !== undefined) x.outlookEventId = n.outlookEventId; } }).catch(fail);
+}
 function saveRoutine(r) { const i = S.routines.findIndex(x => x.id === r.id); if (i >= 0) S.routines[i] = r; else S.routines.push(r); render(true); api("saveRoutine", r).then(n => { const x = S.routines.find(y => y.id === n.id); if (x) x.eventId = n.eventId; }).catch(fail); }
 function setLog(rid, d, status, to) { const id = logId(rid, d), prev = S.logs[id] ? { ...S.logs[id] } : null, obj = { ...(prev || {}), id, routineId: rid, date: d, status, to: to || "" }; S.logs[id] = obj; render(true); api("setLog", obj).catch(fail); return prev; }
 const realChecks = c => { if (!c) return c; const o = {}; Object.keys(c).forEach(k => { if (!(c[k] && c[k].a)) o[k] = c[k]; }); return o; };
@@ -1124,6 +1291,7 @@ view.addEventListener("click", e => {
   if (a === "fold") { const k = b.dataset.f; if (S.fold[k]) delete S.fold[k]; else S.fold[k] = 1; S.swipe = null; saveFold(); renderMain(true); return; }
   if (a === "dayopen") { if (findItem(b.dataset.k)) openSheet({ type: "item", key: b.dataset.k }); return; }
   if (a === "sub") { S.sub[S.view] = b.dataset.sub; S.swipe = null; persist(); renderMain(); return; }
+  if (a === "cf") { S.cf = CLIENTS.includes(b.dataset.cf) ? b.dataset.cf : ""; S.swipe = null; persist(); renderMain(true); return; }
   const sw = b.closest(".sw"); if (!sw) return;
   const it = findItem(sw.dataset.key); if (!it) return;
   const wasOpen = S.swipe; S.swipe = null;
@@ -1174,7 +1342,7 @@ view.addEventListener("pointerup", endDrag); view.addEventListener("pointercance
 /* ---------- sheet ---------- */
 const sheet = document.getElementById("sheet"), scrim = document.getElementById("scrim");
 let lastFocus = null;
-function newTask() { const side = S.view === "personal" ? "personal" : "work"; return { id: uid("t"), title: "", scope: side, area: side === "work" ? "Internal" : "Other", sub: "", owner: "Me", status: "due", due: S.view === "week" ? add(today(), 1) : today(), time: "", next: "", notes: "", priority: false, alert: false, items: [], created: new Date().toISOString(), _new: true }; }
+function newTask() { const side = S.view === "personal" ? "personal" : "work"; return { id: uid("t"), title: "", scope: side, area: side === "work" ? "Internal" : "Other", sub: "", owner: "Me", status: "due", due: S.view === "week" ? add(today(), 1) : today(), time: "", next: "", notes: "", priority: "", alert: false, items: [], requestedBy: "", requestedOn: "", contact: "", clientDeadline: "", nextChase: "", fileLink: "", link: "", source: "manual", created: new Date().toISOString(), _new: true }; }
 function newRoutine() { const side = S.view === "work" ? "work" : "personal"; return { id: uid("r"), title: "", scope: side, area: side === "work" ? "Internal" : "Other", freq: "daily", days: [], dom: "", month: 1, time: "", block: "", notes: "", alert: false, start: today(), startTime: hhmm(nowMin()), active: true, items: [], _new: true }; }
 function openSheet(s) { S.sheet = s; lastFocus = document.activeElement; document.documentElement.classList.add("lock"); scrim.hidden = false; sheet.hidden = false; renderSheet(); requestAnimationFrame(() => { scrim.classList.add("on"); sheet.classList.add("on"); const f = sheet.querySelector("[autofocus]") || sheet.querySelector(".sh-bar button"); if (f) f.focus({ preventScroll: true }); }); }
 function closeSheet() { S.sheet = null; document.documentElement.classList.remove("lock"); scrim.classList.remove("on"); sheet.classList.remove("on"); sheet.style.transform = ""; scrim.style.opacity = ""; setTimeout(() => { if (!S.sheet) { scrim.hidden = true; sheet.hidden = true; sheet.innerHTML = ""; } }, 420); renderMain(true); if (lastFocus && document.contains(lastFocus)) lastFocus.focus({ preventScroll: true }); }
@@ -1215,12 +1383,19 @@ function renderSheet() {
   if (s.type === "item") { const it = findItem(s.key); if (!it) { closeSheet(); return; } const b0 = sheet.querySelector(".sh-body"), y = b0 ? b0.scrollTop : 0; sheet.innerHTML = it.kind === "meet" ? meetSheet(it) : s.pick ? pickSheet(it) : itemSheet(it); const b1 = sheet.querySelector(".sh-body"); if (b1 && !s.pick) b1.scrollTop = y; return; }
   if (s.type === "review") { const b0 = sheet.querySelector(".sh-body"), y = b0 ? b0.scrollTop : 0; sheet.innerHTML = reviewSheet(); const b1 = sheet.querySelector(".sh-body"); if (b1) b1.scrollTop = y; return; }
   if (s.type === "pay") { const it = findItem(s.key); if (!it) { closeSheet(); return; } sheet.innerHTML = paySheet(it); return; }
+  if (s.type === "touch") { const it = findItem(s.key); if (!it || it.kind !== "task") { closeSheet(); return; } sheet.innerHTML = touchSheet(it); return; }
   if (s.type === "editTask") sheet.innerHTML = taskForm(s.obj);
   if (s.type === "editRoutine") sheet.innerHTML = routineForm(s.obj);
 }
 function meetSheet(it) {
-  const ic = itemIcon(it);
-  return bar("Meeting", "", `<button type="button" class="txtbtn strong" data-s="close">Done</button>`) + `<div class="sh-body"><div class="hero"><span class="big" style="--ic:var(${ic.c})">${ico(ic.k)}</span><h3>${esc(it.title)}</h3><span class="when">${esc(rel(it.date))}${it.end ? ", " + fT(it.time) + " to " + fT(it.end) : ", all day"}</span></div>${it.loc ? `<div class="list"><div class="cell"><span>Location</span><span class="v">${esc(it.loc)}</span></div></div>` : ""}<p class="foot">From your ${esc(it.cal || "Google")} calendar.</p></div>`;
+  const ic = itemIcon(it), link = String(it.link || ""), teams = /teams\.microsoft\.com/i.test(link), http = /^https?:\/\//i.test(link);
+  const st = String(it.mstatus || "").toLowerCase(), stLabel = /tentative/.test(st) ? "Tentative" : /oof/.test(st) ? "Out of office" : "";
+  const rows = [["Location", it.loc], ["Organizer", it.organizer], ["Attendees", it.attendees], ["Status", stLabel]].filter(x => x[1]);
+  return bar("Meeting", "", `<button type="button" class="txtbtn strong" data-s="close">Done</button>`) + `<div class="sh-body">
+    <div class="hero"><span class="big" style="--ic:var(${ic.c})">${ico(ic.k)}</span><h3>${esc(it.title)}</h3><span class="when">${esc(rel(it.date))}${it.end ? ", " + fT(it.time) + " to " + fT(it.end) : ", all day"}</span></div>
+    ${teams ? `<a class="btn primary" href="${esc(link)}" target="_blank" rel="noopener">${ico("people")}Join Teams</a>` : http ? `<a class="btn" href="${esc(link)}" target="_blank" rel="noopener">${ico("meet")}Open in Outlook</a>` : ""}
+    ${rows.length ? `<div class="list">${rows.map(([k, v]) => `<div class="cell"><span>${k}</span><span class="v">${esc(v)}</span></div>`).join("")}</div>` : ""}
+    <p class="foot"><span class="src">${esc(it.cal || "Google")}</span> From your ${esc(it.cal || "Google")} calendar.</p></div>`;
 }
 function itemSheet(it) {
   const isT = it.kind === "task", src = isT ? it.t : it.r, ic = itemIcon(it);
@@ -1231,9 +1406,18 @@ function itemSheet(it) {
   const base = isT ? (it.date && diff(it.date) >= 0 ? it.date : today()) : it.date;
   const t0 = it.time && diff(base) === 0 ? Math.max(tm(it.time), nowMin()) : nowMin();
   const quick = isT ? [["+1 Hour", today(), hhmm(Math.min(t0 + 60, 1439))], ["Tonight", today(), "20:00"], ["Tomorrow", add(today(), 1), it.time || ""], ["Next Workday", nextWorkday(), it.time || ""]] : [["+15 Min", it.date, hhmm(Math.min(t0 + 15, 1439))], ["+1 Hour", it.date, hhmm(Math.min(t0 + 60, 1439))], ["Tonight", it.date, "21:00"]];
+  const t = isT ? it.t : null, past = d => isDay(d) && diff(d) < 0;
   const info = isT
-    ? [[it.scope === "work" ? "Client" : "Category", it.t.area], [it.scope === "work" ? "Audit Area" : "List", it.t.sub], ["Status", LABEL[it.status]], ["Duration", gymArea(it.t) && it.date ? dur(gymMins(it.date, it.t)) : ""], ["With", mine(it.t) ? "" : it.t.owner], ["Next Step", it.t.next], ["Priority", it.t.priority ? "High" : ""]].filter(x => x[1])
+    ? [[it.scope === "work" ? "Client" : "Category", t.area], [it.scope === "work" ? "Audit Area" : "List", t.sub], ["Status", LABEL[it.status]], ["Duration", gymArea(t) && it.date ? dur(gymMins(it.date, t)) : ""], ["With", mine(t) ? "" : t.owner], ["Next Step", t.next], ["Priority", priOf(t) === "high" ? "High" : priOf(t) === "low" ? "Low" : ""],
+      ["Chase Due", it.status === "waiting" && isDay(t.nextChase) ? rel(t.nextChase) : "", past(t.nextChase) && it.status === "waiting"],
+      ["Requested By", t.requestedBy ? t.requestedBy + (isDay(t.requestedOn) ? " on " + fDM(t.requestedOn) : "") : ""],
+      ["Contact", t.contact], ["Client Deadline", isDay(t.clientDeadline) ? fD(t.clientDeadline) : "", past(t.clientDeadline) && tOpen(t)], ["Next Chase", isDay(t.nextChase) ? fD(t.nextChase) : ""],
+      ["Source", t.source || t.created ? `${esc(SOURCES[String(t.source || "").toLowerCase()] || t.source || "Manual")}${isDay(isoDay(t.created)) ? `<small style="display:block">Added ${esc(fDMY(isoDay(t.created)))}</small>` : ""}` : "", false, true]].filter(x => x[1])
     : [[it.scope === "work" ? "Client" : "Category", it.area], ["Repeats", freqText(it.r)], ["Usual Time", it.r.time ? fT(it.r.time) : "Any time"], ["Status", ended ? "Ended" : LABEL[it.status]], ["Duration", gymArea(it.r) ? dur(gymMins(it.date, it.r)) : ""], ["Block", it.r.block ? it.r.block[0].toUpperCase() + it.r.block.slice(1) : ""], ["Remaining", plan ? fAmt(balOf(it.r)) + " BHD" : ""], ["Paid So Far", plan && pays.length ? fAmt(sumPays(pays)) + " BHD" : ""]].filter(x => x[1]);
+  const fileLink = isT && /^https?:\/\//i.test(String(t.fileLink || "")) ? `<a class="btn" href="${esc(t.fileLink)}" target="_blank" rel="noopener">${ico("doc")}Open File</a>` : "";
+  const touches = isT ? touchesOf(t.id) : [];
+  const touchRows = touches.map(x => `<div class="hist"><time>${esc(isDay(x.date) ? fDM(x.date) : String(x.date || ""))}</time><b>${esc(x.who || "Me")}<span class="kind">${esc((KINDS.find(k => k[0] === x.kind) || [, x.kind || "Note"])[1])}</span></b><span></span>${x.note ? `<small>${esc(x.note)}</small>` : ""}</div>`).join("");
+  const touchSec = isT ? `<div class="lbl-row"><div class="lbl">Touches${touches.length ? " · " + touches.length : ""}</div><button type="button" class="txtbtn sm" data-s="touch">${ico("plus")} Log a Chase</button></div><div class="list">${touchRows || `<div class="empty">No touches logged yet.</div>`}</div>` : "";
   return bar(isT ? "Task" : "Routine", `<button type="button" class="txtbtn" data-s="edit">Edit</button>`, `<button type="button" class="txtbtn strong" data-s="close">Done</button>`) + `<div class="sh-body">
     <div class="hero"><span class="big" style="--ic:var(${ic.c})">${ico(ic.k)}</span><h3>${esc(it.title)}</h3><span class="when">${esc(ended ? freqText(it.r) : when)}</span></div>
     ${banner}
@@ -1243,8 +1427,9 @@ function itemSheet(it) {
       ${isT ? `<div class="cell"><label for="dlD">Date</label><input id="dlD" type="date" value="${esc(base)}"></div>` : ""}
       <div class="cell"><label for="dlT">Time</label><input id="dlT" type="time" value="${esc(it.time || "")}"></div>
       <div class="cell"><span></span><button type="button" class="btn sm primary" data-s="delay">Move</button></div></div>`}
-    <div class="lbl">Details</div><div class="list">${info.map(([k, v]) => `<div class="cell"><span>${k}</span><span class="v">${esc(v)}</span></div>`).join("")}</div>
-    ${isT && it.t.link && /^https:\/\//.test(it.t.link) ? `<a class="btn" href="${esc(it.t.link)}" target="_blank" rel="noopener">${ico("mail")}Open Email in Outlook</a>` : ""}
+    <div class="lbl">Details</div><div class="list">${info.map(([k, v, late, raw]) => `<div class="cell"><span>${k}</span><span class="v${late ? " late" : ""}">${raw ? v : esc(v)}</span></div>`).join("")}</div>
+    ${fileLink}${isT && it.t.link && /^https?:\/\//i.test(it.t.link) ? `<a class="btn" href="${esc(it.t.link)}" target="_blank" rel="noopener">${ico("mail")}Open Email in Outlook</a>` : ""}
+    ${touchSec}
     <div class="list"><div class="cell"><label for="alarmSw">Calendar Alert</label><span class="switch"><input type="checkbox" role="switch" id="alarmSw" ${src.alert ? "checked" : ""} ${it.time ? "" : "disabled"}><span></span></span></div>
       <div class="cell"><label for="leadSel">Alert Time</label><select id="leadSel" ${it.time && src.alert ? "" : "disabled"}>${opt(LEADS, String(src.lead || ""))}</select></div></div>
     <p class="foot" style="margin-top:-10px">${it.time ? "Pops up " + (src.lead ? leadLabel(src.lead).toLowerCase() : "at the item's time") + " from your Planner Alerts calendar." : "Give it a time to turn on an alert."}</p>
@@ -1265,6 +1450,34 @@ function paySheet(it) {
     <button type="button" class="btn" data-s="payskip">Nothing Paid This Time</button>
     <p class="foot">The new balance shows in the details. When it reaches zero the routine ends by itself.</p>
   </div></form>`;
+}
+/* Log a chase: one touch on a task (chased, sent, received, note, meeting), with the next chase date and an optional new next step. */
+function touchSheet(it) {
+  const t = it.t, ic = itemIcon(it), s = S.sheet, kind = s.kind || "chased";
+  const who = s.who !== undefined ? s.who : (mine(t) ? "" : t.owner || "");
+  const nc = s.nc !== undefined ? s.nc : nextWorkday();
+  return `<form id="hf">` + bar("Log a Chase", `<button type="button" class="txtbtn" data-s="back">Cancel</button>`, `<button type="submit" class="txtbtn strong">Save</button>`) + `<div class="sh-body">
+    <div class="hero"><span class="big" style="--ic:var(${ic.c})">${ico(ic.k)}</span><h3>${esc(t.title)}</h3><span class="when">${esc(mine(t) ? "With me" : "With " + t.owner)}${isDay(t.nextChase) ? " · chase due " + esc(rel(t.nextChase).toLowerCase()) : ""}</span></div>
+    <div class="seg" role="radiogroup" aria-label="Kind">${KINDS.map(([v, l]) => `<label><input type="radio" name="kind" value="${v}" ${v === kind ? "checked" : ""}><span>${l}</span></label>`).join("")}</div>
+    <div class="list"><div class="cell stack"><label for="h-note">Note</label><textarea id="h-note" name="note" style="min-height:70px" placeholder="What was said or sent" autofocus>${esc(s.note || "")}</textarea></div>
+      <div class="cell"><label for="h-who">Who</label><input id="h-who" name="who" class="r" placeholder="Optional" value="${esc(who)}"></div>
+      <div class="cell"><label for="h-date">Date</label><input id="h-date" name="date" type="date" value="${esc(s.date || today())}"></div></div>
+    <div class="list"><div class="cell"><label for="h-nc">Next Chase</label><input id="h-nc" name="nextChase" type="date" value="${esc(nc)}"></div>
+      <div class="cell"><label for="h-next">New Next Step</label><input id="h-next" name="next" class="r" placeholder="Optional" value="${esc(s.next || "")}"></div></div>
+    <p class="foot" style="margin-top:-10px">The next chase date moves the item on Today and Next 7 Days. Leave it empty to keep the current one.</p>
+    <button type="submit" class="btn primary">${ico("check")}Save</button>
+  </div></form>`;
+}
+function readTouch(f) { const d = new FormData(f); return { kind: String(d.get("kind") || "chased"), note: String(d.get("note") || "").trim(), who: String(d.get("who") || "").trim(), date: d.get("date") || today(), nextChase: d.get("nextChase") || "", next: String(d.get("next") || "").trim() }; }
+function logTouch(t, v) {
+  const x = { id: uid("h"), taskId: t.id, date: v.date, kind: v.kind, who: v.who || "Me", note: v.note, at: new Date().toISOString() };
+  S.touches = [...(S.touches || []), x];
+  const patch = {}; if (isDay(v.nextChase)) patch.nextChase = v.nextChase; if (v.next) patch.next = v.next;
+  const i = S.tasks.findIndex(y => y.id === t.id);
+  if (i >= 0 && Object.keys(patch).length) { S.tasks[i] = { ...S.tasks[i], ...patch }; if (SNAP[t.id]) Object.assign(SNAP[t.id], clone(patch)); } // the server applies the same fields, so they are not a pending change
+  render(true);
+  const args = { taskId: t.id, kind: x.kind, note: x.note, who: x.who, date: x.date }; if (patch.nextChase) args.nextChase = patch.nextChase; if (patch.next) args.next = patch.next;
+  api("addTouch", args).then(n => { if (n && n.taskId) { const j = S.touches.findIndex(y => y.id === x.id); if (j >= 0) S.touches[j] = { ...x, ...n }; } }).catch(fail);
 }
 /* ---------- item lists: gym sessions, supplements, recitations, shopping and checklists ---------- */
 const GROUPS = ["Push", "Pull", "Legs", "Core", "Cardio", "Other"];
@@ -1490,10 +1703,11 @@ function taskForm(t) {
     <div class="list">
       <div class="cell"><label for="f-due">Date</label><input id="f-due" name="due" type="date" value="${esc(t.due)}"></div>
       <div class="cell"><label for="f-time">Time</label><input id="f-time" name="time" type="time" value="${esc(t.time)}"></div>
-      <div class="cell"><label for="f-pri">High Priority</label><span class="switch"><input type="checkbox" role="switch" id="f-pri" name="priority" ${t.priority ? "checked" : ""}><span></span></span></div>
+      <div class="cell"><span id="f-pri-l">Priority</span><div class="seg" role="radiogroup" aria-labelledby="f-pri-l">${PRI.map(([v, l]) => `<label><input type="radio" name="priority" value="${v}" ${priOut(t.priority) === v ? "checked" : ""}><span>${l}</span></label>`).join("")}</div></div>
       <div class="cell"><label for="f-al">Calendar Alert</label><span class="switch"><input type="checkbox" role="switch" id="f-al" name="alert" ${t.alert ? "checked" : ""}><span></span></span></div>
       <div class="cell"><label for="f-lead">Alert Time</label><select id="f-lead" name="lead">${opt(LEADS, String(t.lead || ""))}</select></div></div>
     <div class="list"><div class="cell stack"><label for="f-notes">Notes</label><textarea id="f-notes" name="notes">${esc(t.notes)}</textarea></div></div>
+    ${t.scope === "work" ? workDetails(t) : ""}
     ${t._new ? "" : S.sheet.confirm ? `<div class="chips"><button type="button" class="btn danger grow" data-s="delyes">Delete Task</button><button type="button" class="btn grow" data-s="delno">Keep</button></div>` : `<button type="button" class="btn danger" data-s="del">Delete Task</button>`}
   </div></form>`;
 }
@@ -1521,7 +1735,15 @@ function routineForm(r) {
     ${r._new || conv ? "" : S.sheet.confirm ? `<div class="chips"><button type="button" class="btn danger grow" data-s="delyes">Delete Routine and History</button><button type="button" class="btn grow" data-s="delno">Keep</button></div>` : `<button type="button" class="btn danger" data-s="del">Delete Routine</button>`}
   </div></form>`;
 }
-function readTask(f) { const d = new FormData(f); return { title: String(d.get("title") || "").trim(), scope: d.get("scope"), area: d.get("area"), sub: String(d.get("sub") || "").trim(), owner: d.get("owner"), due: d.get("due") || "", time: d.get("time") || "", next: String(d.get("next") || "").trim(), notes: String(d.get("notes") || "").trim(), priority: d.get("priority") === "on", alert: d.get("alert") === "on", lead: String(d.get("lead") || "") }; }
+/* Work details: who asked for it and when, the contact, the client's own deadline, the next chase date and links. Folded unless something is filled in. */
+const WD_FIELDS = [["requestedBy", "Requested By", "text", "Name"], ["requestedOn", "Requested On", "date"], ["contact", "Contact", "text", "Email or phone"], ["clientDeadline", "Client Deadline", "date"], ["nextChase", "Next Chase", "date"], ["fileLink", "File Link", "url", "https://"], ["link", "Email Link", "url", "https://"]];
+function workDetails(t) {
+  const open = S.sheet.wd !== undefined ? S.sheet.wd : WD_FIELDS.some(([k]) => t[k]);
+  return `<div class="card${open ? "" : " folded"}"><button type="button" class="ch" data-s="wd" aria-expanded="${open}">Work Details${chev}</button><div class="fb">
+    ${WD_FIELDS.map(([n, l, ty, ph]) => `<div class="cell"><label for="f-${n}">${l}</label><input id="f-${n}" name="${n}" type="${ty}" ${ty === "url" ? 'inputmode="url" autocapitalize="off" spellcheck="false"' : ""} class="r" placeholder="${ph || ""}" value="${esc(t[n] || "")}"></div>`).join("")}
+  </div></div>`;
+}
+function readTask(f) { const d = new FormData(f); const o = { title: String(d.get("title") || "").trim(), scope: d.get("scope"), area: d.get("area"), sub: String(d.get("sub") || "").trim(), owner: d.get("owner"), due: d.get("due") || "", time: d.get("time") || "", next: String(d.get("next") || "").trim(), notes: String(d.get("notes") || "").trim(), priority: priOut(d.get("priority")), alert: d.get("alert") === "on", lead: String(d.get("lead") || "") }; WD_FIELDS.forEach(([k]) => { if (d.has(k)) o[k] = String(d.get(k) || "").trim(); }); return o; }
 function readRoutine(f, r) { const d = new FormData(f); return { title: String(d.get("title") || "").trim(), scope: d.get("scope"), area: d.get("area"), block: d.get("block") || "", freq: d.get("freq"), days: d.getAll("days").map(Number), dom: d.has("dom") ? (Number(d.get("dom")) || "") : r.dom, month: d.has("month") ? Number(d.get("month")) : r.month, time: d.get("time") || "", notes: String(d.get("notes") || "").trim(), alert: d.get("alert") === "on", lead: String(d.get("lead") || ""), _bal: d.has("bal") ? String(d.get("bal") || "").trim() : r._bal }; }
 sheet.addEventListener("change", e => {
   const s = S.sheet; if (!s) return;
@@ -1533,6 +1755,7 @@ sheet.addEventListener("change", e => {
 sheet.addEventListener("submit", e => {
   e.preventDefault(); const s = S.sheet; if (!s) return;
   if (s.type === "editTask") { const v = readTask(e.target); if (!v.title) { toast("Add a title."); return; } const o = { ...s.obj, ...v }; if (o.owner !== "Me" && (o.status === "due" || !o.status)) o.status = "waiting"; if (o.owner === "Me" && o.status === "waiting") o.status = "due"; const isNew = o._new; delete o._new; saveTask(o); toast(isNew ? "Task added" : "Saved"); closeSheet(); return; }
+  if (s.type === "touch") { const it = findItem(s.key); if (!it || it.kind !== "task") { closeSheet(); return; } const v = readTouch(e.target); if (v.nextChase && !isDay(v.nextChase)) { toast("Check the next chase date."); return; } logTouch(it.t, v); toast("Logged"); S.sheet = { type: "item", key: s.key }; renderSheet(); return; }
   if (s.type === "pay") { const it = findItem(s.key); if (!it) { closeSheet(); return; } const amt = r3(document.getElementById("payAmt").value), bal = balOf(it.r); if (!(amt > 0)) { toast("Enter the amount paid."); return; } if (amt > bal) { toast("That is more than the " + fAmt(bal) + " BHD left."); return; } payNow(it, amt); closeSheet(); return; }
   if (s.type === "editRoutine") {
     const v = readRoutine(e.target, s.obj); if (!v.title) { toast("Add a title."); return; } if (v.freq === "weekly" && !v.days.length) { toast("Pick at least one day."); return; } if ((v.freq === "monthly" || v.freq === "yearly") && !v.dom) { toast("Set the day of the month."); return; }
@@ -1568,6 +1791,7 @@ sheet.addEventListener("click", e => {
     const it = findItem(s.key); if (!it) return;
     if (listClick(a, b, it)) return;
     if (a === "torout") { S.sheet = { type: "editRoutine", obj: routineFromTask(it.t), from: s.key, convert: it.t.id }; renderSheet(); return; }
+    if (a === "touch") { if (it.kind !== "task") return; S.sheet = { type: "touch", key: s.key, from: s.key }; renderSheet(); const n = sheet.querySelector("#h-note"); if (n) n.focus({ preventScroll: true }); return; }
     if (a === "end") { s.endc = true; renderSheet(); return; }
     if (a === "endno") { s.endc = false; renderSheet(); return; }
     if (a === "endyes") { endRoutine(it.r); closeSheet(); return; }
@@ -1585,6 +1809,7 @@ sheet.addEventListener("click", e => {
     if (a === "delay") { const t = document.getElementById("dlT").value, d = it.kind === "task" ? document.getElementById("dlD").value : it.date; if (!d) { toast("Pick a date."); return; } if (it.kind === "routine" && !t) { toast("Pick a time."); return; } delay(it, d, t); closeSheet(); return; }
     return;
   }
+  if (a === "wd" && s.type === "editTask") { const f = b.closest("form"); if (f) Object.assign(s.obj, readTask(f)); s.wd = b.getAttribute("aria-expanded") !== "true"; renderSheet(); return; }
   if (a === "back") { if (s.from) { S.sheet = { type: "item", key: s.from }; renderSheet(); } else closeSheet(); return; }
   if (a === "del") { s.confirm = true; renderSheet(); return; }
   if (a === "delno") { s.confirm = false; renderSheet(); return; }
@@ -1614,7 +1839,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "2026-10-24.14";
+const APP_VERSION = "2026-10-25.9";
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {});
 let verAt = 0;
 async function checkVersion() {
@@ -1706,7 +1931,8 @@ function saveFold() {
   foldT = setTimeout(() => { api("setChecks", { ...FOLD_ROW, checks: { ...S.fold } }).catch(fail).finally(() => { if (n === foldSeq) foldBusy = false; }); }, 500);
 }
 function applyData(d) {
-  S.tasks = d.tasks; S.routines = d.routines;
+  S.tasks = d.tasks; S.routines = d.routines; S.touches = Array.isArray(d.touches) ? d.touches : [];
+  Object.keys(SNAP).forEach(k => delete SNAP[k]); S.tasks.forEach(snapTask);
   const L = {}; d.log.forEach(l => { L[l.id] = l; }); S.logs = L;
   if (!foldBusy) { const f = L[FOLD_ID]; if (f && f.checks && typeof f.checks === "object") { S.fold = { ...f.checks }; persist(); } else if (Object.keys(S.fold).length) saveFold(); }
   S.ready = true;
@@ -1714,7 +1940,7 @@ function applyData(d) {
 /* The last copy is kept on the phone so the planner opens instantly; the server copy replaces it a moment later. */
 const CACHE = "pa-cache";
 let cacheT = 0;
-function saveCache() { clearTimeout(cacheT); cacheT = setTimeout(() => { try { localStorage.setItem(CACHE, JSON.stringify({ tasks: S.tasks, routines: S.routines, log: Object.values(S.logs), meetings: S.meetings })); } catch (e) {} }, 400); }
+function saveCache() { clearTimeout(cacheT); cacheT = setTimeout(() => { try { localStorage.setItem(CACHE, JSON.stringify({ tasks: S.tasks, routines: S.routines, log: Object.values(S.logs), touches: S.touches, meetings: S.meetings })); } catch (e) {} }, 400); }
 function readCache() { try { const c = JSON.parse(localStorage.getItem(CACHE) || "null"); if (!c || !Array.isArray(c.tasks)) return false; applyData(c); S.meetings = c.meetings || {}; return true; } catch (e) { return false; } }
 async function loadAll(first) {
   try {
@@ -1742,19 +1968,32 @@ setInterval(() => { if (!S.ready) return; if (busy()) { renderNav(); return; } r
 /* Near-live sync between devices: every few seconds ask the server for its change stamp (a tiny call)
    and reload only when another device has saved something. A full reload still runs every 5 minutes as a safety net. */
 const typing = () => { const a = document.activeElement; return !!a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName); };
-let stamp = null, polling = false;
+let stamp = null, polling = false, polledAt = 0;
 async function poll(force) {
   if (polling || document.visibilityState !== "visible" || !S.ready || pending || outbox.length) return;
-  polling = true;
+  polling = true; polledAt = Date.now();
   try {
     const st = String(await call("getStamp"));
     if (force || st !== stamp) { if (await loadAll(false)) stamp = st; } // the first check also reloads, so nothing saved meanwhile is missed
   } catch (e) {} finally { polling = false; }
 }
-setInterval(() => poll(false), 6000);
-setInterval(() => poll(true), 300000);
+/* The check runs every 6 seconds while the planner is in use, slows to 20 seconds after 10 minutes without a touch and stops after 30 minutes.
+   Any touch, click, key, scroll or return to the tab brings it back to 6 seconds and checks straight away. */
+const IDLE_SLOW = 600000, IDLE_STOP = 1800000;
+let activeAt = Date.now(), pollT = 0;
+const pollDelay = () => { const idle = Date.now() - activeAt; return idle >= IDLE_STOP ? 0 : idle >= IDLE_SLOW ? 20000 : 6000; };
+function schedulePoll() { clearTimeout(pollT); const d = pollDelay(); if (!d) return; pollT = setTimeout(() => { poll(false); schedulePoll(); }, d); }
+function wake() {
+  const was = pollDelay(); activeAt = Date.now();
+  if (was !== 6000 || Date.now() - polledAt >= 6000) poll(false); // straight away when the cadence had slowed or a check is due
+  if (was !== 6000 || !pollT) schedulePoll();
+}
+["touchstart", "click", "keydown", "scroll"].forEach(ev => addEventListener(ev, wake, { passive: true }));
+schedulePoll();
+setInterval(() => { if (Date.now() - activeAt < IDLE_SLOW) poll(true); }, 300000); // the full reload safety net runs only while the planner is in use
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState !== "visible" || !S.ready) return;
+  activeAt = Date.now(); schedulePoll();
   poll(true);
   if (outbox.length) flush();
   if (Date.now() - S.loadedAt > 600000) loadMeetings();
