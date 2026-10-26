@@ -39,7 +39,7 @@
   --i-work: #3A62D6; --i-personal: #A2477E; --i-meet: #5E6577;
   --c-tamkeen: #7A4CC2; --c-ashraq: #C9621B; --c-arcapita: #2A6FD0; --c-tayseer: #0B8584; --c-ram: #2E8A4F; --c-dwe: #B23A5B; --c-internal: #6E6A80;
   --k-gym: #C0297A; --k-supp: #6E8B12; --k-faith: #3F4AA8; --k-home: #0E7FA6; --k-laundry: #5F7FA8; --k-shop: #A84F2A; --k-errand: #9A7300; --k-car: #7A6A58; --k-money: #3B7A2A; --k-self: #DB4E95; --k-other: #7C818A;
-  --glass: rgba(249, 249, 251, .78);
+  --glass: rgba(249, 249, 251, .88);
   --shadow: 0 10px 30px rgba(0, 0, 0, .12);
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-round: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
@@ -52,7 +52,7 @@
   --i-work: #8DA4E7; --i-personal: #C994B4; --i-meet: #A2A6B0;
   --c-tamkeen: #B297DC; --c-ashraq: #E0A47B; --c-arcapita: #83ABE4; --c-tayseer: #71B8B8; --c-ram: #86CBA0; --c-dwe: #E395AC; --c-internal: #ABA9B5;
   --k-gym: #DA83B2; --k-supp: #ABBC76; --k-faith: #9096CD; --k-home: #73B5CB; --k-laundry: #A2B5CD; --k-shop: #CD9983; --k-errand: #C4AE6B; --k-car: #B2A99E; --k-money: #8DB283; --k-self: #EA98C2; --k-other: #B3B6BB;
-  --glass: rgba(28, 28, 30, .78); --shadow: 0 10px 30px rgba(0, 0, 0, .6);
+  --glass: rgba(30, 30, 32, .9); --shadow: 0 10px 30px rgba(0, 0, 0, .6);
   color-scheme: dark;
 }
 html { font-size: 17px; background: var(--bg); -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
@@ -68,7 +68,7 @@ svg.i { width: 1.15em; height: 1.15em; flex: none; }
 [hidden] { display: none !important; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-.app { display: grid; grid-template-columns: 1fr; }
+.app { display: grid; grid-template-columns: 1fr; overflow-x: clip; }
 .side { display: none; }
 .main { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-top: max(12px, env(safe-area-inset-top, 0px)); padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px)); max-width: 1120px; width: 100%; margin: 0 auto; display: grid; gap: 24px; align-content: start; }
 .navbar { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding-top: 10px; }
@@ -244,7 +244,7 @@ svg.i { width: 1.15em; height: 1.15em; flex: none; }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 
 /* tab bar */
-.tabbar { position: fixed; left: 50%; transform: translate3d(-50%, 0, 0); bottom: calc(10px + env(safe-area-inset-bottom, 0px)); z-index: 30; display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; padding: 6px; border-radius: 32px; background: var(--glass); -webkit-backdrop-filter: blur(20px) saturate(1.8); backdrop-filter: blur(20px) saturate(1.8); box-shadow: var(--shadow); width: min(440px, calc(100% - 20px)); }
+.tabbar { position: fixed; left: 50%; transform: translate3d(-50%, 0, 0); bottom: calc(10px + env(safe-area-inset-bottom, 0px)); z-index: 30; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 2px; padding: 6px; border-radius: 32px; background: var(--glass); -webkit-backdrop-filter: blur(20px) saturate(1.8); backdrop-filter: blur(20px) saturate(1.8); box-shadow: var(--shadow); width: min(400px, calc(100vw - 32px)); }
 .tabbar button { border: 0; background: none; border-radius: 26px; min-height: 54px; display: grid; justify-items: center; align-content: center; gap: 2px; font-size: .64rem; font-weight: 600; color: var(--label2); }
 .tabbar button svg { width: 24px; height: 24px; }
 .tabbar button[aria-current="page"] { background: var(--fill); color: var(--label); }
@@ -456,7 +456,7 @@ html.lock .toast { bottom: auto; top: calc(12px + env(safe-area-inset-top, 0px))
 .setup p { margin: 0; color: var(--label2); font-size: .94rem; line-height: 1.45; }
 .setup input { width: 100%; border: 0; border-radius: 12px; background: var(--card); padding: 14px 16px; font-size: 1rem; }
 /* refresh: pull down at the top of a list, or the refresh button in the navigation bar */
-html, body { overscroll-behavior-y: none; }
+html, body { overscroll-behavior-y: none; overflow-x: hidden; }
 .ptr { position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 10px); width: 28px; height: 28px; margin-left: -14px; z-index: 20; color: var(--label2); opacity: 0; pointer-events: none; transform: translate3d(0, -36px, 0); will-change: transform, opacity; }
 .ptr svg { width: 28px; height: 28px; display: block; }
 .ptr line { opacity: 0; transition: opacity .12s; }
@@ -491,6 +491,20 @@ html[data-mode="personal"] .mode button[aria-pressed="true"] { color: var(--i-pe
 .cell .v small { display: block; font-size: .78rem; color: var(--label2); margin-top: 2px; font-weight: 500; }
 .cell .v .muted { color: var(--label2); font-weight: 400; }
 .navbar .sub.late { color: var(--late, #D70015); }
+/* iPhone polish: selected segments lift above their track in dark mode, the status bar and the floating tab bar get a soft fade so scrolled content never sits under the clock or shows below the tab bar, and the client chips scroll edge to edge */
+:root { --seg-on: var(--card); }
+:root[data-theme="dark"] { --seg-on: #5A5A5E; }
+.seg button[aria-pressed="true"], .seg label input:checked + span, .mode button[aria-pressed="true"] { background: var(--seg-on); }
+:root[data-theme="dark"] .mode button[aria-pressed="true"] { color: var(--label); }
+:root[data-theme="dark"] .seg button, :root[data-theme="dark"] .mode button { color: var(--label2); }
+:root[data-theme="dark"] .seg button[aria-pressed="true"] { color: var(--label); }
+.mode { width: 100%; margin: 0 auto -8px; }
+.topfade { position: fixed; left: 0; right: 0; top: 0; height: calc(env(safe-area-inset-top, 0px) + 6px); z-index: 25; pointer-events: none; background: linear-gradient(var(--bg) 70%, transparent); }
+.botfade { position: fixed; left: 0; right: 0; bottom: 0; height: calc(env(safe-area-inset-bottom, 0px) + 56px); z-index: 29; pointer-events: none; background: linear-gradient(transparent, var(--bg) 62%); }
+html.lock .botfade, html.lock .topfade { display: none; }
+.cfrow { margin-left: -16px; margin-right: -16px; padding-left: 16px; padding-right: 16px; scroll-padding-inline: 16px; }
+:root[data-theme="dark"] .tabbar button[aria-current="page"] { background: rgba(255, 255, 255, .12); }
+@media (min-width: 900px) { .topfade, .botfade { display: none; } .cfrow { margin-left: 0; margin-right: 0; padding-left: 4px; padding-right: 4px; } .mode { margin: 0 0 -8px; max-width: 420px; } }
 </style>
 </head>
 <body>
@@ -499,7 +513,7 @@ html[data-mode="personal"] .mode button[aria-pressed="true"] { color: var(--i-pe
   <nav class="side" id="side" aria-label="Sections"></nav>
   <main class="main" id="view"><div class="card"><div class="empty">Loading your planner.</div></div></main>
 </div>
-<nav class="tabbar" id="tabbar" aria-label="Sections"></nav>
+<div class="topfade" aria-hidden="true"></div><div class="botfade" aria-hidden="true"></div><nav class="tabbar" id="tabbar" aria-label="Sections"></nav>
 <div class="scrim" id="scrim" hidden></div>
 <section class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="shTitle" hidden></section>
 <div class="toast" id="toast" role="status" hidden></div>
@@ -2072,7 +2086,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "2026-10-26.1";
+const APP_VERSION = "2026-10-26.2";
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {});
 let verAt = 0;
 async function checkVersion() {
