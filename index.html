@@ -1794,7 +1794,7 @@ view.addEventListener("click", e => {
   if (a === "pdrop") { dropProp(b.dataset.id); return; }
   if (a === "gap") { openSheet({ type: "gap", a: Number(b.dataset.a), b: Number(b.dataset.b) }); return; }
   if (a === "resched") { openSheet({ type: "resched" }); return; }
-  if (a === "settings") { openSheet({ type: "settings" }); return; }
+  if (a === "settings") { S.pushSub = undefined; openSheet({ type: "settings" }); refreshPush(); return; }
   if (a === "loadday") { S.calMode = "month"; S.calDay = b.dataset.d; S.calMonth = monthStart(b.dataset.d); persist(); renderMain(); return; }
   if (a === "calmode") { S.calMode = b.dataset.sub === "week" ? "week" : "month"; S.swipe = null; persist(); renderMain(); return; }
   if (a === "calday") { S.calDay = b.dataset.d; if (S.calDay.slice(0, 7) !== (S.calMonth || "").slice(0, 7)) S.calMonth = monthStart(S.calDay); renderMain(true); return; }
@@ -1940,11 +1940,44 @@ function updateBadge() {
     (n ? navigator.setAppBadge(n) : navigator.clearAppBadge()).catch(() => {});
   } catch (e) {}
 }
+/* ---------- planner alerts: Web Push from the planner's own server ---------- */
+const pushOK = () => { try { return "serviceWorker" in navigator && "PushManager" in window; } catch (e) { return false; } };
+const b64uBytes = s => { const b = atob(s.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((s.length + 3) % 4)); return Uint8Array.from(b, c => c.charCodeAt(0)); };
+/* The background worker gets the server address and key, so it can read a push while the planner is closed. */
+function swConfig() { try { if (!KEY || !navigator.serviceWorker) return; navigator.serviceWorker.ready.then(r => { const t = r.active || navigator.serviceWorker.controller; if (t) t.postMessage({ type: "pa-config", key: KEY, api: API_URL }); }).catch(() => {}); } catch (e) {} }
+async function refreshPush() { try { if (!pushOK()) { S.pushSub = null; return; } const r = await navigator.serviceWorker.ready; S.pushSub = await r.pushManager.getSubscription(); } catch (e) { S.pushSub = null; } if (S.sheet && S.sheet.type === "settings") renderSheet(); }
+async function enablePush() {
+  if (S.sheet) S.sheet.busy = true; renderSheet();
+  try {
+    const reg = await navigator.serviceWorker.ready, pub = await call("getVapid");
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64uBytes(pub) });
+    const ua = navigator.userAgent, label = (/iPhone/.test(ua) ? "iPhone" : /iPad/.test(ua) ? "iPad" : /Mac/.test(ua) ? "Mac" : "Device") + " · " + today();
+    await call("savePush", sub.toJSON(), label);
+    S.pushSub = sub; swConfig(); toast("Planner alerts on for this device");
+  } catch (e) { toast("Couldn't turn on alerts: " + ((e && e.message) || e)); }
+  if (S.sheet) S.sheet.busy = false; renderSheet();
+}
+async function testPush() {
+  if (!S.pushSub) return; if (S.sheet) S.sheet.busy = true; renderSheet();
+  try { const r = await call("testPush", S.pushSub.endpoint), ok = Array.isArray(r) && r.some(x => x.code >= 200 && x.code < 300); toast(ok ? "Sent. It should arrive in a few seconds." : "The push service refused it" + (r && r[0] ? " (" + r[0].code + ")" : "") + ". Turn alerts off and on again."); }
+  catch (e) { toast("Test failed: " + ((e && e.message) || e)); }
+  if (S.sheet) S.sheet.busy = false; renderSheet();
+}
+async function disablePush() {
+  try { const sub = S.pushSub; if (sub) { const ep = sub.endpoint; await sub.unsubscribe(); await call("removePush", ep); } S.pushSub = null; toast("Planner alerts off for this device"); }
+  catch (e) { toast("Couldn't turn off: " + ((e && e.message) || e)); }
+  renderSheet();
+}
+if (navigator.serviceWorker) navigator.serviceWorker.addEventListener("message", e => { const d = e.data || {}; if (d.type === "pa-open" && d.hash) { try { history.replaceState(null, "", location.pathname + location.search + d.hash); } catch (x) {} if (S.sheet) closeSheet(); setTimeout(checkHash, 450); } });
 function settingsSheet() {
-  const st = notifState();
-  const notif = st === "granted" ? `<div class="list"><div class="cell"><span>Notifications</span><span class="v">On</span></div></div><p class="foot" style="margin-top:-10px">The app icon shows how many of your tasks are due today or overdue (${badgeCount()} now). Alerts at item times still come from Google Calendar and Outlook.</p>`
+  const st = notifState(), busy = S.sheet && S.sheet.busy;
+  const pushRow = !pushOK() ? "" : S.pushSub === undefined ? `<div class="list"><div class="empty">Checking this device.</div></div>`
+    : S.pushSub ? `<div class="list"><div class="cell"><span>Planner Alerts on This Device</span><span class="v">On</span></div><div class="cell"><button type="button" class="btn sm primary" data-s="pushtest" ${busy ? "disabled" : ""}>Send a Test</button><button type="button" class="btn sm" data-s="pushoff" ${busy ? "disabled" : ""}>Turn Off</button></div></div><p class="foot" style="margin-top:-10px">From the planner itself: Plan Your Day at 8 AM, and a nudge once when a timed task is missed. Tapping one opens the right screen.</p>`
+    : `<button type="button" class="btn primary" data-s="pushon" ${busy ? "disabled" : ""}>${ico("alert")}Turn On Planner Alerts</button><p class="foot" style="margin-top:-10px">Lets the planner itself notify this device: Plan Your Day at 8 AM and missed tasks.</p>`;
+  const notif = st === "granted" ? `<div class="list"><div class="cell"><span>Notifications</span><span class="v">Allowed</span></div></div><p class="foot" style="margin-top:-10px">The app icon shows how many of your tasks are due today or overdue (${badgeCount()} now).</p>${pushRow}`
     : st === "denied" ? `<div class="list"><div class="cell"><span>Notifications</span><span class="v">Off</span></div></div><p class="foot" style="margin-top:-10px">They were declined for this app. Turn them on in iPhone Settings, Notifications, Personal Assistant.</p>`
-    : st === "default" ? `<button type="button" class="btn primary" data-s="notif">${ico("alert")}Allow Notifications</button><p class="foot" style="margin-top:-10px">iPhone asks once. After that the app icon shows how many tasks are due today or overdue, and the planner appears in iPhone Settings, Notifications.</p>`
+    : st === "default" ? `<button type="button" class="btn primary" data-s="notif">${ico("alert")}Allow Notifications</button><p class="foot" style="margin-top:-10px">iPhone asks once. After that the planner can notify you itself, the app icon shows how many tasks are due, and the planner appears in iPhone Settings, Notifications.</p>`
     : st === "browser" ? `<div class="list"><div class="empty">Open the planner from its Home Screen icon, then come back here to allow notifications. Safari tabs can't receive them.</div></div>`
     : `<div class="list"><div class="empty">This device doesn't offer notifications to web apps. iOS 16.4 or later is needed.</div></div>`;
   return bar("Settings", "", `<button type="button" class="txtbtn strong" data-s="close">Done</button>`) + `<div class="sh-body">
@@ -2549,7 +2582,10 @@ sheet.addEventListener("click", e => {
     return;
   }
   if (s.type === "settings") {
-    if (a === "notif") { try { Promise.resolve(Notification.requestPermission()).then(r => { if (r === "granted") { lastBadge = -1; updateBadge(); toast("Notifications on"); } renderSheet(); }); } catch (e) { toast("Notifications aren't available here."); } return; }
+    if (a === "notif") { try { Promise.resolve(Notification.requestPermission()).then(r => { if (r === "granted") { lastBadge = -1; updateBadge(); if (pushOK()) enablePush(); else toast("Notifications on"); } renderSheet(); }); } catch (e) { toast("Notifications aren't available here."); } return; }
+    if (a === "pushon") { enablePush(); return; }
+    if (a === "pushtest") { testPush(); return; }
+    if (a === "pushoff") { disablePush(); return; }
     if (a === "cpurl") { copyText(API_URL, "Address"); return; }
     if (a === "cpkey") { copyText(KEY, "Key"); return; }
     return;
@@ -2631,14 +2667,14 @@ view.addEventListener("submit", e => {
   if (e.target.id !== "setupForm") return;
   e.preventDefault();
   const v = document.getElementById("keyIn").value.trim(); if (!v) return;
-  KEY = v; try { localStorage.setItem(KEY_STORE, v); localStorage.removeItem(CACHE); } catch (err) {}
+  KEY = v; try { localStorage.setItem(KEY_STORE, v); localStorage.removeItem(CACHE); } catch (err) {} swConfig();
   document.getElementById("tabbar").hidden = false; document.getElementById("topbar").hidden = false; view.innerHTML = lastHtml = `<div class="card"><div class="empty">Connecting.</div></div>`;
   loadAll(true);
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "2026-10-28.3";
-if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {});
+const APP_VERSION = "2026-10-28.4";
+if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(() => swConfig()).catch(() => {});
 let verAt = 0;
 async function checkVersion() {
   if (Date.now() - verAt < 120000) return; verAt = Date.now();
@@ -2790,7 +2826,14 @@ async function loadAll(first) {
   }
 }
 /* A link ending in #plan (from the 8 AM calendar alert or a shortcut) opens Plan Your Day. */
-function checkHash() { if (!S.ready || S.sheet || !/(^#|&)plan\b/.test(location.hash)) return; try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {} openSheet({ type: "plan" }); }
+function checkHash() {
+  if (!S.ready || S.sheet) return;
+  const h = location.hash, t = h.match(/(?:^#|&)task=([^&]+)/), pl = /(^#|&)plan\b/.test(h);
+  if (!t && !pl) return;
+  try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+  if (t) { const id = decodeURIComponent(t[1]); if (S.tasks.some(x => x.id === id)) { if (S.view !== "today") go("today"); openSheet({ type: "item", key: "task:" + encodeURIComponent(id) }); } return; }
+  openSheet({ type: "plan" });
+}
 addEventListener("hashchange", checkHash);
 setMode(readMode());
 renderNav();
