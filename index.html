@@ -543,6 +543,18 @@ a.btn { text-decoration: none; }
 .qa-prev .chip { font-size: .76rem; padding: 3px 9px; }
 .qa-prev .chip.hl { background: var(--label); color: var(--card); }
 .qa-prev button.chip { border: 0; cursor: pointer; }
+/* inbox: notifications the planner sent, newest first */
+.sh-body > .seg + .seg { margin-top: -6px; }
+.nt { display: grid; grid-template-columns: 8px 1fr auto; align-items: start; gap: 12px; width: 100%; text-align: left; border: 0; background: none; color: inherit; font: inherit; padding: 11px 16px; }
+.nt + .nt { border-top: .5px solid var(--sep); }
+.nt:active { background: var(--fill); }
+.nt-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 7px; }
+.nt-t { display: grid; gap: 2px; min-width: 0; }
+.nt-t b { font-weight: 500; overflow-wrap: anywhere; }
+.nt.new .nt-t b { font-weight: 700; }
+.nt-t span { font-size: .84rem; color: var(--label2); overflow-wrap: anywhere; }
+.nt-w { font-size: .8rem; color: var(--label2); font-variant-numeric: tabular-nums; white-space: nowrap; padding-top: 2px; }
+.nt.new .nt-w { color: var(--i-work); font-weight: 600; }
 /* inbox: changes proposed from Outlook mail, one row each with Accept and Dismiss */
 .pr { display: grid; gap: 6px; padding: 12px 16px; }
 .pr + .pr { border-top: .5px solid var(--sep); }
@@ -724,7 +736,7 @@ const P = {
 const ico = k => `<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[k] || P.Other}</svg>`;
 
 /* ---------- state ---------- */
-const S = { tasks: [], routines: [], logs: {}, touches: [], audits: [], stages: { ...DEFAULT_STAGES }, contacts: [], proposals: [], engOk: true, mode: "work", ready: false, view: "today", sub: { work: "clients", personal: "tasks" }, q: "", qOpen: false, meetings: {}, meetNote: "", loadedAt: 0, sheet: null, swipe: null, just: null, fold: {}, cf: "", calMode: "month" };
+const S = { tasks: [], routines: [], logs: {}, touches: [], audits: [], stages: { ...DEFAULT_STAGES }, contacts: [], proposals: [], notes: [], notesOk: false, engOk: true, mode: "work", ready: false, view: "today", sub: { work: "clients", personal: "tasks" }, q: "", qOpen: false, meetings: {}, meetNote: "", loadedAt: 0, sheet: null, swipe: null, just: null, fold: {}, cf: "", calMode: "month" };
 
 /* Calls go to Apps Script as plain-text POSTs (no CORS preflight). Writes run one at a time, in order,
    so a quick tick and untick can never arrive at the server in the wrong order. */
@@ -1193,11 +1205,45 @@ function proposalRow(p) {
   const link = /^https?:\/\//i.test(String(p.link || "")) ? `<a class="btn sm" href="${esc(p.link)}" target="_blank" rel="noopener">${ico("mail")}Email</a>` : "", lbl = pLabel(kind, p.note);
   return `<div class="pr${S.sheet && S.sheet.busy && S.sheet.busy[p.id] ? " busy" : ""}" data-pid="${esc(p.id)}"><div class="pr-h"><span class="kind ${esc(lbl)}">${esc(P_KIND[lbl] || kind)}</span><b>${head}</b></div>${meta ? `<div class="pr-m">${meta}</div>` : ""}${p.note ? `<div class="pr-n">${esc(p.note)}</div>` : ""}<div class="pr-a"><button type="button" class="btn sm primary" data-s="pacc">${ico("check")}Accept</button><button type="button" class="btn sm" data-s="pdis">Dismiss</button>${link}</div></div>`;
 }
+/* ---------- Notifications: every alert the planner sent, Work and Personal, kept 30 days; read state is shared by both iPhones ---------- */
+const NOTE_READ = "pa-note-read";
+let noteReadLocal = []; try { noteReadLocal = JSON.parse(localStorage.getItem(NOTE_READ) || "[]"); } catch (e) {}
+const unreadCount = () => S.notesOk ? (S.notes || []).filter(n => !n.read).length : 0;
+const noteWhen = n => { const t = Date.parse(n.at); if (!t) return { d: "", t: "" }; const b = new Date(t + 3 * 3600000); return { d: iso(b), t: pad(b.getUTCHours()) + ":" + pad(b.getUTCMinutes()) }; };
+/* Marks the given notifications read here at once and on the server; the ids are kept on this phone until the server copy agrees. */
+function markNotesRead(ids) {
+  ids = ids.filter(id => (S.notes || []).some(n => n.id === id && !n.read)); if (!ids.length || !S.notesOk) return;
+  S.notes = S.notes.map(n => ids.includes(n.id) ? { ...n, read: true } : n);
+  noteReadLocal = [...new Set([...noteReadLocal, ...ids])].slice(-300); try { localStorage.setItem(NOTE_READ, JSON.stringify(noteReadLocal)); } catch (e) {}
+  api("markNotesRead", ids).catch(() => {});
+  saveCache(); renderNav(); if (!S.sheet) render(true);
+}
+/* Opening the inbox counts as reading what is there; the unread dots stay on screen until the inbox is closed. */
+function markNotesSeen() { const s = S.sheet; if (!s || s.type !== "inbox") return; s.fresh = new Set((S.notes || []).filter(n => !n.read).map(n => n.id)); markNotesRead([...s.fresh]); renderSheet(); }
+function noteRow(n) {
+  const w = noteWhen(n), sc = n.scope === "work" || n.scope === "personal" ? n.scope : "", s = S.sheet;
+  const dot = `<span class="nt-dot" style="background:var(${sc === "work" ? "--i-work" : sc === "personal" ? "--i-personal" : "--label2"})" aria-hidden="true"></span>`;
+  const isNew = s && s.fresh && s.fresh.has(n.id);
+  return `<button type="button" class="nt${isNew ? " new" : ""}" data-s="nopen" data-nid="${esc(n.id)}">${dot}<span class="nt-t"><b>${esc(n.title || "Planner")}</b>${n.body ? `<span>${esc(n.body)}</span>` : ""}</span><span class="nt-w">${esc(w.t ? fT(w.t) : "")}${isNew ? '<span class="sr">, new</span>' : ""}</span></button>`;
+}
+function notesPane() {
+  const s = S.sheet, f = s.nf || "all";
+  if (!S.notesOk) return `<div class="card"><div class="empty">Notifications appear here once the planner's back end is updated.</div></div>`;
+  const li = (S.notes || []).filter(n => f === "all" || n.scope === f);
+  const seg = `<div class="seg" role="group" aria-label="Show">${[["all", "All"], ["work", "Work"], ["personal", "Personal"]].map(([k, l]) => `<button type="button" data-s="nf" data-v="${k}" aria-pressed="${f === k}">${l}</button>`).join("")}</div>`;
+  if (!li.length) return seg + `<div class="card"><div class="empty">${f === "all" ? "No notifications in the last 30 days." : "No " + f + " notifications in the last 30 days."}</div></div>`;
+  const by = {}; li.forEach(n => { const d = noteWhen(n).d || "0000-00-00"; (by[d] = by[d] || []).push(n); });
+  const groups = Object.keys(by).sort().reverse().map(d => `<div class="lbl">${esc(isDay(d) && d !== "0000-00-00" ? rel(d) : "Earlier")}</div><div class="list">${by[d].map(noteRow).join("")}</div>`).join("");
+  return seg + groups + `<p class="foot">Notifications from the last 30 days, from both Work and Personal. Tap one to open its item.</p>`;
+}
 function inboxSheet() {
+  const s = S.sheet, work = S.mode === "work", tab = work && s.tab === "mail" ? "mail" : "notes";
+  const tabs = work ? `<div class="seg" role="tablist" aria-label="Inbox">${[["notes", "Notifications" + (s.fresh && s.fresh.size ? " · " + s.fresh.size : "")], ["mail", "From Outlook" + (inboxCount() ? " · " + inboxCount() : "")]].map(([k, l]) => `<button type="button" role="tab" data-s="itab" data-v="${k}" aria-pressed="${tab === k}" aria-selected="${tab === k}">${esc(l)}</button>`).join("")}</div>` : "";
+  if (tab === "notes") return bar("Inbox", "", `<button type="button" class="txtbtn strong" data-s="close">Done</button>`) + `<div class="sh-body">${tabs}${notesPane()}</div>`;
   const li = (S.proposals || []).slice().sort((a, b) => String(a.area).localeCompare(String(b.area)) || String(a.sub || "").localeCompare(String(b.sub || "")) || String(b.at || "").localeCompare(String(a.at || "")));
   const by = {}; li.forEach(p => { (by[p.area || "Other"] = by[p.area || "Other"] || []).push(p); });
   const groups = Object.keys(by).sort((a, b) => CLIENTS.indexOf(a) - CLIENTS.indexOf(b) || a.localeCompare(b)).map(c => `<div class="lbl"><span class="dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(${CLIENT_VAR[c] || "--i-work"});margin-right:6px;vertical-align:1px"></span>${esc(c)} · ${by[c].length}</div><div class="list">${by[c].map(proposalRow).join("")}</div>`).join("");
-  return bar("Inbox", "", `<button type="button" class="txtbtn strong" data-s="close">Done</button>`) + `<div class="sh-body">
+  return bar("Inbox", "", `<button type="button" class="txtbtn strong" data-s="close">Done</button>`) + `<div class="sh-body">${tabs}
     ${li.length ? `<p class="foot">${li.length === 1 ? "One change" : li.length + " changes"} proposed from your Outlook mail. Accept applies it to the planner; Dismiss leaves the planner as it is.</p>${li.length > 1 ? `<button type="button" class="btn primary" data-s="paccall">${ico("check")}Accept All (${li.length})</button>` : ""}${groups}` : `<div class="card"><div class="empty">Nothing waiting. The next mail scan runs on the next workday morning and afternoon.</div></div>`}
   </div>`;
 }
@@ -1440,7 +1486,7 @@ function loadStrip() {
   return `<div class="loads" role="group" aria-label="Planned time per day">${Array.from({ length: 7 }, (_, i) => add(today(), i + 1)).map(d => { const m = dayLoad(d), r = m / cap, off = S.mode === "work" && isWeekend(d); return `<button type="button" class="ld${r > 1 ? " over" : r > .85 ? " heavy" : ""}${off ? " off" : ""}" data-act="loadday" data-d="${d}" aria-label="${esc(fDL(d))}: ${off ? "weekend" : esc(dur(m)) + " planned"}">${esc(DAYS[wd(d)])} ${Number(d.slice(8))}<b>${off ? "Off" : m ? esc(dur(m)) : "Free"}</b></button>`; }).join("")}</div>`;
 }
 /* Nav bar buttons. Inbox shows in Work mode with the count of proposals waiting; Search opens the field under the segments. */
-const inboxBtn = () => S.mode !== "work" ? "" : `<button type="button" class="icon-btn" data-act="inbox" aria-label="Inbox${inboxCount() ? ", " + inboxCount() + " proposed" : ""}">${ico("inbox")}${inboxCount() ? `<span class="badge-n">${inboxCount()}</span>` : ""}</button>`;
+const inboxBtn = () => { const n = unreadCount() + (S.mode === "work" ? inboxCount() : 0); return `<button type="button" class="icon-btn" data-act="inbox" aria-label="Inbox${n ? ", " + n + " new" : ""}">${ico("inbox")}${n ? `<span class="badge-n">${n}</span>` : ""}</button>`; };
 const searchBtn = () => `<button type="button" class="icon-btn" data-act="search" aria-label="Search" aria-pressed="${S.qOpen || !!S.q}">${ico("search")}</button>`;
 const searchField = () => `<label class="search${S.qOpen || S.q ? "" : " hid"}">${ico("search")}<span class="sr">Search</span><input id="q" type="search" placeholder="Search" value="${esc(S.q)}"></label>`;
 const segHtml = (name, list, cur, act) => `<div class="seg" role="group" aria-label="${esc(name)}">${list.map(([k, l]) => `<button type="button" data-act="${act}" data-sub="${k}" aria-pressed="${cur === k}">${l}</button>`).join("")}</div>`;
@@ -1624,7 +1670,7 @@ function viewWork() {
 /* ---------- Personal: Tasks (by date), Routines (by how they repeat), Done ---------- */
 function viewPersonal() {
   const s = S.sub.personal;
-  const head = `<header class="navbar"><div><h1>Personal</h1></div><div class="acts">${searchBtn()}${rfBtn()}<button type="button" class="icon-btn" data-act="${s === "routines" ? "newr" : "new"}" aria-label="New ${s === "routines" ? "routine" : "task"}">${ico("plus")}</button></div></header>
+  const head = `<header class="navbar"><div><h1>Personal</h1></div><div class="acts">${inboxBtn()}${searchBtn()}${rfBtn()}<button type="button" class="icon-btn" data-act="${s === "routines" ? "newr" : "new"}" aria-label="New ${s === "routines" ? "routine" : "task"}">${ico("plus")}</button></div></header>
   <div class="tools">${segHtml("Show", PERS_SUBS, s, "sub")}${searchField()}</div>`;
   let cards;
   if (s === "tasks") cards = dateCards(S.tasks.filter(t => t.scope === "personal" && tOpen(t) && match(t)).map(tItem).sort(byDayPri), "p", true);
@@ -1776,7 +1822,7 @@ view.addEventListener("click", e => {
   if (a === "new") { S.qa = ""; openSheet({ type: "quick", side: S.mode }); return; }
   if (a === "newaudit") { openSheet({ type: "editAudit", obj: newAudit() }); return; }
   if (a === "audit") { openSheet({ type: "audit", id: b.dataset.id }); return; }
-  if (a === "inbox") { openSheet({ type: "inbox" }); return; }
+  if (a === "inbox") { openSheet({ type: "inbox", tab: S.mode === "work" && inboxCount() && !unreadCount() ? "mail" : "notes", nf: "all" }); markNotesSeen(); return; }
   if (a === "search") { S.qOpen = !(S.qOpen || S.q); if (!S.qOpen) S.q = ""; renderMain(true); if (S.qOpen) { const q = document.getElementById("q"); if (q) q.focus({ preventScroll: true }); } return; }
   if (a === "refresh") { refreshNow(); return; }
   if (a === "lastdone") { const it = findItem(b.dataset.k); if (it) markDone(it); return; }
@@ -1924,8 +1970,11 @@ function gapSheet() {
 /* ---------- settings: notifications and the icon badge, Siri capture, version ---------- */
 const standalone = () => { try { return matchMedia("(display-mode: standalone)").matches || navigator.standalone === true; } catch (e) { return false; } };
 function notifState() { if (!("Notification" in window)) return standalone() ? "unsupported" : "browser"; return Notification.permission; }
-/* The icon badge: tasks of yours due today or overdue, work ones only on workdays. */
-function badgeCount() { const d = today(), wk = isWeekend(d); return S.tasks.filter(t => tOpen(t) && mine(t) && t.status !== "waiting" && isDay(t.due) && t.due <= d && !(t.scope === "work" && wk && t.due === d)).length; }
+/* The icon badge: tasks of yours whose time has come: overdue, due today with no time, or due today once its alert has gone
+   (its time, less the alert lead). A task later today adds nothing until its notification, so moving a time moves the badge too.
+   Work ones only on workdays. The server's push badge counts the same way (pushSummary_). */
+const alertMin = t => { const x = String(t.time || "").match(/^(\d{1,2}):(\d{2})/); return x ? Number(x[1]) * 60 + Number(x[2]) - (t.alert ? Math.min(Math.max(Math.round(Number(t.lead) || 0), 0), 1440) : 0) : -1; };
+function badgeCount() { const d = today(), wk = isWeekend(d), n = nowMin(); return S.tasks.filter(t => tOpen(t) && mine(t) && t.status !== "waiting" && isDay(t.due) && t.due <= d && !(t.scope === "work" && wk && t.due === d) && (t.due < d || alertMin(t) <= n)).length; }
 /* Set every time, never skipped as "unchanged": a push can change the icon badge while the planner sits in the background,
    so the page's last value is not proof of what the icon shows. */
 let lastBadge = -1;
@@ -2615,6 +2664,15 @@ sheet.addEventListener("click", e => {
     return;
   }
   if (s.type === "inbox") {
+    if (a === "itab") { s.tab = b.dataset.v; renderSheet(); return; }
+    if (a === "nf") { s.nf = b.dataset.v; renderSheet(); return; }
+    if (a === "nopen") {
+      const n = (S.notes || []).find(x => x.id === b.dataset.nid); if (!n) return;
+      const u = String(n.url || "");
+      if (/^#(task|routine)=/.test(u) || u === "#plan") { closeSheet(); try { history.replaceState(null, "", location.pathname + location.search + u); } catch (x) {} setTimeout(checkHash, 450); }
+      else toast("Nothing to open for this one.");
+      return;
+    }
     if (a === "paccall") { decideProposals((S.proposals || []).map(p => p.id), "accept"); return; }
     const row = b.closest("[data-pid]"); if (!row) return;
     if (a === "pacc") decideProposals([row.dataset.pid], "accept"); else if (a === "pdis") decideProposals([row.dataset.pid], "dismiss");
@@ -2788,6 +2846,8 @@ function applyData(d) {
   const props = Array.isArray(d.proposals) ? d.proposals.filter(p => p && p.id && String(p.status || "proposed").toLowerCase() === "proposed") : [];
   S.proposals = props.filter(p => String(p.kind || "").toLowerCase() !== "capture");
   S.captures = props.filter(p => String(p.kind || "").toLowerCase() === "capture");
+  S.notesOk = Array.isArray(d.notes); // an older back end sends none; the inbox then shows proposals only
+  if (S.notesOk) { const rd = new Set(noteReadLocal); S.notes = d.notes.filter(n => n && n.id).map(n => rd.has(n.id) ? { ...n, read: true } : n).sort((a, b) => String(b.at).localeCompare(String(a.at))); }
   Object.keys(SNAP).forEach(k => delete SNAP[k]); S.tasks.forEach(snapTask);
   const L = {}; d.log.forEach(l => { L[l.id] = l; }); S.logs = L;
   if (!foldBusy) { const f = L[FOLD_ID]; if (f && f.checks && typeof f.checks === "object") { S.fold = { ...f.checks }; persist(); } else if (Object.keys(S.fold).length) saveFold(); }
@@ -2810,7 +2870,7 @@ function ingestCaptures() {
 /* The last copy is kept on the phone so the planner opens instantly; the server copy replaces it a moment later. */
 const CACHE = "pa-cache";
 let cacheT = 0;
-function saveCache() { clearTimeout(cacheT); cacheT = setTimeout(() => { try { localStorage.setItem(CACHE, JSON.stringify({ tasks: S.tasks, routines: S.routines, log: Object.values(S.logs), touches: S.touches, engagements: S.engOk ? S.audits : undefined, audits: S.audits, stageMap: S.stages, contacts: S.contacts, proposals: S.proposals, meetings: S.meetings })); } catch (e) {} }, 400); }
+function saveCache() { clearTimeout(cacheT); cacheT = setTimeout(() => { try { localStorage.setItem(CACHE, JSON.stringify({ tasks: S.tasks, routines: S.routines, log: Object.values(S.logs), touches: S.touches, engagements: S.engOk ? S.audits : undefined, audits: S.audits, stageMap: S.stages, contacts: S.contacts, proposals: S.proposals, notes: S.notesOk ? S.notes : undefined, meetings: S.meetings })); } catch (e) {} }, 400); }
 function readCache() { try { const c = JSON.parse(localStorage.getItem(CACHE) || "null"); if (!c || !Array.isArray(c.tasks)) return false; applyData(c); S.meetings = c.meetings || {}; return true; } catch (e) { return false; } }
 async function loadAll(first) {
   try {
@@ -2839,6 +2899,7 @@ function checkHash() {
   if (!S.ready || S.sheet) return;
   const h = location.hash, t = h.match(/(?:^#|&)task=([^&]+)/), ro = h.match(/(?:^#|&)routine=([^&]+)/), pl = /(^#|&)plan\b/.test(h);
   if (!t && !ro && !pl) return;
+  if (S.notesOk) { const u = (t ? "#task=" + t[1] : ro ? "#routine=" + ro[1] : "#plan"); markNotesRead((S.notes || []).filter(n => !n.read && (n.url === u || n.url === decodeURIComponent(u))).map(n => n.id)); }
   try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
   if (ro) { const id = decodeURIComponent(ro[1]), r = S.routines.find(x => x.id === id); if (r) { if (S.mode !== r.scope) setMode(r.scope, true); if (S.view !== "today") go("today"); else render(true); openSheet({ type: "item", key: "routine:" + encodeURIComponent(id) + ":" + today() }); } return; }
   if (t) { const id = decodeURIComponent(t[1]); const tk = S.tasks.find(x => x.id === id); if (tk) { if (S.mode !== tk.scope) setMode(tk.scope, true); if (S.view !== "today") go("today"); else render(true); openSheet({ type: "item", key: "task:" + encodeURIComponent(id) }); } return; }
@@ -2848,7 +2909,7 @@ addEventListener("hashchange", checkHash);
 setMode(readMode());
 renderNav();
 if (!KEY) showSetup(); else { if (readCache()) render(); showOffline(); if (outbox.length) flush(); else loadAll(true); }
-setInterval(() => { if (!S.ready) return; if (!busy()) tickMode(); if (busy()) { renderNav(); return; } render(true); }, 60000);
+setInterval(() => { if (!S.ready) return; if (!busy()) tickMode(); if (busy()) { renderNav(); updateBadge(); return; } render(true); }, 60000);
 /* Near-live sync between devices: every few seconds ask the server for its change stamp (a tiny call)
    and reload only when another device has saved something. A full reload still runs every 5 minutes as a safety net. */
 const typing = () => { const a = document.activeElement; return !!a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName); };
