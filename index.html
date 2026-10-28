@@ -635,9 +635,17 @@ html[data-mode="personal"] .mode button[aria-pressed="true"] { color: var(--i-pe
 /* ---------- connection ---------- */
 const API_URL = "https://script.google.com/macros/s/AKfycbxiV8ohrXFCnAwEPXQBxxIFXvkGoBemYE9wdstFdIkxFY5mtNOzjQGMoxCdvatPqD7Y/exec";
 const KEY_STORE = "pa-key";
+const CALL_MS = 20000;
+/* The phone's time zone, sent with every call so the server can match it. */
+const TZ_NAME = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch (e) { return ""; } })();
 function readKey() {
   const m = location.hash.match(/key=([A-Za-z0-9_-]{20,})/);
-  if (m) { try { localStorage.setItem(KEY_STORE, m[1]); } catch (e) {} return m[1]; }
+  if (m) {
+    try { localStorage.setItem(KEY_STORE, m[1]); } catch (e) {}
+    /* Take the key out of the address so it doesn't stay in history or get shared with a copied link. */
+    try { const h = location.hash.replace(/(^#|&)key=[^&]*/, "$1").replace(/^#&/, "#").replace(/&$/, ""); history.replaceState(null, "", location.pathname + location.search + (h === "#" ? "" : h)); } catch (e) {}
+    return m[1];
+  }
   try { return localStorage.getItem(KEY_STORE) || ""; } catch (e) { return ""; }
 }
 let KEY = readKey();
@@ -729,7 +737,12 @@ const S = { tasks: [], routines: [], logs: {}, touches: [], audits: [], stages: 
 /* Calls go to Apps Script as plain-text POSTs (no CORS preflight). Writes run one at a time, in order,
    so a quick tick and untick can never arrive at the server in the wrong order. */
 async function call(fn, ...args) {
-  const r = await fetch(API_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ key: KEY, fn, args }), redirect: "follow", cache: "no-store" });
+  /* A call that hangs is given up after 20 seconds and treated like being offline, so saves behind it go to the outbox instead of waiting forever. */
+  const ac = new AbortController(), to = setTimeout(() => ac.abort(), CALL_MS);
+  let r;
+  try { r = await fetch(API_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ key: KEY, fn, args, tz: TZ_NAME }), redirect: "follow", cache: "no-store", signal: ac.signal }); }
+  catch (e) { if (e && e.name === "AbortError") throw new Error("The server didn't answer. Check your connection."); throw e; }
+  finally { clearTimeout(to); }
   if (!r.ok) throw new Error("The server didn't answer. Check your connection.");
   const j = await r.json();
   if (!j.ok) { if (j.error === "auth") { showSetup("That key wasn't accepted."); } throw new Error(j.error === "auth" ? "Key not accepted." : j.error || "That didn't work."); }
@@ -801,9 +814,11 @@ setInterval(() => { if (outbox.length) flush(); }, 30000);
 try { const v = JSON.parse(localStorage.getItem("pa4") || "{}"); if (v.view && VIEWS.some(x => x[0] === v.view)) S.view = v.view; if (v.sub) Object.assign(S.sub, v.sub); if (!WORK_SUBS.some(x => x[0] === S.sub.work)) S.sub.work = "clients"; if (!PERS_SUBS.some(x => x[0] === S.sub.personal)) S.sub.personal = "tasks"; if (v.fold && typeof v.fold === "object") S.fold = v.fold; if (typeof v.cf === "string" && CLIENTS.includes(v.cf)) S.cf = v.cf; if (v.calMode === "week") S.calMode = "week"; } catch (e) {}
 const persist = () => { try { localStorage.setItem("pa4", JSON.stringify({ view: S.view, sub: S.sub, fold: S.fold, cf: S.cf, calMode: S.calMode })); } catch (e) {} };
 
-/* ---------- time, Bahrain ---------- */
+/* ---------- time, in the phone's time zone ---------- */
 const pad = n => String(n).padStart(2, "0");
-const bh = () => new Date(Date.now() + 3 * 3600000);
+/* Wall-clock time in the phone's time zone, read with the getUTC* methods. Follows the phone when you travel and through daylight saving. */
+const tzMs = t => -new Date(t).getTimezoneOffset() * 60000;
+const bh = () => { const t = Date.now(); return new Date(t + tzMs(t)); };
 const today = () => { const n = bh(); return n.getUTCFullYear() + "-" + pad(n.getUTCMonth() + 1) + "-" + pad(n.getUTCDate()); };
 const nowMin = () => { const n = bh(); return n.getUTCHours() * 60 + n.getUTCMinutes(); };
 const D = s => { const [y, m, d] = s.split("-").map(Number); return new Date(Date.UTC(y, m - 1, d)); };
@@ -2697,7 +2712,7 @@ setTimeout(checkVersion, 8000);
 /* ---------- refresh ---------- */
 /* Manual refresh sends anything waiting, then reloads tasks, routines and meetings from the server. Automatic sync keeps running as before. */
 let refreshing = false;
-const rfBtn = () => `<button type="button" class="icon-btn rf${refreshing ? " spin" : ""}" data-act="refresh" aria-label="Refresh"${S.syncedAt ? ` title="Updated ${fT(hhmm(Math.floor((S.syncedAt + 3 * 3600000) / 60000) % 1440))}"` : ""}${refreshing ? ' aria-busy="true"' : ""}>${ico("refresh")}</button>`;
+const rfBtn = () => `<button type="button" class="icon-btn rf${refreshing ? " spin" : ""}" data-act="refresh" aria-label="Refresh"${S.syncedAt ? ` title="Updated ${fT(hhmm(Math.floor((S.syncedAt + tzMs(S.syncedAt)) / 60000) % 1440))}"` : ""}${refreshing ? ' aria-busy="true"' : ""}>${ico("refresh")}</button>`;
 const ptr = document.createElement("div"); ptr.className = "ptr"; ptr.setAttribute("aria-hidden", "true");
 ptr.innerHTML = `<svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round">${[0, 1, 2, 3, 4, 5, 6, 7].map(i => `<line x1="14" y1="3.5" x2="14" y2="8.5" transform="rotate(${i * 45} 14 14)" style="--o:${(1 - i * .1).toFixed(2)}"/>`).join("")}</svg>`;
 document.body.appendChild(ptr);
@@ -2727,7 +2742,7 @@ async function refreshNow() {
   } finally {
     await new Promise(r => setTimeout(r, Math.max(0, 700 - (Date.now() - t0)))); // long enough to read as a refresh, never a flicker
     refreshing = false; ptr.classList.remove("spin");
-    document.querySelectorAll('[data-act="refresh"]').forEach(b => { b.classList.remove("spin"); b.removeAttribute("aria-busy"); if (S.syncedAt) b.title = "Updated " + fT(hhmm(Math.floor((S.syncedAt + 3 * 3600000) / 60000) % 1440)); });
+    document.querySelectorAll('[data-act="refresh"]').forEach(b => { b.classList.remove("spin"); b.removeAttribute("aria-busy"); if (S.syncedAt) b.title = "Updated " + fT(hhmm(Math.floor((S.syncedAt + tzMs(S.syncedAt)) / 60000) % 1440)); });
     rfLive.textContent = ok ? "Up to date" : "";
     if (view.style.transform) settle(0);
   }
