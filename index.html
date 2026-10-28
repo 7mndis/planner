@@ -980,7 +980,9 @@ const chaseItem = t => ({ ...tItem(t), date: chaseDate(t) });
 const chaseCount = () => S.tasks.filter(t => t.scope === "work" && isWaiting(t) && chaseDate(t) && diff(chaseDate(t)) <= 0).length;
 const touchesOf = id => (S.touches || []).filter(x => x.taskId === id).sort((a, b) => String(b.date).localeCompare(String(a.date)) || String(b.at || "").localeCompare(String(a.at || "")));
 /* Client filter: applies to work items only. */
-const cfOk = t => !S.cf || t.scope !== "work" || t.area === S.cf;
+/* The chip filter: a client in Work, a category in Personal. It applies on Today, Calendar and Next 7 Days as well as the list tabs. */
+const cfOk = t => t.scope === "work" ? !S.cf || t.area === S.cf : pfOk(t.area);
+const filterChips = () => `<div class="tools">${S.mode === "work" ? chipRow() : catChipRow()}</div>`;
 function chipRow() {
   const ch = (v, l, c) => `<button type="button" class="cfc${c ? "" : " all"}" data-act="cf" data-cf="${esc(v)}" aria-pressed="${S.cf === v}"${c ? ` style="--ic:var(${c})"` : ""}>${c ? '<span class="dot"></span>' : ""}${esc(l)}</button>`;
   return `<div class="cfrow" role="group" aria-label="Filter by client">${ch("", "All")}${CLIENTS.map(c => ch(c, c, CLIENT_VAR[c])).join("")}</div>`;
@@ -1301,7 +1303,7 @@ function planner(range) {
   const overdue = range === "today" ? S.tasks.filter(t => tOpen(t) && mine(t) && t.status !== "waiting" && t.due && diff(t.due) < 0) : [];
   const tasks = S.tasks.filter(t => mine(t) && t.status !== "waiting" && inRange(t.due) && (range === "today" || tOpen(t)));
   const work = S.mode !== "work" || (isWeekend(d0) && range === "today") ? [] : oneEach([...overdue, ...tasks].filter(t => t.scope === "work" && cfOk(t)).map(tItem).sort(sortP));
-  const pers = [...overdue, ...tasks].filter(t => t.scope === "personal").map(tItem).sort(sortP);
+  const pers = [...overdue, ...tasks].filter(t => t.scope === "personal" && cfOk(t)).map(tItem).sort(sortP);
   // waiting items to chase: by their chase date (nextChase, else due); on Today anything already past is included
   const chase = S.mode !== "work" ? [] : S.tasks.filter(t => t.scope === "work" && isWaiting(t) && cfOk(t) && chaseDate(t) && (inRange(chaseDate(t)) || (range === "today" && diff(chaseDate(t)) < 0))).map(chaseItem).sort(byDayPri);
   const list = (items, sc) => multi ? rowsByDay(items, sc) : items.map(rowHtml).join("");
@@ -1483,20 +1485,20 @@ function dayDots(d) {
   const ev = (S.meetings[d] || []).map(m => mItem(m, d)).filter(inMode);
   if (ev.some(e => e.etype === "birthday")) dots.push("--i-bday");
   if (ev.some(e => e.etype === "meeting" || e.etype === "event" || e.etype === "holiday")) dots.push(S.mode === "work" ? "--i-meet" : "--i-event");
-  const ts = S.tasks.filter(t => t.due === d && tOpen(t) && t.scope === S.mode);
+  const ts = S.tasks.filter(t => t.due === d && tOpen(t) && t.scope === S.mode && cfOk(t));
   if (ts.length && diff(d) < 0) dots.push("--late");
   else if (ts.length) dots.push(S.mode === "work" ? "--i-work" : "--i-personal");
   return dots;
 }
 /* Open tasks on a day in this mode, shown as a small count on the month grid. */
-const dayCount = d => S.tasks.filter(t => t.due === d && tOpen(t) && t.scope === S.mode && mine(t)).length;
+const dayCount = d => S.tasks.filter(t => t.due === d && tOpen(t) && t.scope === S.mode && mine(t) && cfOk(t)).length;
 /* Planned minutes on a day: timed events, tasks (30m if no duration) and routines (15m if none). */
 function dayLoad(d) {
   if (S.mode === "work" && isWeekend(d)) return 0;
   let m = 0;
   (S.meetings[d] || []).map(x => mItem(x, d)).filter(inMode).forEach(it => { if (it.time) m += spanEnd(it, d) - tm(it.time); });
-  S.tasks.filter(t => t.scope === S.mode && mine(t) && t.status !== "waiting" && t.due === d && tOpen(t)).forEach(t => { m += durMins(t, d) || 30; });
-  occsOn(d).filter(o => o.scope === S.mode).forEach(o => { m += durMins(o.r, d) || 15; });
+  S.tasks.filter(t => t.scope === S.mode && mine(t) && t.status !== "waiting" && t.due === d && tOpen(t) && cfOk(t)).forEach(t => { m += durMins(t, d) || 30; });
+  occsOn(d).filter(o => o.scope === S.mode && cfOk(o.r)).forEach(o => { m += durMins(o.r, d) || 15; });
   return m;
 }
 function loadStrip() {
@@ -1511,7 +1513,7 @@ const segHtml = (name, list, cur, act) => `<div class="seg" role="group" aria-la
 function viewCal() {
   const week = S.calMode === "week";
   const head = `<header class="navbar"><div><h1>Calendar</h1><div class="sub">${week ? esc(fD(add(today(), 1))) + " to " + esc(fD(add(today(), 7))) : S.mode === "work" ? "Outlook meetings and work tasks" : "Events, birthdays and personal tasks"}</div></div><div class="acts">${rfBtn()}<button type="button" class="icon-btn" data-act="${week ? "new" : "newday"}" aria-label="New task${week ? "" : " on this day"}">${ico("plus")}</button></div></header>
-  ${segHtml("Show", [["month", "Month"], ["week", "Next 7 Days"]], S.calMode, "calmode")}`;
+  ${segHtml("Show", [["month", "Month"], ["week", "Next 7 Days"]], S.calMode, "calmode")}${filterChips()}`;
   if (week) { const p = planner("week"); return head + loadStrip() + `<div class="cols two"><div class="col">${p.meetSec}${p.workSec}${p.persSec}</div><div class="col">${p.routineSec}</div></div>`; }
   const sel = S.calDay || today(), m = S.calMonth || monthStart(sel), { from } = calRange(m);
   if (!monthsLoaded[m]) loadMonth(m);
@@ -1523,8 +1525,8 @@ function viewCal() {
   }
   const meets = (S.meetings[sel] || []).map(x => mItem(x, sel)).filter(inMode).sort(byEvent);
   const evL = S.mode === "work" ? "Meetings" : "Events";
-  const tasks = S.tasks.filter(t => t.due === sel && t.scope === S.mode && (tOpen(t) || diff(sel) >= 0)).map(tItem).sort(byTime);
-  const routines = occsOn(sel).filter(o => o.scope === S.mode && !(o.scope === "work" && isWeekend(sel))).sort(byTime);
+  const tasks = S.tasks.filter(t => t.due === sel && t.scope === S.mode && cfOk(t) && (tOpen(t) || diff(sel) >= 0)).map(tItem).sort(byTime);
+  const routines = occsOn(sel).filter(o => o.scope === S.mode && cfOk(o.r) && !(o.scope === "work" && isWeekend(sel))).sort(byTime);
   RO = { planner: true, ctx: true };
   const meetRows = meets.map(rowHtml).join("");
   const loading = monthsLoaded[m] === "busy" && !meets.length;
@@ -1652,6 +1654,7 @@ function viewToday() {
   if (!p.work) { const li = Array.from({ length: 7 }, (_, i) => add(d, i + 1)).flatMap(x => (S.meetings[x] || []).map(m => mItem(m, x))).filter(it => it.etype === "birthday" || it.etype === "holiday").sort(byEvent); if (li.length) { RO = { planner: true, evDate: true }; soon = cardHtml(li.map(rowHtml).join(""), chHead("Coming Up", "--i-bday", li.length, "ev:soon")); RO = {}; } }
   const note = !p.off && S.meetNote ? `<p class="foot">${esc(S.meetNote)}</p>` : "";
   return `${head}
+  ${filterChips()}
   ${upNext()}
   ${planBanner()}
   ${capacityHtml(p)}
@@ -2803,7 +2806,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "1.5"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
+const APP_VERSION = "1.6"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(() => swConfig()).catch(() => {});
 let verAt = 0;
 async function checkVersion() {
