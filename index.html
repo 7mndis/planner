@@ -1926,11 +1926,13 @@ const standalone = () => { try { return matchMedia("(display-mode: standalone)")
 function notifState() { if (!("Notification" in window)) return standalone() ? "unsupported" : "browser"; return Notification.permission; }
 /* The icon badge: tasks of yours due today or overdue, work ones only on workdays. */
 function badgeCount() { const d = today(), wk = isWeekend(d); return S.tasks.filter(t => tOpen(t) && mine(t) && t.status !== "waiting" && isDay(t.due) && t.due <= d && !(t.scope === "work" && wk && t.due === d)).length; }
+/* Set every time, never skipped as "unchanged": a push can change the icon badge while the planner sits in the background,
+   so the page's last value is not proof of what the icon shows. */
 let lastBadge = -1;
 function updateBadge() {
   try {
     if (!("setAppBadge" in navigator) || !("Notification" in window) || Notification.permission !== "granted") return;
-    const n = badgeCount(); if (n === lastBadge) return; lastBadge = n;
+    const n = badgeCount(); lastBadge = n;
     (n ? navigator.setAppBadge(n) : navigator.clearAppBadge()).catch(() => {});
   } catch (e) {}
 }
@@ -2876,6 +2878,7 @@ setInterval(() => { if (Date.now() - activeAt < IDLE_SLOW) poll(true); }, 300000
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState !== "visible" || !S.ready) return;
   activeAt = Date.now(); schedulePoll();
+  updateBadge(); // correct a badge a push left behind, before the reload finishes
   poll(true);
   if (outbox.length) flush();
   if (Date.now() - S.loadedAt > 600000) loadMeetings();
