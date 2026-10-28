@@ -36,7 +36,7 @@
   --late: #C2312A;
   --done: #1E7A53;
   --accent: #111114;
-  --i-work: #3A62D6; --i-personal: #A2477E; --i-meet: #5E6577;
+  --i-work: #3A62D6; --i-personal: #A2477E; --i-meet: #5E6577; --i-event: #0E7FA6; --i-bday: #C26A0A; --i-hol: #2E8A4F;
   --c-tamkeen: #7A4CC2; --c-ashraq: #C9621B; --c-arcapita: #2A6FD0; --c-tayseer: #0B8584; --c-ram: #2E8A4F; --c-dwe: #B23A5B; --c-internal: #6E6A80;
   --k-gym: #C0297A; --k-supp: #6E8B12; --k-faith: #3F4AA8; --k-home: #0E7FA6; --k-laundry: #5F7FA8; --k-shop: #A84F2A; --k-errand: #9A7300; --k-car: #7A6A58; --k-money: #3B7A2A; --k-self: #DB4E95; --k-other: #7C818A;
   --glass: rgba(249, 249, 251, .92);
@@ -49,7 +49,7 @@
   --bg: #000000; --card: #1C1C1E; --fill: #2C2C2E; --fill2: #232325; --label: #F5F5F7; --label2: #A1A1A6; --sep: rgba(84, 84, 88, .55);
   --late: #FF6961; --done: #4CD38A;
   --accent: #F5F5F7;
-  --i-work: #8DA4E7; --i-personal: #C994B4; --i-meet: #A2A6B0;
+  --i-work: #8DA4E7; --i-personal: #C994B4; --i-meet: #A2A6B0; --i-event: #73B5CB; --i-bday: #F2B55E; --i-hol: #86CBA0;
   --c-tamkeen: #B297DC; --c-ashraq: #E0A47B; --c-arcapita: #83ABE4; --c-tayseer: #71B8B8; --c-ram: #86CBA0; --c-dwe: #E395AC; --c-internal: #ABA9B5;
   --k-gym: #DA83B2; --k-supp: #ABBC76; --k-faith: #9096CD; --k-home: #73B5CB; --k-laundry: #A2B5CD; --k-shop: #CD9983; --k-errand: #C4AE6B; --k-car: #B2A99E; --k-money: #8DB283; --k-self: #EA98C2; --k-other: #B3B6BB;
   --glass: rgba(28, 28, 30, .94); --shadow: 0 10px 30px rgba(0, 0, 0, .6);
@@ -352,6 +352,17 @@ a.btn { text-decoration: none; }
 .set.note { grid-template-columns: 1fr; }
 .set.note input { text-align: left; }
 .set-acts { display: flex; gap: 8px; padding-left: 32px; margin-top: 4px; }
+.cdo { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding-left: 32px; }
+.cdo label { display: grid; gap: 4px; min-width: 0; font-size: .7rem; font-weight: 600; color: var(--label2); text-transform: uppercase; letter-spacing: .04em; }
+.cdo select { -webkit-appearance: none; appearance: none; border: 0; background: var(--fill2); border-radius: 8px; min-height: 40px; padding: 0 6px; width: 100%; color: var(--label); font: inherit; font-size: 1rem; font-weight: 600; text-transform: none; letter-spacing: 0; text-align: center; text-align-last: center; font-variant-numeric: tabular-nums; }
+.ex.sk .cdo { display: none; }
+.cell.li.dose { flex-wrap: wrap; }
+.cell.li.dose > input[type="text"] { flex: 1; }
+.dose-r { display: grid; grid-template-columns: 84px 112px minmax(0, 1fr); gap: 8px; width: 100%; padding-bottom: 8px; }
+.dose-r input, .dose-r select { border: 0; background: var(--fill2); border-radius: 8px; min-height: 38px; padding: 0 10px; color: var(--label); font: inherit; font-size: 1rem; min-width: 0; max-width: none; }
+.dose-r input.li-d { text-align: center; color: var(--label); width: 100%; max-width: none; }
+.dose-r select { text-align: left; text-align-last: left; }
+.chips .btn.grow { padding: 0 10px; white-space: nowrap; }
 .ex-last { padding-left: 32px; font-size: .8rem; color: var(--label2); font-variant-numeric: tabular-nums; }
 .cell.pk { width: 100%; border: 0; background: none; text-align: left; }
 .cell.pk + .cell.pk { border-top: .5px solid var(--sep); }
@@ -575,6 +586,9 @@ const DEFAULT_STAGES = {
 const PERS_SUBS = [["tasks", "Tasks"], ["routines", "Routines"], ["done", "Done"]];
 const GRACE = 60;
 const LEADS = [["", "At the Time"], ["5", "5 Min Before"], ["10", "10 Min Before"], ["15", "15 Min Before"], ["30", "30 Min Before"], ["60", "1 Hour Before"], ["120", "2 Hours Before"], ["1440", "1 Day Before"]];
+/* How long an item takes. Empty means the default: 1 hour for gym (2 hours on the Saturday session), otherwise not set. */
+const DURS = [["", "Not Set"], ["15", "15 min"], ["30", "30 min"], ["45", "45 min"], ["60", "1 hour"], ["90", "1.5 hours"], ["120", "2 hours"], ["180", "3 hours"], ["240", "4 hours"]];
+const durOpts = v => DURS.some(x => x[0] === String(v || "")) ? DURS : [...DURS, [String(v), dur(Number(v))]];
 const leadLabel = m => { const x = LEADS.find(l => l[0] === String(m || "")); return x ? x[1] : Number(m) >= 60 ? dur(Number(m)) + " before" : m + " min before"; };
 const LABEL = { due: "Due", progress: "In-progress", waiting: "Waiting", delayed: "Delayed", done: "Done", skipped: "Skipped", missed: "Missed" };
 
@@ -590,6 +604,9 @@ const P = {
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   check: '<path d="M5 12l5 5L20 7"/>', skip: '<path d="M5 12h14"/>', alert: '<circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.5"/>',
   meet: '<rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M8 3v4M16 3v4M3 10h18"/>',
+  cake: '<path d="M4 20h16v-6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2z"/><path d="M4 16c1.3 1 2.7 1 4 0s2.7-1 4 0 2.7 1 4 0 2.7-1 4 0"/><path d="M12 12V8"/><path d="M12 3.5c1 1.2 1 2.3 0 3-1-.7-1-1.8 0-3z" fill="currentColor"/>',
+  flag: '<path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/>',
+  timer: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 1.5M9.5 2.5h5"/>',
   doc: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>',
   receipt: '<path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 7h6M9 11h6M9 15h4"/>',
   people: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M21.5 20a6.5 6.5 0 0 0-4-6"/>',
@@ -746,7 +763,7 @@ function taskIcon(t) {
   return "checklist";
 }
 function itemIcon(it) {
-  if (it.kind === "meet") return { k: "meet", c: "--i-meet" };
+  if (it.kind === "meet") { const e = ETYPE[it.etype] || ETYPE.event; return { k: e.ic, c: e.c }; }
   if (it.kind === "routine") { const r = it.r; if (r.scope === "personal") return { k: P[r.area] ? r.area : "Other", c: CAT_VAR[r.area] || "--k-other" }; return { k: taskIcon({ ...r, scope: "work" }), c: CLIENT_VAR[r.area] || "--i-work" }; }
   const t = it.t; return { k: taskIcon(t), c: t.scope === "work" ? (CLIENT_VAR[t.area] || "--i-work") : (CAT_VAR[t.area] || "--k-other") };
 }
@@ -807,9 +824,11 @@ function nextOcc(r) { let d = today(); for (let i = 0; i < 400; i++) { if (occur
 /* ---------- gym sessions: 1 hour, 2 hours on Saturday ---------- */
 function gymArea(src) { return !!src && src.area === "Gym" && !/renew|subscri|membership|\bpay/i.test(src.title || ""); }
 /* The Saturday routine session runs 2 hours; every other session, including one-off tasks, runs 1 hour. */
-function gymMins(d, src) { return src && src.freq && d && wd(d) === 6 ? 120 : 60; }
-function graceOf(src, d) { return gymArea(src) ? gymMins(d, src) : GRACE; }
-function spanOf(it) { return gymArea(it.kind === "task" ? it.t : it.r) && it.time ? fT(it.time) + " to " + fT(hhmm(Math.min(tm(it.time) + gymMins(it.date, it.kind === "task" ? it.t : it.r), 1439))) : it.time ? fT(it.time) : ""; }
+function gymMins(d, src) { const own = Math.round(Number(src && src.dur) || 0); if (own > 0) return own; return src && src.freq && d && wd(d) === 6 ? 120 : 60; }
+/* Minutes the item takes: its own duration, else the gym default, else null (not set). */
+function durMins(src, d) { const own = Math.round(Number(src && src.dur) || 0); return own > 0 ? own : gymArea(src) ? gymMins(d, src) : null; }
+function graceOf(src, d) { return gymArea(src) ? gymMins(d, src) : Math.max(durMins(src, d) || 0, GRACE); }
+function spanOf(it) { const src = it.kind === "task" ? it.t : it.r, m = durMins(src, it.date); return it.time && m ? fT(it.time) + " to " + fT(hhmm(Math.min(tm(it.time) + m, 1439))) : it.time ? fT(it.time) : ""; }
 const mine = t => (t.owner || "Me") === "Me";
 const tOpen = t => t.status !== "done" && t.status !== "skipped";
 function tStatus(t) {
@@ -820,7 +839,13 @@ function tStatus(t) {
   return t.status || "due";
 }
 const tItem = t => ({ kind: "task", t, id: t.id, date: t.due, time: t.time || "", status: tStatus(t), scope: t.scope, title: t.title, area: t.area });
-const mItem = (m, d) => ({ kind: "meet", id: m.id, date: d, title: m.subject, time: m.time, end: m.end, loc: m.loc, cal: m.cal || "Google", link: m.link || "", organizer: m.organizer || "", attendees: m.attendees || "", mstatus: m.status || "", status: "meet", scope: "meet" });
+/* Calendar entries come in four kinds: Outlook meetings (work), and from Google Calendar birthdays, public holidays and other events (personal). */
+const etypeOf = m => m.cal === "Outlook" ? "meeting" : /birthday|عيد ميلاد/i.test(m.subject || "") ? "birthday" : /holiday/i.test(m.cal || "") ? "holiday" : "event";
+const ETYPE = { meeting: { l: "Meeting", ic: "meet", c: "--i-meet" }, birthday: { l: "Birthday", ic: "cake", c: "--i-bday" }, holiday: { l: "Holiday", ic: "flag", c: "--i-hol" }, event: { l: "Event", ic: "meet", c: "--i-event" } };
+const bdayName = t => String(t || "").replace(/[’']s birthday$/i, "").replace(/\s*birthday$/i, "").trim();
+const mItem = (m, d) => ({ kind: "meet", id: m.id, date: d, title: m.subject, time: m.time, end: m.end, loc: m.loc, cal: m.cal || "Google", link: m.link || "", organizer: m.organizer || "", attendees: m.attendees || "", mstatus: m.status || "", status: "meet", scope: "meet", etype: etypeOf(m) });
+/* All-day birthdays and holidays first, then by time. */
+const byEvent = (a, b) => String(a.date).localeCompare(String(b.date)) || (a.time ? 1 : 0) - (b.time ? 1 : 0) || byTime(a, b);
 const byTime = (a, b) => tm(a.time) - tm(b.time) || String(a.title).localeCompare(String(b.title));
 const byDate = (a, b) => String(a.date || "9999").localeCompare(String(b.date || "9999")) || byTime(a, b);
 const priCmp = (a, b) => a.kind === "task" && b.kind === "task" ? priRank(a.t) - priRank(b.t) : 0;
@@ -902,7 +927,7 @@ const key = it => it.kind + ":" + encodeURIComponent(it.id) + (it.kind !== "task
    noDate: skip the date · chase: the date shown is the chase date · noWho: the group already says who it is with · rfreq: routines show how they repeat. */
 let RO = {};
 function metaHtml(it) {
-  if (it.kind === "meet") return it.cal === "Outlook" ? `<span class="meta"><span class="chip">Outlook</span>${it.organizer ? esc(it.organizer) : ""}</span>` : "";
+  if (it.kind === "meet") return it.cal === "Outlook" ? `<span class="meta"><span class="chip">Outlook</span>${it.organizer ? esc(it.organizer) : ""}</span>` : it.etype === "event" && it.time && (it.end || it.loc) ? `<span class="meta">${it.end ? "Until " + esc(fT(it.end)) : ""}${it.end && it.loc ? '<span class="sep">·</span>' : ""}${it.loc ? esc(it.loc) : ""}</span>` : RO.evDate ? `<span class="meta">${esc(rel(it.date))}</span>` : "";
   const parts = [];
   if (it.kind === "routine") {
     if (RO.rfreq) parts.push(it.r.freq === "daily" ? (it.r.time ? esc(fT(it.r.time)) : "Any time") : esc(freqText(it.r)) + (it.r.time ? ", " + esc(fT(it.r.time)) : ""));
@@ -932,7 +957,7 @@ function rowHtml(it) {
   const k = key(it), ic = itemIcon(it), sw = S.swipe === k;
   const canSwipe = it.kind !== "meet" && it.status !== "done" && it.status !== "skipped" && it.status !== "ended";
   const hi = it.kind === "task" && tOpen(it.t) ? priMark(priOf(it.t)) : "";
-  const flag = it.kind === "meet" ? `<span class="when-t">${it.time ? fT(it.time) : "All day"}</span>` : it.status === "missed" ? `<span class="flag late" title="Missed">${ico("alert")}<span class="sr">Missed</span></span>` : it.status === "delayed" ? `<span class="flag" title="Delayed">${ico("clock")}<span class="sr">Delayed</span></span>` : it.status === "waiting" && !RO.noWho ? `<span class="flag" title="Waiting on others">${ico("people")}<span class="sr">Waiting</span></span>` : it.status === "progress" ? `<span class="prog-t">In-progress</span>` : "";
+  const flag = it.kind === "meet" ? `<span class="when-t">${it.time ? fT(it.time) : it.etype === "birthday" ? "Birthday" : it.etype === "holiday" ? "Holiday" : "All day"}</span>` : it.status === "missed" ? `<span class="flag late" title="Missed">${ico("alert")}<span class="sr">Missed</span></span>` : it.status === "delayed" ? `<span class="flag" title="Delayed">${ico("clock")}<span class="sr">Delayed</span></span>` : it.status === "waiting" && !RO.noWho ? `<span class="flag" title="Waiting on others">${ico("people")}<span class="sr">Waiting</span></span>` : it.status === "progress" ? `<span class="prog-t">In-progress</span>` : "";
   return `<div class="sw" data-key="${esc(k)}">
     ${canSwipe ? `<div class="sw-under" aria-hidden="${!sw}"><div><button type="button" class="u-done" data-act="done" tabindex="${sw ? 0 : -1}">${ico("check")}Done</button></div><div><button type="button" class="u-delay" data-act="open" tabindex="${sw ? 0 : -1}">${ico("clock")}Delay</button><button type="button" class="u-skip" data-act="skip" tabindex="${sw ? 0 : -1}">${ico("skip")}Skip</button></div></div>` : ""}
     <div class="row ${it.kind} s-${it.status}${S.just === k ? " just" : ""}" ${sw ? 'style="transform:translate3d(-152px, 0, 0)"' : ""}>
@@ -1091,7 +1116,9 @@ function planner(range) {
   const inRange = d => d && days.includes(d);
   const multi = days.length > 1;
   // meetings
-  const meets = days.flatMap(d => (S.meetings[d] || []).map(m => mItem(m, d))).filter(inMode).sort(byDate);
+  const meets = days.flatMap(d => (S.meetings[d] || []).map(m => mItem(m, d))).filter(inMode).sort(S.mode === "work" ? byDate : byEvent);
+  // birthdays and holidays in the coming week, so a gift or a day off is never a surprise
+  const soon = range === "today" && S.mode === "personal" ? Array.from({ length: 7 }, (_, i) => add(d0, i + 1)).flatMap(d => (S.meetings[d] || []).map(m => mItem(m, d))).filter(it => it.etype === "birthday" || it.etype === "holiday").sort(byEvent) : [];
   // routines
   const off = it => it.scope === "work" && isWeekend(it.date || d0); // no work on Friday or Saturday
   let routines = days.flatMap(d => occsOn(d)).filter(o => !off(o) && cfOk(o.r) && o.scope === S.mode);
@@ -1111,7 +1138,9 @@ function planner(range) {
   const allDone = li => li.length > 0 && li.every(o => o.status === "done" || o.status === "skipped");
 
   RO = { planner: true };
-  const meetSec = meets.length ? sectionHtml("Meetings", "meet", cardHtml(list(meets, "meet")), meets.length) : S.meetNote ? sectionHtml("Meetings", "meet", cardHtml(`<div class="empty">${esc(S.meetNote)}</div>`)) : "";
+  const evTitle = S.mode === "work" ? "Meetings" : "Events";
+  RO = { planner: true, evDate: true }; const soonCard = soon.length ? cardHtml(soon.map(rowHtml).join(""), chHead("Coming Up", "--i-bday", soon.length, "ev:soon")) : ""; RO = { planner: true };
+  const meetSec = meets.length || soonCard ? sectionHtml(evTitle, S.mode === "work" ? "meet" : "cake", (meets.length ? cardHtml(list(meets, "meet")) : cardHtml(`<div class="empty">No events ${multi ? "this week" : "today"}.</div>`)) + soonCard, meets.length) : S.meetNote ? sectionHtml(evTitle, "meet", cardHtml(`<div class="empty">${esc(S.meetNote)}</div>`)) : "";
   const blocks = [];
   if (!multi) {
     const by = { morning: [], day: [], night: [] }; rPers.forEach(o => by[o.r.block || "day"].push(o));
@@ -1135,10 +1164,21 @@ function oneEach(items) {
   items.forEach(it => { const a = engOf(it.t), k = a ? a.id : ""; if (!k) { out.push(it); return; } if (seen[k]) { seen[k].more = (seen[k].more || 0) + 1; return; } seen[k] = it; out.push(it); });
   return out;
 }
+/* The first gap today, from now until 11 PM, long enough for an item of len minutes. Busy time is what is timed today in the current mode. */
+function freeSlot(len, skipKey) {
+  const d = today(), wk = isWeekend(d);
+  const busy = [...S.tasks.filter(t => mine(t) && t.due === d && tOpen(t)).map(tItem), ...occsOn(d), ...(S.meetings[d] || []).map(m => mItem(m, d))]
+    .filter(it => it.time && inMode(it) && key(it) !== skipKey && !(it.scope === "work" && wk) && it.status !== "done" && it.status !== "skipped")
+    .map(it => { const s0 = tm(it.time); return [s0, it.kind === "meet" ? Math.max(tm(it.end || it.time), s0 + 1) : s0 + (durMins(it.kind === "task" ? it.t : it.r, d) || (it.kind === "task" ? 30 : 15))]; })
+    .sort((a, b) => a[0] - b[0]);
+  let t = Math.ceil((nowMin() + 5) / 15) * 15;
+  for (const [a, b] of busy) { if (b <= t) continue; if (a - t >= len) break; t = Math.max(t, Math.ceil(b / 15) * 15); }
+  return t + len <= 1380 ? hhmm(t) : "";
+}
 /* Last, Now and Up Next in one card: what just happened, what is on now, and what comes next today. */
 function upNext() {
   const d = today(), n = nowMin(), wk = isWeekend(d);
-  const span = it => it.kind === "meet" ? Math.max(tm(it.end || it.time), tm(it.time) + 1) : tm(it.time) + (gymArea(it.kind === "task" ? it.t : it.r) ? gymMins(d, it.kind === "task" ? it.t : it.r) : it.kind === "task" ? 30 : 15);
+  const span = it => it.kind === "meet" ? Math.max(tm(it.end || it.time), tm(it.time) + 1) : tm(it.time) + (durMins(it.kind === "task" ? it.t : it.r, d) || (it.kind === "task" ? 30 : 15));
   const all = [...S.tasks.filter(t => mine(t) && t.due === d).map(tItem), ...occsOn(d), ...(S.meetings[d] || []).map(m => mItem(m, d))]
     .filter(it => it.time && inMode(it) && !(it.scope === "work" && wk));
   const open = it => ["due", "delayed", "progress", "meet"].includes(it.status);
@@ -1181,7 +1221,9 @@ async function loadMonth(m) {
 }
 function dayDots(d) {
   const dots = [];
-  if ((S.meetings[d] || []).some(m => inMode(mItem(m, d)))) dots.push("--i-meet");
+  const ev = (S.meetings[d] || []).map(m => mItem(m, d)).filter(inMode);
+  if (ev.some(e => e.etype === "birthday")) dots.push("--i-bday");
+  if (ev.some(e => e.etype === "meeting" || e.etype === "event" || e.etype === "holiday")) dots.push(S.mode === "work" ? "--i-meet" : "--i-event");
   const ts = S.tasks.filter(t => t.due === d && tOpen(t) && t.scope === S.mode);
   if (ts.some(t => t.scope === "work")) dots.push("--i-work");
   if (ts.some(t => t.scope === "personal")) dots.push("--i-personal");
@@ -1194,7 +1236,7 @@ const searchField = () => `<label class="search${S.qOpen || S.q ? "" : " hid"}">
 const segHtml = (name, list, cur, act) => `<div class="seg" role="group" aria-label="${esc(name)}">${list.map(([k, l]) => `<button type="button" data-act="${act}" data-sub="${k}" aria-pressed="${cur === k}">${l}</button>`).join("")}</div>`;
 function viewCal() {
   const week = S.calMode === "week";
-  const head = `<header class="navbar"><div><h1>Calendar</h1><div class="sub">${week ? esc(fD(add(today(), 1))) + " to " + esc(fD(add(today(), 7))) : S.mode === "work" ? "Outlook meetings and work tasks" : "Google Calendar and personal tasks"}</div></div><div class="acts">${rfBtn()}<button type="button" class="icon-btn" data-act="${week ? "new" : "newday"}" aria-label="New task${week ? "" : " on this day"}">${ico("plus")}</button></div></header>
+  const head = `<header class="navbar"><div><h1>Calendar</h1><div class="sub">${week ? esc(fD(add(today(), 1))) + " to " + esc(fD(add(today(), 7))) : S.mode === "work" ? "Outlook meetings and work tasks" : "Events, birthdays and personal tasks"}</div></div><div class="acts">${rfBtn()}<button type="button" class="icon-btn" data-act="${week ? "new" : "newday"}" aria-label="New task${week ? "" : " on this day"}">${ico("plus")}</button></div></header>
   ${segHtml("Show", [["month", "Month"], ["week", "Next 7 Days"]], S.calMode, "calmode")}`;
   if (week) { const p = planner("week"); return head + `<div class="cols two"><div class="col">${p.meetSec}${p.workSec}${p.persSec}</div><div class="col">${p.routineSec}</div></div>`; }
   const sel = S.calDay || today(), m = S.calMonth || monthStart(sel), { from } = calRange(m);
@@ -1205,27 +1247,36 @@ function viewCal() {
     const d = add(from, i), cls = ["cd", d.slice(0, 7) !== m.slice(0, 7) ? "out" : "", isWeekend(d) ? "we" : "", d === today() ? "today" : "", d === sel ? "sel" : ""].filter(Boolean).join(" ");
     grid += `<button type="button" class="${cls}" data-act="calday" data-d="${d}" aria-label="${esc(fDL(d))}"${d === sel ? ' aria-pressed="true"' : ""}><b>${Number(d.slice(8))}</b><span class="dots">${dayDots(d).map(c => `<i style="--ic:var(${c})"></i>`).join("")}</span></button>`;
   }
-  const meets = (S.meetings[sel] || []).map(x => mItem(x, sel)).filter(inMode).sort(byTime);
+  const meets = (S.meetings[sel] || []).map(x => mItem(x, sel)).filter(inMode).sort(byEvent);
+  const evL = S.mode === "work" ? "Meetings" : "Events";
   const tasks = S.tasks.filter(t => t.due === sel && t.scope === S.mode && (tOpen(t) || diff(sel) >= 0)).map(tItem).sort(byTime);
   const routines = occsOn(sel).filter(o => o.time && o.scope === S.mode && !(o.scope === "work" && isWeekend(sel))).sort(byTime);
   RO = { planner: true, ctx: true };
   const meetRows = meets.map(rowHtml).join("");
   const loading = monthsLoaded[m] === "busy" && !meets.length;
   const agenda = sectionHtml(rel(sel) === fD(sel) ? fDL(sel) : rel(sel) + " · " + fD(sel), "cal",
-    (meets.length ? cardHtml(meetRows, chHead("Meetings", "--i-meet", meets.length)) : cardHtml(`<div class="empty">${loading ? "Loading your calendar." : "No meetings."}</div>`, chHead("Meetings", "--i-meet")))
+    (meets.length ? cardHtml(meetRows, chHead(evL, S.mode === "work" ? "--i-meet" : "--i-event", meets.length)) : cardHtml(`<div class="empty">${loading ? "Loading your calendar." : "No " + evL.toLowerCase() + "."}</div>`, chHead(evL, S.mode === "work" ? "--i-meet" : "--i-event")))
     + (tasks.length ? cardHtml(tasks.map(rowHtml).join(""), chHead("Tasks", null, tasks.length)) : "")
     + (routines.length ? cardHtml(routines.map(rowHtml).join(""), chHead("Timed Routines", null, routines.length)) : ""));
   RO = {};
   return head + `<div class="cols two"><div class="col"><section class="section"><div class="cal-head"><button type="button" class="icon-btn" data-act="calnav" data-n="-1" aria-label="Previous month"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><h2>${esc(title)}</h2>${m !== monthStart(today()) || sel !== today() ? `<button type="button" class="btn sm" data-act="caltoday">Today</button>` : ""}<button type="button" class="icon-btn" data-act="calnav" data-n="1" aria-label="Next month"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button></div>
   <div class="cal" role="grid" aria-label="${esc(title)}">${grid}</div>
-  <div class="cal-key"><span><i style="--ic:var(--i-meet)"></i>Meetings</span>${S.mode === "work" ? `<span><i style="--ic:var(--i-work)"></i>Work tasks</span>` : `<span><i style="--ic:var(--i-personal)"></i>Personal tasks</span>`}</div></section></div>
+  <div class="cal-key">${S.mode === "work" ? `<span><i style="--ic:var(--i-meet)"></i>Meetings</span>` : `<span><i style="--ic:var(--i-event)"></i>Events</span><span><i style="--ic:var(--i-bday)"></i>Birthdays</span>`}${S.mode === "work" ? `<span><i style="--ic:var(--i-work)"></i>Work tasks</span>` : `<span><i style="--ic:var(--i-personal)"></i>Personal tasks</span>`}</div></section></div>
   <div class="col">${agenda}</div></div>`;
+}
+/* Today's own items in this mode: how many are finished, for the line under the date. */
+function dayProgress() {
+  const d = today(); if (S.mode === "work" && isWeekend(d)) return "";
+  const li = [...S.tasks.filter(t => mine(t) && t.status !== "waiting" && t.due === d && t.scope === S.mode).map(tItem), ...occsOn(d).filter(o => o.scope === S.mode)];
+  if (!li.length) return "";
+  const n = li.filter(o => o.status === "done" || o.status === "skipped").length;
+  return n === li.length ? "All done for today" : `${n} of ${li.length} done`;
 }
 function viewToday() {
   const p = planner("today"), d = today();
-  return `<header class="navbar"><div><h1>Today</h1><div class="sub">${esc(fDL(d))}</div></div><div class="acts">${inboxBtn()}${rfBtn()}<button type="button" class="icon-btn" data-act="new" aria-label="New task">${ico("plus")}</button></div></header>
+  return `<header class="navbar"><div><h1>Today</h1><div class="sub">${esc(fDL(d))}</div>${dayProgress() ? `<div class="sub">${esc(dayProgress())}</div>` : ""}</div><div class="acts">${inboxBtn()}${rfBtn()}<button type="button" class="icon-btn" data-act="new" aria-label="New task">${ico("plus")}</button></div></header>
   ${upNext()}
-  ${S.mode === "work" ? `<div class="cols two"><div class="col">${p.workSec}</div><div class="col">${p.meetSec}${p.routineSec}</div></div>` : `<div class="cols two"><div class="col">${p.persSec}${p.meetSec}</div><div class="col">${p.routineSec}</div></div>`}
+  ${S.mode === "work" ? `<div class="cols two"><div class="col">${p.workSec}</div><div class="col">${p.meetSec}${p.routineSec}</div></div>` : `<div class="cols two"><div class="col">${p.meetSec}${p.persSec}</div><div class="col">${p.routineSec}</div></div>`}
   <p class="foot" style="text-align:center">Version ${esc(APP_VERSION)}</p>`;
 }
 
@@ -1427,7 +1478,7 @@ function restartRoutine(r) { saveRoutine({ ...r, active: true, start: today(), s
 function routineFromTask(t) {
   const d = t.due && diff(t.due) >= 0 ? t.due : today();
   const amt = t.area === "Money" ? ((String(t.title).match(/\d+(?:\.\d+)?/) || [])[0] || "") : "";
-  return { ...newRoutine(), title: t.title, scope: t.scope, area: t.area, freq: "monthly", dom: Number(d.slice(8)), month: Number(d.slice(5, 7)), days: [wd(d)], time: t.time || "", notes: t.notes || "", alert: !!t.alert || !!amt, lead: t.lead || "", items: plainItems(t).map(({ done, ...x }) => x), start: today(), startTime: hhmm(nowMin()), _bal: amt };
+  return { ...newRoutine(), title: t.title, scope: t.scope, area: t.area, freq: "monthly", dom: Number(d.slice(8)), month: Number(d.slice(5, 7)), days: [wd(d)], time: t.time || "", dur: t.dur || "", notes: t.notes || "", alert: !!t.alert || !!amt, lead: t.lead || "", items: plainItems(t).map(({ done, ...x }) => x), start: today(), startTime: hhmm(nowMin()), _bal: amt };
 }
 /* Applies the Amount Owed field from the routine form: starts, changes or stops tracking a balance. */
 function applyBalance(o) {
@@ -1442,6 +1493,7 @@ function applyBalance(o) {
   return o;
 }
 function delay(it, date, time) {
+  if (it.kind === "task" && !it.t.time && it.status !== "missed") { const t = it.t, b = { ...t }; saveTask({ ...t, due: date, time, status: t.status === "progress" ? "progress" : "due" }); toast("Scheduled " + rel(date).toLowerCase() + (time ? ", " + fT(time) : ""), () => saveTask(b)); return; } // giving an untimed task a slot is planning, not a delay
   if (it.kind === "task") { const t = it.t, b = { ...t }; saveTask({ ...t, delayedFrom: t.delayedFrom || ((t.due || today()) + (t.time ? "T" + t.time : "")), due: date, time, status: "delayed" }); toast("Moved to " + rel(date) + (time ? ", " + fT(time) : ""), () => saveTask(b)); }
   else { const p = setLog(it.r.id, it.date, "delayed", time); toast("Moved to " + fT(time), () => restoreLog(it.r.id, it.date, p)); }
 }
@@ -1515,8 +1567,8 @@ view.addEventListener("pointerup", endDrag); view.addEventListener("pointercance
 /* ---------- sheet ---------- */
 const sheet = document.getElementById("sheet"), scrim = document.getElementById("scrim");
 let lastFocus = null;
-function newTask() { const side = S.mode; return { id: uid("t"), title: "", scope: side, area: side === "work" ? "Internal" : "Other", sub: "", owner: "Me", status: "due", due: S.view === "cal" && S.calMode === "week" ? add(today(), 1) : today(), time: "", next: "", notes: "", priority: "", alert: false, items: [], requestedBy: "", requestedOn: "", contact: "", clientDeadline: "", nextChase: "", fileLink: "", link: "", source: "manual", created: new Date().toISOString(), _new: true }; }
-function newRoutine() { const side = S.mode; return { id: uid("r"), title: "", scope: side, area: side === "work" ? "Internal" : "Other", freq: "daily", days: [], dom: "", month: 1, time: "", block: "", notes: "", alert: false, start: today(), startTime: hhmm(nowMin()), active: true, items: [], _new: true }; }
+function newTask() { const side = S.mode; return { id: uid("t"), title: "", scope: side, area: side === "work" ? "Internal" : "Other", sub: "", owner: "Me", status: "due", due: S.view === "cal" && S.calMode === "week" ? add(today(), 1) : today(), time: "", dur: "", next: "", notes: "", priority: "", alert: false, items: [], requestedBy: "", requestedOn: "", contact: "", clientDeadline: "", nextChase: "", fileLink: "", link: "", source: "manual", created: new Date().toISOString(), _new: true }; }
+function newRoutine() { const side = S.mode; return { id: uid("r"), title: "", scope: side, area: side === "work" ? "Internal" : "Other", freq: "daily", days: [], dom: "", month: 1, time: "", dur: "", block: "", notes: "", alert: false, start: today(), startTime: hhmm(nowMin()), active: true, items: [], _new: true }; }
 function openSheet(s) { S.sheet = s; lastFocus = document.activeElement; document.documentElement.classList.add("lock"); scrim.hidden = false; sheet.hidden = false; renderSheet(); requestAnimationFrame(() => { scrim.classList.add("on"); sheet.classList.add("on"); const f = sheet.querySelector("[autofocus]") || sheet.querySelector(".sh-bar button"); if (f) f.focus({ preventScroll: true }); }); }
 function closeSheet() { S.sheet = null; document.documentElement.classList.remove("lock"); scrim.classList.remove("on"); sheet.classList.remove("on"); sheet.style.transform = ""; scrim.style.opacity = ""; setTimeout(() => { if (!S.sheet) { scrim.hidden = true; sheet.hidden = true; sheet.innerHTML = ""; } }, 420); renderMain(true); if (lastFocus && document.contains(lastFocus)) lastFocus.focus({ preventScroll: true }); }
 scrim.addEventListener("click", closeSheet);
@@ -1636,11 +1688,13 @@ function meetSheet(it) {
   const ic = itemIcon(it), link = String(it.link || ""), teams = /teams\.microsoft\.com/i.test(link), http = /^https?:\/\//i.test(link);
   const st = String(it.mstatus || "").toLowerCase(), stLabel = /tentative/.test(st) ? "Tentative" : /oof/.test(st) ? "Out of office" : "";
   const rows = [["Location", it.loc], ["Organizer", it.organizer], ["Attendees", it.attendees], ["Status", stLabel]].filter(x => x[1]);
-  return bar("Meeting", "", `<button type="button" class="txtbtn strong" data-s="close">Done</button>`) + `<div class="sh-body">
-    <div class="hero"><span class="big" style="--ic:var(${ic.c})">${ico(ic.k)}</span><h3>${esc(it.title)}</h3><span class="when">${esc(rel(it.date))}${it.end ? ", " + fT(it.time) + " to " + fT(it.end) : ", all day"}</span></div>
+  const et = ETYPE[it.etype] || ETYPE.event, bd = it.etype === "birthday", dd = diff(it.date);
+  return bar(et.l, "", `<button type="button" class="txtbtn strong" data-s="close">Done</button>`) + `<div class="sh-body">
+    <div class="hero"><span class="big" style="--ic:var(${ic.c})">${ico(ic.k)}</span><h3>${esc(bd ? bdayName(it.title) : it.title)}</h3><span class="when">${bd ? "Birthday · " : ""}${esc(rel(it.date))}${it.end && it.time ? ", " + fT(it.time) + " to " + fT(it.end) : bd || it.etype === "holiday" ? "" : ", all day"}${dd > 1 ? " · in " + dd + " days" : ""}</span></div>
     ${teams ? `<a class="btn primary" href="${esc(link)}" target="_blank" rel="noopener">${ico("people")}Join Teams</a>` : http ? `<a class="btn" href="${esc(link)}" target="_blank" rel="noopener">${ico("meet")}Open in Outlook</a>` : it.cal !== "Outlook" ? `<a class="btn" href="https://calendar.google.com/calendar/u/0/r/day/${esc(it.date.replace(/-/g, "/"))}" target="_blank" rel="noopener">${ico("meet")}Open in Google Calendar</a>` : ""}
     ${rows.length ? `<div class="list">${rows.map(([k, v]) => `<div class="cell"><span>${k}</span><span class="v">${esc(v)}</span></div>`).join("")}</div>` : ""}
-    <p class="foot"><span class="src">${esc(it.cal || "Google")}</span> From your ${esc(it.cal || "Google")} calendar.</p></div>`;
+    ${bd && dd >= 0 ? `<button type="button" class="btn" data-s="bdtask">${ico("plus")}Remind Me to Wish ${esc(bdayName(it.title).split(" ")[0])}</button>` : ""}
+    <p class="foot"><span class="src">${esc(it.cal || "Google")}</span> From your ${esc(it.cal === "Outlook" ? "Outlook" : it.cal || "Google")} calendar.</p></div>`;
 }
 function itemSheet(it) {
   const isT = it.kind === "task", src = isT ? it.t : it.r, ic = itemIcon(it);
@@ -1650,26 +1704,27 @@ function itemSheet(it) {
   const banner = ended ? `<div class="banner" style="--late:var(--done)">${ico("check")}${plan && balOf(it.r) <= 0 ? "Fully paid. " : ""}Ended. It no longer repeats or alerts.</div>` : it.status === "missed" ? `<div class="banner">${ico("alert")}Missed${isT ? ", was due " + rel(it.date).toLowerCase() : ""}.</div>` : it.status === "delayed" ? `<div class="banner">${ico("clock")}Delayed${isT && it.t.delayedFrom ? " from " + esc(rel(it.t.delayedFrom.split("T")[0])) : !isT ? " from " + fT(it.origTime) + ", today only" : ""}.</div>` : "";
   const base = isT ? (it.date && diff(it.date) >= 0 ? it.date : today()) : it.date;
   const t0 = it.time && diff(base) === 0 ? Math.max(tm(it.time), nowMin()) : nowMin();
-  const quick = isT ? [["+1 Hour", today(), hhmm(Math.min(t0 + 60, 1439))], ["Tonight", today(), "20:00"], ["Tomorrow", add(today(), 1), it.time || ""], ["Next Workday", nextWorkday(), it.time || ""]] : [["+15 Min", it.date, hhmm(Math.min(t0 + 15, 1439))], ["+1 Hour", it.date, hhmm(Math.min(t0 + 60, 1439))], ["Tonight", it.date, "21:00"]];
+  const slot = isT ? freeSlot(durMins(it.t, today()) || 30, key(it)) : "";
+  const quick = isT ? [...(slot ? [["Next Free " + fT(slot), today(), slot]] : []), ["+1 Hour", today(), hhmm(Math.min(t0 + 60, 1439))], ["Tonight", today(), "20:00"], ["Tomorrow", add(today(), 1), it.time || ""], ["Next Workday", nextWorkday(), it.time || ""]] : [["+15 Min", it.date, hhmm(Math.min(t0 + 15, 1439))], ["+1 Hour", it.date, hhmm(Math.min(t0 + 60, 1439))], ["Tonight", it.date, "21:00"]];
   const t = isT ? it.t : null, past = d => isDay(d) && diff(d) < 0;
   const info = isT
-    ? [[it.scope === "work" ? "Client" : "Category", t.area], [it.scope === "work" ? "Audit" : "List", t.sub], ["Status", LABEL[it.status]], ["Duration", gymArea(t) && it.date ? dur(gymMins(it.date, t)) : ""], ["With", mine(t) ? "" : t.owner], ["Next Step", t.next], ["Priority", priOf(t) === "high" ? "High" : priOf(t) === "low" ? "Low" : ""],
+    ? [[it.scope === "work" ? "Client" : "Category", t.area], [it.scope === "work" ? "Audit" : "List", t.sub], ["Status", LABEL[it.status]], ["Duration", durMins(t, it.date) ? dur(durMins(t, it.date)) : ""], ["With", mine(t) ? "" : t.owner], ["Next Step", t.next], ["Priority", priOf(t) === "high" ? "High" : priOf(t) === "low" ? "Low" : ""],
       ["Chase Due", it.status === "waiting" && isDay(t.nextChase) ? rel(t.nextChase) : "", past(t.nextChase) && it.status === "waiting"],
       ["Requested By", t.requestedBy ? t.requestedBy + (isDay(t.requestedOn) ? " on " + fDM(t.requestedOn) : "") : ""],
       ["Contact", t.contact], ["Client Deadline", isDay(t.clientDeadline) ? fD(t.clientDeadline) : "", past(t.clientDeadline) && tOpen(t)], ["Next Chase", isDay(t.nextChase) ? fD(t.nextChase) : ""],
       ["Outlook", t.scope === "work" && tOpen(t) && t.outlookEventId ? "In the Work plan digest" : ""],
       ["Source", t.source || t.created ? `${esc(SOURCES[String(t.source || "").toLowerCase()] || t.source || "Manual")}${isDay(isoDay(t.created)) ? `<small style="display:block">Added ${esc(fDMY(isoDay(t.created)))}</small>` : ""}` : "", false, true]].filter(x => x[1])
-    : [[it.scope === "work" ? "Client" : "Category", it.area], ["Repeats", freqText(it.r)], ["Usual Time", it.r.time ? fT(it.r.time) : "Any time"], ["Status", ended ? "Ended" : LABEL[it.status]], ["Duration", gymArea(it.r) ? dur(gymMins(it.date, it.r)) : ""], ["Block", it.r.block ? it.r.block[0].toUpperCase() + it.r.block.slice(1) : ""], ["Remaining", plan ? fAmt(balOf(it.r)) + " BHD" : ""], ["Paid So Far", plan && pays.length ? fAmt(sumPays(pays)) + " BHD" : ""]].filter(x => x[1]);
+    : [[it.scope === "work" ? "Client" : "Category", it.area], ["Repeats", freqText(it.r)], ["Usual Time", it.r.time ? fT(it.r.time) : "Any time"], ["Status", ended ? "Ended" : LABEL[it.status]], ["Duration", durMins(it.r, it.date) ? dur(durMins(it.r, it.date)) : ""], ["Block", it.r.block ? it.r.block[0].toUpperCase() + it.r.block.slice(1) : ""], ["Remaining", plan ? fAmt(balOf(it.r)) + " BHD" : ""], ["Paid So Far", plan && pays.length ? fAmt(sumPays(pays)) + " BHD" : ""]].filter(x => x[1]);
   const fileLink = isT && /^https?:\/\//i.test(String(t.fileLink || "")) ? `<a class="btn" href="${esc(t.fileLink)}" target="_blank" rel="noopener">${ico("doc")}Open File</a>` : "";
   const touches = isT ? touchesOf(t.id) : [];
   const touchRows = touches.map(x => `<div class="hist"><time>${esc(isDay(x.date) ? fDM(x.date) : String(x.date || ""))}</time><b>${esc(x.who || "Me")}<span class="kind">${esc((KINDS.find(k => k[0] === x.kind) || [, x.kind || "Note"])[1])}</span></b><span></span>${x.note ? `<small>${esc(x.note)}</small>` : ""}</div>`).join("");
-  const touchSec = isT ? `<div class="lbl-row"><div class="lbl">Touches${touches.length ? " · " + touches.length : ""}</div><button type="button" class="txtbtn sm" data-s="touch">${ico("plus")} Log a Chase</button></div><div class="list">${touchRows || `<div class="empty">No touches logged yet.</div>`}</div>` : "";
+  const touchSec = isT && t.scope === "work" ? `<div class="lbl-row"><div class="lbl">Touches${touches.length ? " · " + touches.length : ""}</div><button type="button" class="txtbtn sm" data-s="touch">${ico("plus")} Log a Chase</button></div><div class="list">${touchRows || `<div class="empty">No touches logged yet.</div>`}</div>` : "";
   return bar(isT ? "Task" : "Routine", `<button type="button" class="txtbtn" data-s="edit">Edit</button>`, `<button type="button" class="txtbtn strong" data-s="close">Done</button>`) + `<div class="sh-body">
     <div class="hero"><span class="big" style="--ic:var(${ic.c})">${ico(ic.k)}</span><h3>${esc(it.title)}</h3><span class="when">${esc(ended ? freqText(it.r) : when)}</span></div>
     ${banner}
     ${ended ? `<button type="button" class="btn primary" data-s="restart">${ico("repeat")}Restart Routine</button>` : doneLike ? `<button type="button" class="btn" data-s="undo">Mark as Not ${it.status === "done" ? "Done" : "Skipped"}</button>` : `<div class="chips"><button type="button" class="btn primary grow" data-s="done">${ico("check")}Done</button><button type="button" class="btn grow" data-s="progress">${it.status === "progress" ? "Back to Due" : "In-progress"}</button><button type="button" class="btn grow" data-s="skip">Skip</button></div>`}
     ${ended ? "" : listSection(it)}
-    ${doneLike || ended ? "" : `<div class="lbl">Delay${isT ? "" : " (today only)"}</div><div class="list"><div class="cell stack"><div class="chips">${quick.map(([l, d, t]) => `<button type="button" class="btn sm" data-s="q" data-d="${d}" data-t="${t}">${l}</button>`).join("")}</div></div>
+    ${doneLike || ended ? "" : `<div class="lbl">${isT && !it.time && it.status !== "missed" ? "Schedule" : "Delay"}${isT ? "" : " (today only)"}</div><div class="list"><div class="cell stack"><div class="chips">${quick.map(([l, d, t]) => `<button type="button" class="btn sm" data-s="q" data-d="${d}" data-t="${t}">${l}</button>`).join("")}</div></div>
       ${isT ? `<div class="cell"><label for="dlD">Date</label><input id="dlD" type="date" value="${esc(base)}"></div>` : ""}
       <div class="cell"><label for="dlT">Time</label><input id="dlT" type="time" value="${esc(it.time || "")}"></div>
       <div class="cell"><span></span><button type="button" class="btn sm primary" data-s="delay">Move</button></div></div>`}
@@ -1737,6 +1792,47 @@ const LIST_META = {
 const DEF_META = { title: "Checklist", add: "Add Step", ph: "Step" };
 const KG_LB = 2.20462;
 const half = x => Math.round(x * 2) / 2;
+/* Cardio: time, incline and speed (resistance on an elliptical, bike, rower or stair machine), each picked from a list.
+   Older entries held these in a note such as "30 minutes (6 incline and 6.5 speed)"; they are read from it until first changed. */
+const resMachine = x => /ellip|bike|cycl|rower|rowing|stair/i.test((x && x.name) || "");
+const isCardio = x => !!x && !x.sets && (x.group === "Cardio" || /walk|run|jog|treadmill|ellip|bike|cycl|rower|stair/i.test(x.name || ""));
+function cardioOf(x) {
+  const n = String(x.note || ""), num = (...res) => { for (const re of res) { const m = n.match(re); if (m) return Number(m[1]); } return undefined; };
+  const has = k => x[k] !== undefined && x[k] !== "" && !isNaN(Number(x[k]));
+  const res = has("res") ? Number(x.res) : num(/resistance\s*(\d+(?:\.\d+)?)/i, /(\d+(?:\.\d+)?)\s*resistance/i);
+  const spd = has("spd") ? Number(x.spd) : num(/speed\s*(\d+(?:\.\d+)?)/i, /(\d+(?:\.\d+)?)\s*(?:speed|km)/i);
+  const useRes = res !== undefined || (spd === undefined && resMachine(x));
+  return {
+    min: has("min") ? Number(x.min) : num(/(\d+(?:\.\d+)?)\s*(?:min|mins|minutes)\b/i) ?? (resMachine(x) ? 10 : 30),
+    inc: has("inc") ? Number(x.inc) : num(/incline\s*(\d+(?:\.\d+)?)/i, /(\d+(?:\.\d+)?)\s*incline/i) ?? 0,
+    ...(useRes ? { res: res ?? 6 } : { spd: spd ?? 5 })
+  };
+}
+const cardioTxt = c => c.min + " min · incline " + fmtN(c.inc) + " · " + (c.res !== undefined ? "resistance " + fmtN(c.res) : "speed " + fmtN(c.spd));
+const fmtN = v => String(Math.round(Number(v || 0) * 10) / 10);
+const numRange = (a, b, st) => { const o = []; for (let v = a; v <= b + 1e-9; v += st) o.push(Math.round(v * 10) / 10); return o; };
+const CARDIO_OPTS = {
+  min: { l: "Time", list: [...numRange(1, 10, 1), 12, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 75, 90, 120], f: v => v + " min" },
+  inc: { l: "Incline", list: numRange(0, 15, .5), f: fmtN },
+  spd: { l: "Speed", list: numRange(1, 16, .5), f: fmtN },
+  res: { l: "Resistance", list: numRange(1, 20, 1), f: fmtN }
+};
+function cardioHtml(x) {
+  const c = cardioOf(x), keys = ["min", "inc", c.res !== undefined ? "res" : "spd"];
+  return `<div class="cdo">${keys.map(k => { const o = CARDIO_OPTS[k], v = c[k], li = o.list.includes(v) ? o.list : [...o.list, v].sort((a, b) => a - b); return `<label><span>${o.l}</span><select data-f="${k}" aria-label="${esc(x.name)} ${o.l.toLowerCase()}">${li.map(n => `<option value="${n}"${n === v ? " selected" : ""}>${esc(o.f(n))}</option>`).join("")}</select></label>`; }).join("")}</div>`;
+}
+/* Supplement dose: an amount and a unit picked from a list, plus an optional strength. Older doses were one line of text ("1 capsule, 50 mg") and are split on first change. */
+const DOSE_UNITS = ["capsules", "tablets", "softgels", "pills", "scoops", "drops", "ml", "g", "mg", "mcg", "IU"];
+const UNIT_ALIAS = { capsule: "capsules", caps: "capsules", cap: "capsules", tablet: "tablets", tab: "tablets", tabs: "tablets", softgel: "softgels", pill: "pills", scoop: "scoops", drop: "drops", iu: "IU", ug: "mcg", "µg": "mcg", gram: "g", grams: "g" };
+function doseOf(x) {
+  if (x.amt !== undefined && x.amt !== "") return { amt: Number(x.amt), unit: x.unit || "capsules", extra: x.extra || "" };
+  const m = String(x.dose || "").match(/^\s*(\d+(?:\.\d+)?)\s*([A-Za-zµ]+)\b[\s,]*(.*)$/);
+  if (!m) return { amt: "", unit: "capsules", extra: String(x.dose || "") };
+  const u = m[2].toLowerCase(), unit = DOSE_UNITS.find(d => d.toLowerCase() === u) || UNIT_ALIAS[u] || "capsules";
+  return { amt: Number(m[1]), unit, extra: m[3].replace(/^\(|\)$/g, "").trim() };
+}
+const unitWord = (u, n) => Number(n) === 1 && /s$/.test(u) && u !== "IU" ? u.slice(0, -1) : u;
+const doseTxt = d => d.amt === "" ? d.extra : d.amt + " " + unitWord(d.unit, d.amt) + (d.extra ? " · " + d.extra : "");
 const conv = (w, from, to) => from === to || !w ? w : half(from === "kg" ? w * KG_LB : w / KG_LB);
 const isGym = it => (it.kind === "routine" || it.kind === "task") && gymArea(it.kind === "task" ? it.t : it.r);
 const srcOf = it => it.kind === "task" ? it.t : it.r;
@@ -1774,9 +1870,9 @@ function setSkip(it, x, on) {
   if (!on) reopenIfDone();
   if (!(on && finishIfAll(it))) render(true);
 }
-const snap = x => x.sets ? { n: x.name, u: x.unit || "kg", s: clone(x.sets) } : { n: x.name };
+const snap = x => x.sets ? { n: x.name, u: x.unit || "kg", s: clone(x.sets) } : isCardio(x) ? { n: x.name, c: cardioOf(x) } : { n: x.name };
 
-function taskLogs() { return S.tasks.filter(t => gymArea(t) && t.due && Array.isArray(t.items)).map(t => ({ date: t.due, checks: Object.fromEntries(t.items.filter(x => x.done && !x.skip && x.sets).map(x => [x.id, { n: x.name, u: x.unit || "kg", s: x.sets }])) })); }
+function taskLogs() { return S.tasks.filter(t => gymArea(t) && t.due && Array.isArray(t.items)).map(t => ({ date: t.due, checks: Object.fromEntries(t.items.filter(x => x.done && !x.skip && (x.sets || isCardio(x))).map(x => [x.id, snap(x)])) })); }
 function historyFor(name, unit) {
   const pts = [];
   [...Object.values(S.logs), ...taskLogs()].forEach(l => {
@@ -1800,7 +1896,7 @@ function lastFor(name, date) {
   let best = null;
   [...Object.values(S.logs), ...taskLogs()].forEach(l => {
     if (!l.checks || !(l.date < date)) return;
-    Object.values(l.checks).forEach(v => { if (v && v.n === name && v.s && (!best || l.date > best.date)) best = { date: l.date, v }; });
+    Object.values(l.checks).forEach(v => { if (v && v.n === name && (v.s || v.c) && (!best || l.date > best.date)) best = { date: l.date, v }; });
   });
   return best;
 }
@@ -1836,8 +1932,10 @@ function listSection(it) {
 }
 function tickBtn(on, x) { return `<button type="button" class="tick${on ? " on" : ""}${on && S.just === "tick:" + x.id ? " just" : ""}" data-s="tick" data-id="${esc(x.id)}" aria-pressed="${on}" aria-label="${on ? "Untick" : "Tick"} ${esc(x.name)}"><i></i></button>`; }
 function listHtml(it, items, ed, m) {
+  const dosed = m.dk === "dose";
   const rows = items.map(x => {
-    const dv = m.dk ? x[m.dk] : "";
+    const dv = dosed ? doseTxt(doseOf(x)) : m.dk ? x[m.dk] : "";
+    if (ed && dosed) { const d = doseOf(x), ul = DOSE_UNITS.includes(d.unit) ? DOSE_UNITS : [...DOSE_UNITS, d.unit]; return `<div class="cell li ed dose" data-li="${esc(x.id)}"><input type="text" data-f="name" value="${esc(x.name)}" placeholder="${m.ph}" aria-label="${m.ph}"><button type="button" class="rm" data-s="lrm" data-id="${esc(x.id)}" aria-label="Remove ${esc(x.name)}">${ico("skip")}</button><div class="dose-r"><input class="li-d" data-f="amt" type="number" inputmode="decimal" min="0" step="any" value="${esc(d.amt)}" placeholder="Amount" aria-label="${esc(x.name)} amount"><select data-f="unit" aria-label="${esc(x.name)} unit">${ul.map(u => `<option value="${esc(u)}"${u === d.unit ? " selected" : ""}>${esc(u)}</option>`).join("")}</select><input data-f="extra" type="text" value="${esc(d.extra)}" placeholder="Strength (optional)" aria-label="${esc(x.name)} strength"></div></div>`; }
     if (ed) return `<div class="cell li ed" data-li="${esc(x.id)}"><input type="text" data-f="name" value="${esc(x.name)}" placeholder="${m.ph}" aria-label="${m.ph}">${m.dk ? `<input class="li-d" data-f="${m.dk}" ${m.num ? 'type="number" inputmode="numeric" min="1"' : 'type="text"'} value="${esc(dv)}" placeholder="${m.dph}" aria-label="${m.dl}">` : ""}<button type="button" class="rm" data-s="lrm" data-id="${esc(x.id)}" aria-label="Remove ${esc(x.name)}">${ico("skip")}</button></div>`;
     const on = ticked(it, x);
     return `<div class="cell li${on ? " on" : ""}" data-li="${esc(x.id)}">${tickBtn(on, x)}<span class="li-n">${esc(x.name || "Untitled")}${x.note ? `<small>${esc(x.note)}</small>` : ""}</span>${dv !== "" && dv !== undefined ? `<span class="v">${m.num ? "×" + esc(dv) : esc(dv)}</span>` : ""}</div>`;
@@ -1846,15 +1944,15 @@ function listHtml(it, items, ed, m) {
 }
 function gymHtml(it, items, ed) {
   const ex = items.map(x => {
-    const on = ticked(it, x), sk = skippedX(it, x), u = x.unit || "kg", last = x.sets ? lastFor(x.name, it.date) : null;
+    const on = ticked(it, x), sk = skippedX(it, x), u = x.unit || "kg", cd = isCardio(x), last = x.sets || cd ? lastFor(x.name, it.date) : null;
     const head = `<div class="ex-h">${tickBtn(on, x)}${ed ? `<input type="text" data-f="name" value="${esc(x.name)}" aria-label="Exercise name"><select data-f="group" aria-label="Group">${opt(GROUPS, x.group || "Other")}</select>` : `<div class="ex-t"><b>${esc(x.name)}</b><span class="chip">${esc(sk ? "Skipped" : x.group || "Other")}</span></div>`}
       ${x.sets ? `<button type="button" class="unit" data-s="unit" data-id="${esc(x.id)}" aria-label="Weights in ${u}, switch to ${u === "kg" ? "lb" : "kg"}">${u}</button>` : ""}
       ${ed ? `<button type="button" class="rm" data-s="lrm" data-id="${esc(x.id)}" aria-label="Remove ${esc(x.name)}">${ico("skip")}</button>` : `<button type="button" class="ib${sk ? " on" : ""}" data-s="exskip" data-id="${esc(x.id)}" aria-pressed="${sk}" aria-label="${sk ? "Bring back" : "Skip"} ${esc(x.name)}">${ico("skip")}</button><button type="button" class="ib" data-s="swap" data-id="${esc(x.id)}" aria-label="Swap ${esc(x.name)}">${ico("repeat")}</button>`}</div>`;
     const body = x.sets
       ? x.sets.map((st, i) => `<div class="set"><span class="sn">${i + 1}</span><input type="number" inputmode="numeric" min="0" data-f="reps" data-i="${i}" value="${esc(st.reps)}" aria-label="Set ${i + 1} reps"><span class="x">reps ×</span><input type="number" inputmode="decimal" min="0" step="0.5" data-f="w" data-i="${i}" value="${esc(fmtW(st.w))}" aria-label="Set ${i + 1} weight in ${u}"><span class="x">${u}</span></div>`).join("")
         + `<div class="set-acts"><button type="button" class="btn sm" data-s="setadd" data-id="${esc(x.id)}">${ico("plus")}Set</button>${x.sets.length > 1 ? `<button type="button" class="btn sm" data-s="setrm" data-id="${esc(x.id)}">${ico("skip")}Set</button>` : ""}</div>`
-      : `<div class="set note"><input type="text" data-f="note" value="${esc(x.note || "")}" placeholder="Duration, settings" aria-label="${esc(x.name)} details"></div>`;
-    const lastTxt = last ? `<div class="ex-last">Last ${esc(rel(last.date))}: ${last.v.s.map(st => `${st.reps} × ${fmtW(conv(Number(st.w) || 0, last.v.u || "kg", u))}`).join(", ")} ${u}</div>` : "";
+      : cd ? cardioHtml(x) : `<div class="set note"><input type="text" data-f="note" value="${esc(x.note || "")}" placeholder="Details" aria-label="${esc(x.name)} details"></div>`;
+    const lastTxt = last && last.v.s && x.sets ? `<div class="ex-last">Last ${esc(rel(last.date))}: ${last.v.s.map(st => `${st.reps} × ${fmtW(conv(Number(st.w) || 0, last.v.u || "kg", u))}`).join(", ")} ${u}</div>` : last && last.v.c && cd ? `<div class="ex-last">Last ${esc(rel(last.date))}: ${esc(cardioTxt(last.v.c))}</div>` : "";
     return `<div class="list ex${on ? " on" : ""}${sk && !ed ? " sk" : ""}" data-li="${esc(x.id)}">${head}${body}${lastTxt}${x.sets && !ed ? progressHtml(x.name, u) : ""}</div>`;
   }).join("");
   return `<div class="exs">${ex || `<div class="list"><div class="empty">No exercises yet.</div></div>`}</div><button type="button" class="btn sm" data-s="exadd" style="justify-self:start">${ico("plus")}Add Exercise</button>`;
@@ -1872,7 +1970,7 @@ function pickSheet(it) {
   const lib = library(items.map(x => (x.name || "").toLowerCase())).filter(x => (x.group || "Other") === g);
   return bar(p.mode === "swap" ? "Swap " + (cur ? cur.name : "Exercise") : "Add Exercise", `<button type="button" class="txtbtn" data-s="pkback">Back</button>`, "") + `<div class="sh-body">
     <div class="seg" role="group" aria-label="Group">${GROUPS.map(x => `<button type="button" data-s="pkg" data-g="${x}" aria-pressed="${x === g}">${x}</button>`).join("")}</div>
-    <div class="list">${lib.map(x => `<button type="button" class="cell pk" data-s="pk" data-name="${esc(x.name)}"><span>${esc(x.name)}</span><span class="v">${x.sets ? x.sets.map(st => st.reps + " × " + fmtW(st.w)).join(", ") + " " + (x.unit || "kg") : esc(x.note || "")}</span></button>`).join("") || `<div class="empty">No other ${g} exercises in your routines yet.</div>`}</div>
+    <div class="list">${lib.map(x => `<button type="button" class="cell pk" data-s="pk" data-name="${esc(x.name)}"><span>${esc(x.name)}</span><span class="v">${x.sets ? x.sets.map(st => st.reps + " × " + fmtW(st.w)).join(", ") + " " + (x.unit || "kg") : isCardio(x) ? esc(cardioTxt(cardioOf(x))) : esc(x.note || "")}</span></button>`).join("") || `<div class="empty">No other ${g} exercises in your routines yet.</div>`}</div>
     <div class="lbl">New Exercise</div>
     <div class="list"><div class="cell"><input id="pkNew" type="text" placeholder="Exercise name" aria-label="New exercise name"><button type="button" class="btn sm primary" data-s="pknew">${p.mode === "swap" ? "Swap" : "Add"}</button></div></div>
   </div>`;
@@ -1894,9 +1992,12 @@ function listChange(el) {
   const items = clone(itemsOf(it)), x = items.find(y => y.id === id); if (!x) return;
   if (f === "reps" || f === "w") { const i = Number(el.dataset.i); if (!x.sets || !x.sets[i]) return; x.sets[i][f] = Math.max(0, Number(el.value) || 0); }
   else if (f === "count") x.count = Math.max(1, Number(el.value) || 1);
+  else if (CARDIO_OPTS[f]) { Object.assign(x, cardioOf(x)); x[f] = Number(el.value) || 0; delete x.note; }
+  else if (f === "amt" || f === "unit" || f === "extra") { const d0 = doseOf(x); Object.assign(x, { amt: d0.amt, unit: d0.unit, extra: d0.extra }); x[f] = f === "amt" ? (el.value === "" ? "" : Math.max(0, Number(el.value) || 0)) : el.value.trim(); x.dose = doseTxt(doseOf(x)); }
   else x[f] = el.value.trim();
   saveItems(it, items);
   if (isGym(it) && it.kind === "routine") { const c = checksOf(it); if (c[id]) writeChecks(it, { ...c, [id]: snap(x) }); }
+  if (CARDIO_OPTS[f]) toast(x.name + ": " + cardioTxt(cardioOf(x)));
 }
 function listClick(a, b, it) {
   const id = b.dataset.id, items = () => clone(itemsOf(it)), s = S.sheet;
@@ -1904,7 +2005,7 @@ function listClick(a, b, it) {
   if (a === "exskip") { const x = itemsOf(it).find(y => y.id === id); if (x) { setSkip(it, x, !skippedX(it, x)); renderSheet(); } return true; }
   if (a === "ledit") { s.edit = !s.edit; renderSheet(); return true; }
   if (a === "ladd") {
-    const m = LIST_META[srcOf(it).area] || DEF_META, li = items(), x = { id: uid("i"), name: "" }; if (m.num) x.count = 1;
+    const m = LIST_META[srcOf(it).area] || DEF_META, li = items(), x = { id: uid("i"), name: "" }; if (m.num) x.count = 1; if (m.dk === "dose") Object.assign(x, { amt: 1, unit: "capsules", extra: "", dose: "1 capsule" });
     li.push(x); saveItems(it, li); s.edit = true; renderSheet();
     const inp = sheet.querySelector(`[data-li="${x.id}"] input`); if (inp) inp.focus(); return true;
   }
@@ -1931,7 +2032,7 @@ function listClick(a, b, it) {
   if (a === "pknew") {
     const name = (document.getElementById("pkNew").value || "").trim(); if (!name) { toast("Type a name."); return true; }
     const p = s.pick, cur = p.mode === "swap" ? itemsOf(it).find(y => y.id === p.id) : null, g = p.group || (cur && cur.group) || "Push";
-    const x = g === "Cardio" ? { id: uid("x"), name, group: g, note: "" } : { id: uid("x"), name, group: g, unit: (cur && cur.unit) || "kg", sets: cur && cur.sets ? clone(cur.sets).map(st => ({ reps: st.reps, w: 0 })) : [{ reps: 10, w: 0 }, { reps: 10, w: 0 }] };
+    const x = g === "Cardio" ? { id: uid("x"), name, group: g, ...cardioOf({ name }) } : { id: uid("x"), name, group: g, unit: (cur && cur.unit) || "kg", sets: cur && cur.sets ? clone(cur.sets).map(st => ({ reps: st.reps, w: 0 })) : [{ reps: 10, w: 0 }, { reps: 10, w: 0 }] };
     placeExercise(it, x); return true;
   }
   return false;
@@ -1951,6 +2052,7 @@ function taskForm(t) {
     <div class="list">
       <div class="cell"><label for="f-due">Date</label><input id="f-due" name="due" type="date" value="${esc(t.due)}"></div>
       <div class="cell"><label for="f-time">Time</label><input id="f-time" name="time" type="time" value="${esc(t.time)}"></div>
+      <div class="cell"><label for="f-dur">Duration</label><select id="f-dur" name="dur">${opt(durOpts(t.dur), String(t.dur || ""))}</select></div>
       <div class="cell"><span id="f-pri-l">Priority</span><div class="seg" role="radiogroup" aria-labelledby="f-pri-l">${PRI.map(([v, l]) => `<label><input type="radio" name="priority" value="${v}" ${priOut(t.priority) === v ? "checked" : ""}><span>${l}</span></label>`).join("")}</div></div>
       <div class="cell"><label for="f-al">Calendar Alert</label><span class="switch"><input type="checkbox" role="switch" id="f-al" name="alert" ${t.alert ? "checked" : ""}><span></span></span></div>
       <div class="cell"><label for="f-lead">Alert Time</label><select id="f-lead" name="lead">${opt(LEADS, String(t.lead || ""))}</select></div></div>
@@ -1975,6 +2077,7 @@ function routineForm(r) {
       ${r.freq === "monthly" || r.freq === "yearly" ? `<div class="cell"><label for="r-dom">Day of Month</label><input id="r-dom" name="dom" type="number" min="1" max="31" inputmode="numeric" value="${esc(r.dom || "")}"></div>` : ""}
       ${r.freq === "yearly" ? `<div class="cell"><label for="r-month">Month</label><select id="r-month" name="month">${opt(Array.from({ length: 12 }, (_, i) => [i + 1, new Date(Date.UTC(2026, i, 1)).toLocaleDateString("en-GB", { month: "long", timeZone: "UTC" })]), r.month || 1)}</select></div>` : ""}
       <div class="cell"><label for="r-time">Usual Time</label><input id="r-time" name="time" type="time" value="${esc(r.time)}"></div>
+      <div class="cell"><label for="r-dur">Duration</label><select id="r-dur" name="dur">${opt(durOpts(r.dur), String(r.dur || ""))}</select></div>
       <div class="cell"><label for="r-al">Calendar Alert</label><span class="switch"><input type="checkbox" role="switch" id="r-al" name="alert" ${r.alert ? "checked" : ""}><span></span></span></div>
       <div class="cell"><label for="r-lead">Alert Time</label><select id="r-lead" name="lead">${opt(LEADS, String(r.lead || ""))}</select></div></div>
     ${showBal ? `<div class="list"><div class="cell"><label for="r-bal">Amount Owed (BHD)</label><input id="r-bal" name="bal" type="number" inputmode="decimal" min="0" step="0.001" class="r" placeholder="Optional" value="${esc(balVal)}"></div></div>
@@ -1991,8 +2094,8 @@ function workDetails(t) {
     ${WD_FIELDS.map(([n, l, ty, ph]) => `<div class="cell"><label for="f-${n}">${l}</label><input id="f-${n}" name="${n}" type="${ty}" ${ty === "url" ? 'inputmode="url" autocapitalize="off" spellcheck="false"' : ""} class="r" placeholder="${ph || ""}" value="${esc(t[n] || "")}"></div>`).join("")}
   </div></div>`;
 }
-function readTask(f) { const d = new FormData(f), eid = d.has("engagement") ? String(d.get("engagement") || "") : null, ea = eid ? S.audits.find(a => a.id === eid) : null; const o = { title: String(d.get("title") || "").trim(), scope: d.get("scope"), area: d.get("area"), sub: eid !== null ? (ea ? ea.engagement : "") : String(d.get("sub") || "").trim(), owner: d.get("owner"), due: d.get("due") || "", time: d.get("time") || "", next: String(d.get("next") || "").trim(), notes: String(d.get("notes") || "").trim(), priority: priOut(d.get("priority")), alert: d.get("alert") === "on", lead: String(d.get("lead") || "") }; WD_FIELDS.forEach(([k]) => { if (d.has(k)) o[k] = String(d.get(k) || "").trim(); }); if (eid !== null) o.engagement = eid; return o; }
-function readRoutine(f, r) { const d = new FormData(f); return { title: String(d.get("title") || "").trim(), scope: d.get("scope"), area: d.get("area"), block: d.get("block") || "", freq: d.get("freq"), days: d.getAll("days").map(Number), dom: d.has("dom") ? (Number(d.get("dom")) || "") : r.dom, month: d.has("month") ? Number(d.get("month")) : r.month, time: d.get("time") || "", notes: String(d.get("notes") || "").trim(), alert: d.get("alert") === "on", lead: String(d.get("lead") || ""), _bal: d.has("bal") ? String(d.get("bal") || "").trim() : r._bal }; }
+function readTask(f) { const d = new FormData(f), eid = d.has("engagement") ? String(d.get("engagement") || "") : null, ea = eid ? S.audits.find(a => a.id === eid) : null; const o = { title: String(d.get("title") || "").trim(), scope: d.get("scope"), area: d.get("area"), sub: eid !== null ? (ea ? ea.engagement : "") : String(d.get("sub") || "").trim(), owner: d.get("owner"), due: d.get("due") || "", time: d.get("time") || "", dur: String(d.get("dur") || ""), next: String(d.get("next") || "").trim(), notes: String(d.get("notes") || "").trim(), priority: priOut(d.get("priority")), alert: d.get("alert") === "on", lead: String(d.get("lead") || "") }; WD_FIELDS.forEach(([k]) => { if (d.has(k)) o[k] = String(d.get(k) || "").trim(); }); if (eid !== null) o.engagement = eid; return o; }
+function readRoutine(f, r) { const d = new FormData(f); return { title: String(d.get("title") || "").trim(), scope: d.get("scope"), area: d.get("area"), block: d.get("block") || "", freq: d.get("freq"), days: d.getAll("days").map(Number), dom: d.has("dom") ? (Number(d.get("dom")) || "") : r.dom, month: d.has("month") ? Number(d.get("month")) : r.month, time: d.get("time") || "", dur: String(d.get("dur") || ""), notes: String(d.get("notes") || "").trim(), alert: d.get("alert") === "on", lead: String(d.get("lead") || ""), _bal: d.has("bal") ? String(d.get("bal") || "").trim() : r._bal }; }
 sheet.addEventListener("change", e => {
   const s = S.sheet; if (!s) return;
   if (s.type === "item" && e.target.closest("[data-li]")) { listChange(e.target); return; }
@@ -2052,6 +2155,7 @@ sheet.addEventListener("click", e => {
   }
   if (s.type === "item") {
     const it = findItem(s.key); if (!it) return;
+    if (a === "bdtask" && it.kind === "meet") { const t = newTask(); Object.assign(t, { scope: "personal", area: "Other", title: "Wish " + bdayName(it.title) + " a happy birthday", due: it.date, time: diff(it.date) === 0 ? hhmm(Math.min(Math.ceil((nowMin() + 15) / 15) * 15, 1425)) : "09:00", alert: true }); S.sheet = { type: "editTask", obj: t, from: s.key }; renderSheet(); return; }
     if (listClick(a, b, it)) return;
     if (a === "torout") { S.sheet = { type: "editRoutine", obj: routineFromTask(it.t), from: s.key, convert: it.t.id }; renderSheet(); return; }
     if (a === "touch") { if (it.kind !== "task") return; S.sheet = { type: "touch", key: s.key, from: s.key }; renderSheet(); const n = sheet.querySelector("#h-note"); if (n) n.focus({ preventScroll: true }); return; }
@@ -2103,7 +2207,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "2026-10-27.1";
+const APP_VERSION = "2026-10-28.1";
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {});
 let verAt = 0;
 async function checkVersion() {
