@@ -69,6 +69,9 @@ svg.i { width: 1.15em; height: 1.15em; flex: none; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 .app { display: grid; grid-template-columns: 1fr; overflow-x: clip; }
+/* a short page left the fixed tab bar floating above the home indicator on iPhone; the page is always at least one screen tall */
+html, body { min-height: 100%; }
+.app { min-height: 100vh; min-height: 100lvh; }
 .side { display: none; }
 .main { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-top: calc(env(safe-area-inset-top, 0px) + 58px); padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); max-width: 1120px; width: 100%; margin: 0 auto; display: grid; gap: 24px; align-content: start; }
 .navbar { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; padding-top: 2px; }
@@ -699,7 +702,7 @@ const DEFAULT_STAGES = {
   "Quality Assessment": ["Planning", "Document Review", "Interviews", "Draft Report", "Final Report", "Closed"],
   "Custom": []
 };
-const PERS_SUBS = [["tasks", "Tasks"], ["routines", "Routines"], ["done", "Done"]];
+const PERS_SUBS = [["cats", "Categories"], ["tasks", "Tasks"], ["routines", "Routines"], ["done", "Done"]];
 const GRACE = 60;
 const LEADS = [["", "At the Time"], ["5", "5 Min Before"], ["10", "10 Min Before"], ["15", "15 Min Before"], ["30", "30 Min Before"], ["60", "1 Hour Before"], ["120", "2 Hours Before"], ["1440", "1 Day Before"]];
 /* How long an item takes. Empty means the default: 1 hour for gym (2 hours on the Saturday session), otherwise not set. */
@@ -745,7 +748,7 @@ const P = {
 const ico = k => `<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[k] || P.Other}</svg>`;
 
 /* ---------- state ---------- */
-const S = { tasks: [], routines: [], logs: {}, touches: [], audits: [], stages: { ...DEFAULT_STAGES }, contacts: [], proposals: [], notes: [], notesOk: false, engOk: true, mode: "work", ready: false, view: "today", sub: { work: "clients", personal: "tasks" }, q: "", qOpen: false, meetings: {}, meetNote: "", loadedAt: 0, sheet: null, swipe: null, just: null, fold: {}, cf: "", calMode: "month" };
+const S = { tasks: [], routines: [], logs: {}, touches: [], audits: [], stages: { ...DEFAULT_STAGES }, contacts: [], proposals: [], notes: [], notesOk: false, engOk: true, mode: "work", ready: false, view: "today", sub: { work: "clients", personal: "cats" }, q: "", qOpen: false, meetings: {}, meetNote: "", loadedAt: 0, sheet: null, swipe: null, just: null, fold: {}, cf: "", calMode: "month" };
 
 /* Calls go to Apps Script as plain-text POSTs (no CORS preflight). Writes run one at a time, in order,
    so a quick tick and untick can never arrive at the server in the wrong order. */
@@ -819,7 +822,7 @@ function api(fn, ...args) {
 addEventListener("online", () => { showOffline(); flush(); });
 addEventListener("offline", showOffline);
 setInterval(() => { if (outbox.length) flush(); }, 30000);
-try { const v = JSON.parse(localStorage.getItem("pa4") || "{}"); if (v.view && VIEWS.some(x => x[0] === v.view)) S.view = v.view; if (v.sub) Object.assign(S.sub, v.sub); if (!WORK_SUBS.some(x => x[0] === S.sub.work)) S.sub.work = "clients"; if (!PERS_SUBS.some(x => x[0] === S.sub.personal)) S.sub.personal = "tasks"; if (v.fold && typeof v.fold === "object") S.fold = v.fold; if (typeof v.cf === "string" && CLIENTS.includes(v.cf)) S.cf = v.cf; if (v.calMode === "week") S.calMode = "week"; } catch (e) {}
+try { const v = JSON.parse(localStorage.getItem("pa4") || "{}"); if (v.view && VIEWS.some(x => x[0] === v.view)) S.view = v.view; if (v.sub) Object.assign(S.sub, v.sub); if (!WORK_SUBS.some(x => x[0] === S.sub.work)) S.sub.work = "clients"; if (!PERS_SUBS.some(x => x[0] === S.sub.personal)) S.sub.personal = "cats"; if (v.fold && typeof v.fold === "object") S.fold = v.fold; if (typeof v.cf === "string" && CLIENTS.includes(v.cf)) S.cf = v.cf; if (v.calMode === "week") S.calMode = "week"; } catch (e) {}
 const persist = () => { try { localStorage.setItem("pa4", JSON.stringify({ view: S.view, sub: S.sub, fold: S.fold, cf: S.cf, calMode: S.calMode })); } catch (e) {} };
 
 /* ---------- time, Bahrain ---------- */
@@ -1635,7 +1638,7 @@ function viewToday() {
   const props = propsNow();
   const propBar = props.length ? `<div class="propbar"><span>${props.length} proposed</span><button type="button" class="btn sm primary" data-act="paccall">Accept All</button><button type="button" class="btn sm" data-act="pclear">Clear</button></div>` : "";
   const tlOpen = p.timed.filter(isOpen).length;
-  const tl = p.off ? cardHtml(`<div class="empty">Weekend. Work returns on Sunday.</div>`, chHead("Schedule", null)) : (() => { const k = fk("c", "t:tl"), f = folded(k); return `<div class="card tlc${f ? " folded" : ""}"><button type="button" class="ch" data-act="fold" data-f="${esc(k)}" data-o="${f ? 0 : 1}" aria-expanded="${!f}">Schedule<span class="cnt">${p.timed.length - tlOpen}/${p.timed.length}</span>${chev}</button><div class="fb">${propBar}<div class="tl">${timelineHtml(p)}</div></div></div>`; })();
+  const tl = p.off ? cardHtml(`<div class="empty">Weekend. Work returns on Sunday.</div>`, chHead("Schedule", null)) : (() => { const k = fk("c", "t:tl"), f = folded(k); return `<div class="card tlc${f ? " folded" : ""}"><button type="button" class="ch" data-act="fold" data-f="${esc(k)}" data-o="${f ? 0 : 1}" aria-expanded="${!f}">Schedule<span class="cnt">${p.timed.length - tlOpen}/${p.timed.length}</span>${chev}</button><div class="fb">${propBar}${p.timed.length || props.length ? `<div class="tl">${timelineHtml(p)}</div>` : `<div class="empty">Nothing scheduled today.</div>`}</div></div>`; })();
   let chase = "";
   if (p.work && !p.off) { const li = S.tasks.filter(t => t.scope === "work" && isWaiting(t) && cfOk(t) && chaseDate(t) && diff(chaseDate(t)) <= 0).map(chaseItem).sort(byDayPri); if (li.length) { RO = { ctx: true }; chase = cardHtml(li.map(rowHtml).join(""), chHead("To Chase", "--i-meet", li.length, "chase")); RO = {}; } }
   let soon = "";
@@ -1714,7 +1717,18 @@ function viewPersonal() {
   const head = `<header class="navbar"><div><h1>Personal</h1></div><div class="acts">${inboxBtn()}${searchBtn()}${rfBtn()}<button type="button" class="icon-btn" data-act="${s === "routines" ? "newr" : "new"}" aria-label="New ${s === "routines" ? "routine" : "task"}">${ico("plus")}</button></div></header>
   <div class="tools">${segHtml("Show", PERS_SUBS, s, "sub")}${searchField()}</div>`;
   let cards;
-  if (s === "tasks") cards = dateCards(S.tasks.filter(t => t.scope === "personal" && tOpen(t) && match(t)).map(tItem).sort(byDayPri), "p", true);
+  if (s === "cats") {
+    // like Clients in Work: one card per category holding its open tasks (soonest first) and its routines
+    const ts = S.tasks.filter(t => t.scope === "personal" && tOpen(t) && match(t)).map(tItem).sort(byDayPri);
+    const rs = S.routines.filter(r => r.scope === "personal" && r.active !== false && match(r)).map(r => nextOcc(r) || occ(r, today())).sort((a, b) => (a.r.time || "99").localeCompare(b.r.time || "99"));
+    const cat = a => CATS.includes(a) ? a : "Other";
+    cards = CATS.map(c => [c, ts.filter(i => cat(i.area) === c), rs.filter(o => cat(o.area) === c)]).filter(x => x[1].length || x[2].length).map(([c, a, b]) => {
+      RO = {}; const tr = a.map(rowHtml).join(""); RO = { rfreq: true }; const rr = b.map(rowHtml).join(""); RO = {};
+      const late = a.filter(i => isDay(i.t.due) && diff(i.t.due) < 0).length;
+      return cardHtml((a.length && b.length ? subGroup("Tasks", tr, "cat:" + c) + subGroup("Routines", rr, "cat:" + c) : tr + rr), chHead(c, CAT_VAR[c] || "--k-other", (a.length + b.length) + (late ? ` · ${late} overdue` : ""), "cat:" + c));
+    });
+  }
+  else if (s === "tasks") cards = dateCards(S.tasks.filter(t => t.scope === "personal" && tOpen(t) && match(t)).map(tItem).sort(byDayPri), "p", true);
   else if (s === "routines") {
     const li = S.routines.filter(r => r.scope === "personal" && r.active !== false && match(r)).map(r => nextOcc(r) || occ(r, today()));
     const groups = [["daily", "Every Day"], ["weekly", "Weekly"], ["monthly", "Monthly"], ["lastworkday", "Monthly"], ["yearly", "Yearly"]], by = {};
@@ -1727,7 +1741,7 @@ function viewPersonal() {
     const li = [...S.routines.filter(r => r.scope === "personal" && r.active === false && match(r)).map(r => ({ ...occ(r, today()), status: "ended" })), ...S.tasks.filter(t => t.scope === "personal" && !tOpen(t) && match(t)).sort((a, b) => String(b.updated || "").localeCompare(String(a.updated || ""))).map(tItem)];
     cards = CATS.map(c => [c, li.filter(i => i.area === c)]).concat([["Other ", li.filter(i => !CATS.includes(i.area))]]).filter(x => x[1].length).map(([c, l2]) => cardHtml(l2.map(rowHtml).join(""), chHead(c.trim(), CAT_VAR[c.trim()] || null, l2.length, "done:" + c.trim())));
   }
-  const empty = S.q ? "Nothing matches your search." : s === "routines" ? "No routines yet. Tap + to add one." : s === "done" ? "Completed tasks and ended routines appear here." : "Nothing open. Tap + to add a task.";
+  const empty = S.q ? "Nothing matches your search." : s === "cats" ? "Nothing open in any category. Tap + to add a task." : s === "routines" ? "No routines yet. Tap + to add one." : s === "done" ? "Completed tasks and ended routines appear here." : "Nothing open. Tap + to add a task.";
   return head + (cards.length ? twoCols(cards) : cardHtml(`<div class="empty">${empty}</div>`));
 }
 
@@ -2781,7 +2795,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "1.2"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
+const APP_VERSION = "1.3"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(() => swConfig()).catch(() => {});
 let verAt = 0;
 async function checkVersion() {
