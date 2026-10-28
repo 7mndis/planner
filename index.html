@@ -1987,8 +1987,8 @@ function settingsSheet() {
     <div class="list"><ol class="steps">
       <li>Open the Shortcuts app, tap <b>+</b> and name it <b>Add to Planner</b>.</li>
       <li>Add <b>Ask for Input</b> (Text), prompt: What should I add?</li>
-      <li>Add <b>Get Contents of URL</b>. Paste the address below, set Method to <b>POST</b> and Request Body to <b>JSON</b>.</li>
-      <li>Add three fields: <b>key</b> (Text) with the key below, <b>fn</b> (Text) with <code>capture</code>, and <b>args</b> (Array) holding one Text item set to <b>Provided Input</b>.</li>
+      <li>Add <b>Get Contents of URL</b>. Tap URL and paste the Address below. Tap the arrow on the action, set Method to <b>POST</b> and Request Body to <b>JSON</b>.</li>
+      <li>Tap <b>Add new field</b>, choose <b>Text</b>, three times: <code>key</code> with the Key below, <code>fn</code> with <code>capture</code>, and <code>text</code> with the <b>Provided Input</b> variable (tap the box, then Provided Input above the keyboard).</li>
       <li>Say "Hey Siri, Add to Planner", or put it on the Action Button. Write it like quick add: "Tamkeen send the agenda tomorrow 10am".</li>
     </ol>
     <div class="cell"><span>Address</span><button type="button" class="btn sm" data-s="cpurl">Copy</button></div>
@@ -2674,7 +2674,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "2026-10-28.5";
+const APP_VERSION = "2026-10-28.6";
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(() => swConfig()).catch(() => {});
 let verAt = 0;
 async function checkVersion() {
@@ -2829,10 +2829,11 @@ async function loadAll(first) {
 /* A link ending in #plan (from the 8 AM calendar alert or a shortcut) opens Plan Your Day. */
 function checkHash() {
   if (!S.ready || S.sheet) return;
-  const h = location.hash, t = h.match(/(?:^#|&)task=([^&]+)/), pl = /(^#|&)plan\b/.test(h);
-  if (!t && !pl) return;
+  const h = location.hash, t = h.match(/(?:^#|&)task=([^&]+)/), ro = h.match(/(?:^#|&)routine=([^&]+)/), pl = /(^#|&)plan\b/.test(h);
+  if (!t && !ro && !pl) return;
   try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
-  if (t) { const id = decodeURIComponent(t[1]); if (S.tasks.some(x => x.id === id)) { if (S.view !== "today") go("today"); openSheet({ type: "item", key: "task:" + encodeURIComponent(id) }); } return; }
+  if (ro) { const id = decodeURIComponent(ro[1]), r = S.routines.find(x => x.id === id); if (r) { if (S.mode !== r.scope) setMode(r.scope, true); if (S.view !== "today") go("today"); else render(true); openSheet({ type: "item", key: "routine:" + encodeURIComponent(id) + ":" + today() }); } return; }
+  if (t) { const id = decodeURIComponent(t[1]); const tk = S.tasks.find(x => x.id === id); if (tk) { if (S.mode !== tk.scope) setMode(tk.scope, true); if (S.view !== "today") go("today"); else render(true); openSheet({ type: "item", key: "task:" + encodeURIComponent(id) }); } return; }
   openSheet({ type: "plan" });
 }
 addEventListener("hashchange", checkHash);
