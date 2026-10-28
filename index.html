@@ -2676,7 +2676,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "2026-10-28.8";
+const APP_VERSION = "1.0"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(() => swConfig()).catch(() => {});
 let verAt = 0;
 async function checkVersion() {
