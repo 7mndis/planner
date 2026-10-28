@@ -182,6 +182,14 @@ svg.i { width: 1.15em; height: 1.15em; flex: none; }
 .tl-gh { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto auto; align-items: center; gap: 0 10px; width: 100%; border: 0; background: none; color: inherit; font: inherit; text-align: left; padding: 6px 14px 6px 0; min-height: 56px; cursor: pointer; }
 .tl-gh .ttl { cursor: inherit; }
 .tl-grp.folded .tl-gh .chev { transform: rotate(-90deg); }
+/* a routine group inside a list: ring, category tile, title and progress, opening to its rows */
+.lgrp { position: relative; }
+.lgh { position: relative; display: grid; grid-template-columns: 44px 38px minmax(0, 1fr) auto auto; align-items: center; gap: 0 10px; width: 100%; border: 0; background: var(--card); color: inherit; font: inherit; text-align: left; padding: 6px 12px 6px 6px; min-height: 56px; cursor: pointer; }
+.lgh .ttl { cursor: inherit; }
+.lgrp.folded > .lgh .chev { transform: rotate(-90deg); }
+.lgrp > .fb > .sw .row { padding-left: 22px; }
+.lgrp > .fb > .sw .row::before, .sw + .lgrp > .lgh::before, .lgrp + .lgrp > .lgh::before { content: ""; position: absolute; top: 0; left: 100px; right: 0; border-top: .5px solid var(--sep); }
+.lgrp + .sw .row::before { content: ""; position: absolute; top: 0; left: 100px; right: 0; border-top: .5px solid var(--sep); }
 .ring { width: 24px; height: 24px; border-radius: 50%; justify-self: center; position: relative; background: conic-gradient(var(--done) var(--p), var(--fill) 0); }
 .ring::after { content: ""; position: absolute; inset: 4px; border-radius: 50%; background: var(--card); }
 .ring.full::after { inset: 0; background: var(--done); }
@@ -197,7 +205,8 @@ svg.i { width: 1.15em; height: 1.15em; flex: none; }
 .cap { background: var(--card); border-radius: var(--r); padding: 12px 16px; display: grid; gap: 8px; }
 .cap-h { display: flex; justify-content: space-between; align-items: baseline; gap: 4px 12px; flex-wrap: wrap; font-size: .84rem; color: var(--label2); font-variant-numeric: tabular-nums; }
 .cap-h b { color: var(--label); font-size: .95rem; font-weight: 600; }
-.cap-bar { height: 8px; border-radius: 4px; background: var(--fill); overflow: hidden; }
+.cap-p { margin-left: 8px; color: var(--done); font-weight: 700; }
+.cap-bar { height: 10px; border-radius: 5px; background: var(--fill); overflow: hidden; }
 .cap-bar i { display: block; height: 100%; border-radius: 4px; background: var(--done); transition: width .4s cubic-bezier(.2, .8, .2, 1); }
 .cap-bar.warn i { background: #C98A12; }
 .cap-bar.over i { background: var(--late); }
@@ -1274,8 +1283,7 @@ function planner(range) {
   // routines
   const off = it => it.scope === "work" && isWeekend(it.date || d0); // no work on Friday or Saturday
   let routines = days.flatMap(d => occsOn(d)).filter(o => !off(o) && cfOk(o.r) && o.scope === S.mode);
-  let dailyNote = "";
-  if (multi) { const daily = S.routines.filter(r => r.freq === "daily" && r.active !== false && cfOk(r) && r.scope === S.mode); routines = routines.filter(o => o.r.freq !== "daily"); if (daily.length) dailyNote = `<div class="dayh">Plus ${daily.length} daily routines every day</div>`; }
+  const dailyNote = ""; // daily routines now show each day inside their Morning, Night or category group
   routines.sort(byDate);
   const rPers = routines.filter(o => o.scope === "personal"), rWork = routines.filter(o => o.scope === "work");
   // tasks
@@ -1297,8 +1305,8 @@ function planner(range) {
   if (!multi) {
     const by = { morning: [], day: [], night: [] }; rPers.forEach(o => by[o.r.block || "day"].push(o));
     [["morning", "Morning"], ["day", "During the Day"], ["night", "Night"]].forEach(([k, l]) => { if (by[k].length) blocks.push(cardHtml(by[k].map(rowHtml).join(""), chHead(l, null, `${by[k].filter(o => o.status === "done").length}/${by[k].length}`, "r:" + k, allDone(by[k])))); });
-  } else if (rPers.length || dailyNote) blocks.push(cardHtml(list(rPers, "rp") + dailyNote, chHead("Personal", null, undefined, "r:personal")));
-  if (rWork.length) blocks.push(cardHtml(list(rWork, "rw"), chHead("Work", null, `${rWork.filter(o => o.status === "done").length}/${rWork.length}`, "r:work", !multi && allDone(rWork))));
+  } else if (rPers.length || dailyNote) blocks.push(cardHtml(rgDays(rPers, "rp") + dailyNote, chHead("Personal", null, undefined, "r:personal")));
+  if (rWork.length) blocks.push(cardHtml(multi ? rgDays(rWork, "rw") : list(rWork, "rw"), chHead("Work", null, `${rWork.filter(o => o.status === "done").length}/${rWork.length}`, "r:work", !multi && allDone(rWork))));
   const routineSec = sectionHtml("Routines", "repeat", blocks.join("") || cardHtml(`<div class="empty">No routines ${multi ? "this week" : "today"}.</div>`), routines.length);
   RO = { planner: true, ctx: true };
   const workOpen = work.filter(i => i.status !== "done" && i.status !== "skipped").length;
@@ -1506,14 +1514,14 @@ function viewCal() {
   const meets = (S.meetings[sel] || []).map(x => mItem(x, sel)).filter(inMode).sort(byEvent);
   const evL = S.mode === "work" ? "Meetings" : "Events";
   const tasks = S.tasks.filter(t => t.due === sel && t.scope === S.mode && (tOpen(t) || diff(sel) >= 0)).map(tItem).sort(byTime);
-  const routines = occsOn(sel).filter(o => o.time && o.scope === S.mode && !(o.scope === "work" && isWeekend(sel))).sort(byTime);
+  const routines = occsOn(sel).filter(o => o.scope === S.mode && !(o.scope === "work" && isWeekend(sel))).sort(byTime);
   RO = { planner: true, ctx: true };
   const meetRows = meets.map(rowHtml).join("");
   const loading = monthsLoaded[m] === "busy" && !meets.length;
   const agenda = sectionHtml(rel(sel) === fD(sel) ? fDL(sel) : rel(sel) + " · " + fD(sel), "cal",
     (meets.length ? cardHtml(meetRows, chHead(evL, S.mode === "work" ? "--i-meet" : "--i-event", meets.length)) : cardHtml(`<div class="empty">${loading ? "Loading your calendar." : "No " + evL.toLowerCase() + "."}</div>`, chHead(evL, S.mode === "work" ? "--i-meet" : "--i-event")))
     + (tasks.length ? cardHtml(tasks.map(rowHtml).join(""), chHead("Tasks", null, tasks.length)) : "")
-    + (routines.length ? cardHtml(routines.map(rowHtml).join(""), chHead("Timed Routines", null, routines.length)) : ""));
+    + (routines.length ? cardHtml(rgRows(routines, "cal"), chHead("Routines", null, `${routines.filter(o => !isOpen(o)).length}/${routines.length}`)) : ""));
   RO = {};
   return head + `<div class="cols two"><div class="col"><section class="section"><div class="cal-head"><button type="button" class="icon-btn" data-act="calnav" data-n="-1" aria-label="Previous month"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><h2>${esc(title)}</h2>${m !== monthStart(today()) || sel !== today() ? `<button type="button" class="btn sm" data-act="caltoday">Today</button>` : ""}<button type="button" class="icon-btn" data-act="calnav" data-n="1" aria-label="Next month"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button></div>
   <div class="cal" role="grid" aria-label="${esc(title)}">${grid}</div>
@@ -1528,11 +1536,12 @@ function capacityHtml(p) {
   p.timed.filter(isOpen).forEach(it => { const a = Math.max(tm(it.time), start), e = Math.min(spanEnd(it, p.d), end); if (e > a) planned += e - a; });
   p.anytime.filter(isOpen).forEach(it => { const m = durMins(it.kind === "task" ? it.t : it.r, p.d); if (!m && it.kind === "task") noEst++; planned += m || (it.kind === "task" ? 30 : 15); });
   const own = [...p.timed, ...p.anytime].filter(it => it.kind !== "meet"), done = own.filter(it => !isOpen(it)).length;
-  const ratio = left ? planned / left : 0, cls = ratio > 1 ? "over" : ratio > .85 ? "warn" : "";
+  // the bar shows progress: tasks and routines done out of today's total in this mode
+  const pct = own.length ? Math.round(done / own.length * 100) : 0;
   const head = own.length ? (done === own.length ? "All done" : `${done} of ${own.length} done`) : "Nothing planned";
   const right = left ? `${dur(planned)} planned · ${dur(left)} left until ${fT(hhmm(end))}` : "Day over";
   const note = left && planned > left ? `<div class="cap-n late">Over by ${dur(planned - left)}. Move something to another day.</div>` : noEst ? `<div class="cap-n">${noEst} task${noEst > 1 ? "s" : ""} without a duration, counted as 30m</div>` : "";
-  return `<section class="cap" aria-label="Today's load"><div class="cap-h"><b>${esc(head)}</b><span>${esc(right)}</span></div>${left ? `<div class="cap-bar ${cls}" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(Math.min(100, ratio * 100))}"><i style="width:${Math.round(Math.min(100, ratio * 100))}%"></i></div>` : ""}${note}</section>`;
+  return `<section class="cap" aria-label="Today's progress"><div class="cap-h"><b>${esc(head)}${own.length ? `<span class="cap-p">${pct}%</span>` : ""}</b><span>${esc(right)}</span></div>${own.length ? `<div class="cap-bar" role="progressbar" aria-label="Done today" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><i style="width:${pct}%"></i></div>` : ""}${note}</section>`;
 }
 function overdueHtml(p) {
   if (!p.overdue.length) return "";
@@ -1544,12 +1553,43 @@ function tlRowHtml(it, d, cls) {
   const s0 = tm(it.time), e = spanEnd(it, d), ic = itemIcon(it), past = d === today() && e <= nowMin();
   return `<div class="tl-it${cls ? " " + cls : ""}${past ? " past" : ""}" style="--ic:var(${ic.c})"><div class="tl-g"><b>${fTh(s0)}</b><small>${ampm(s0)}</small></div>${rowHtml(it)}</div>`;
 }
-/* Morning and Night routines sit on the timeline as one block that opens to its steps. */
+/* Routines group like the Morning Routine everywhere: Morning and Night by block, every other routine by its category.
+   Routines in "Other" (such as Plan Your Day) stay single rows. Each group is one row that opens to its steps. */
+const rgKey = it => it.kind !== "routine" ? "" : it.r.block === "morning" || it.r.block === "night" ? "b:" + it.r.block : it.area && it.area !== "Other" ? "a:" + it.area : "";
+const rgLabel = k => k === "b:morning" ? "Morning Routine" : k === "b:night" ? "Night Routine" : k.slice(2);
+/* Items in their given order, with each group's members gathered into one entry where the first of them sits. */
+function rgGroup(items) {
+  const out = [], at = {};
+  items.forEach(it => { const k = rgKey(it); if (!k) { out.push(it); return; } if (at[k]) at[k].li.push(it); else { at[k] = { key: k, label: rgLabel(k), li: [it] }; out.push({ g: at[k] }); } });
+  return out;
+}
+const rgFold = g => g.key.startsWith("b:") ? g.key.slice(2) : g.key;
+const rgIcon = g => g.key === "b:morning" ? { k: "today", c: "--i-personal" } : g.key === "b:night" ? { k: "Faith", c: "--i-personal" } : itemIcon(g.li[0]);
+function rgHead(g, f, k, gutter) {
+  const all = g.li.length, done = g.li.filter(o => !isOpen(o)).length, nx = g.li.find(isOpen), miss = g.li.some(o => o.status === "missed"), pct = Math.round(done / all * 100);
+  const ti = g.li.filter(o => o.time).map(o => tm(o.time)), when = gutter ? (g.end > g.start ? dur(g.end - g.start) : "") : ti.length ? fT(hhmm(Math.min(...ti))) : "";
+  const ic = rgIcon(g);
+  return `<button type="button" class="${gutter ? "tl-gh" : "lgh"}" data-act="fold" data-f="${esc(k)}" data-o="${f ? 0 : 1}" aria-expanded="${!f}"><span class="ring${done === all ? " full" : ""}" style="--p:${pct}%" aria-hidden="true"></span>${gutter ? "" : `<span class="itile" style="--ic:var(${ic.c})">${ico(ic.k)}</span>`}<span class="ttl"><span class="tt">${esc(g.label)}</span><span class="meta">${done} of ${all} done${when ? '<span class="sep">·</span>' + esc(when) : ""}${nx ? '<span class="sep">·</span>Next: ' + esc(nx.title) : ""}</span></span>${miss ? `<span class="flag late" title="Missed">${ico("alert")}<span class="sr">Something missed</span></span>` : ""}${chev}</button>`;
+}
+/* A group on the timeline: the start time in the gutter, then the group row that opens to its timed steps. */
 function grpHtml(g, d) {
-  const k = fk("tg", g.block), all = g.li.length, done = g.li.filter(o => !isOpen(o)).length, nx = g.li.find(o => isOpen(o));
+  const k = fk("tg", rgFold(g)), all = g.li.length, done = g.li.filter(o => !isOpen(o)).length;
   const n = nowMin(), live = d === today() && n >= g.start - 30 && n <= g.end + 30, miss = g.li.some(o => o.status === "missed");
-  const f = folded(k, done === all || (!live && !miss)), pct = Math.round(done / all * 100), lbl = g.block === "morning" ? "Morning Routine" : "Night Routine";
-  return `<div class="tl-grp${f ? " folded" : ""}"><div class="tl-it${d === today() && g.end <= n ? " past" : ""}" style="--ic:var(--i-personal)"><div class="tl-g"><b>${fTh(g.start)}</b><small>${ampm(g.start)}</small></div><button type="button" class="tl-gh" data-act="fold" data-f="${esc(k)}" data-o="${f ? 0 : 1}" aria-expanded="${!f}"><span class="ring${done === all ? " full" : ""}" style="--p:${pct}%" aria-hidden="true"></span><span class="ttl"><span class="tt">${lbl}</span><span class="meta">${done} of ${all} done<span class="sep">·</span>${esc(dur(g.end - g.start))}${nx ? '<span class="sep">·</span>Next: ' + esc(nx.title) : ""}</span></span>${miss ? `<span class="flag late" title="Missed">${ico("alert")}<span class="sr">Something missed</span></span>` : ""}${chev}</button></div><div class="fb">${g.li.map(o => tlRowHtml(o, d, "sub")).join("")}</div></div>`;
+  const f = folded(k, done === all || (!live && !miss)), ic = rgIcon(g);
+  return `<div class="tl-grp${f ? " folded" : ""}"><div class="tl-it${d === today() && g.end <= n ? " past" : ""}" style="--ic:var(${ic.c})"><div class="tl-g"><b>${fTh(g.start)}</b><small>${ampm(g.start)}</small></div>${rgHead(g, f, k, true)}</div><div class="fb">${g.li.map(o => tlRowHtml(o, d, "sub")).join("")}</div></div>`;
+}
+/* A group in a list (Any Time, Next 7 Days, Calendar): one row with progress that opens to the usual rows. */
+function lgrpHtml(g, sc) {
+  const k = fk("lg", sc || "", rgFold(g), g.li[0].date || ""), miss = g.li.some(o => o.status === "missed"), done = g.li.every(o => !isOpen(o));
+  const f = folded(k, done || !miss);
+  return `<div class="lgrp${f ? " folded" : ""}">${rgHead(g, f, k, false)}<div class="fb">${g.li.map(rowHtml).join("")}</div></div>`;
+}
+/* Rows with routines grouped. */
+const rgRows = (items, sc) => rgGroup(items).map(x => x.g ? lgrpHtml(x.g, sc) : rowHtml(x)).join("");
+/* Rows under a header per day (Next 7 Days), with each day's routines grouped. */
+function rgDays(items, sc) {
+  const days = []; items.forEach(it => { const g = days[days.length - 1]; if (g && g.d === it.date) g.li.push(it); else days.push({ d: it.date, li: [it] }); });
+  return days.map(({ d, li }) => { const k = fk("d", sc || "", "d:" + d), f = folded(k), open = li.filter(isOpen).length; return `<div class="sg dg${f ? " folded" : ""}"><button type="button" class="dayh" data-act="fold" data-f="${esc(k)}" data-o="${f ? 0 : 1}" aria-expanded="${!f}"><span>${esc(rel(d))}</span>${f ? `<span class="cnt">${li.length - open}/${li.length}</span>` : ""}${chev}</button><div class="fb">${rgRows(li, sc + ":" + d)}</div></div>`; }).join("");
 }
 function propHtml(x) {
   const s0 = tm(x.time);
@@ -1558,8 +1598,9 @@ function propHtml(x) {
 /* The timeline: items in time order, Morning and Night blocks, proposed blocks, a now line and the free gaps after it. */
 function timelineHtml(p) {
   const d = p.d, n = nowMin(), isToday = d === today(), end = DAY_END[S.mode], ents = [], groups = {};
-  p.timed.forEach(it => { const b = it.kind === "routine" ? it.r.block : ""; if (b === "morning" || b === "night") (groups[b] = groups[b] || []).push(it); else ents.push({ s: tm(it.time), e: spanEnd(it, d), it }); });
-  Object.keys(groups).forEach(b => { const li = groups[b].sort(byTime); if (li.length === 1) { ents.push({ s: tm(li[0].time), e: spanEnd(li[0], d), it: li[0] }); return; } const st = Math.min(...li.map(o => tm(o.time))), e = Math.max(...li.map(o => spanEnd(o, d))); ents.push({ s: st, e, g: { block: b, li, start: st, end: e } }); });
+  p.timed.forEach(it => { const k = rgKey(it); if (k) (groups[k] = groups[k] || []).push(it); else ents.push({ s: tm(it.time), e: spanEnd(it, d), it }); });
+  // a group sits at its first step; its later steps stay busy time (ghosts) so the free gaps remain true
+  Object.keys(groups).forEach(k => { const li = groups[k].sort(byTime), st = tm(li[0].time), e = Math.max(...li.map(o => spanEnd(o, d))); ents.push({ s: st, e: spanEnd(li[0], d), g: { key: k, label: rgLabel(k), li, start: st, end: e } }); li.slice(1).forEach(o => ents.push({ s: tm(o.time), e: spanEnd(o, d), ghost: true })); });
   propsNow().forEach(x => { const t = S.tasks.find(y => y.id === x.id); ents.push({ s: tm(x.time), e: tm(x.time) + x.len, prop: { ...x, title: t.title } }); });
   ents.sort((a, b) => a.s - b.s || (a.it && a.it.kind === "meet" ? -1 : b.it && b.it.kind === "meet" ? 1 : 0));
   const nowLine = () => `<div class="tl-now" role="separator" aria-label="Now, ${esc(fT(hhmm(n)))}"><div class="tl-g"><b>${fTh(n)}</b></div><i></i></div>`;
@@ -1569,7 +1610,7 @@ function timelineHtml(p) {
   ents.forEach(x => {
     if (!nowDone && x.s > n) { html += nowLine(); nowDone = true; }
     if (isToday && x.s > n) html += gap(Math.max(last, n), x.s);
-    html += x.g ? grpHtml(x.g, d) : x.prop ? propHtml(x.prop) : tlRowHtml(x.it, d);
+    html += x.ghost ? "" : x.g ? grpHtml(x.g, d) : x.prop ? propHtml(x.prop) : tlRowHtml(x.it, d);
     last = Math.max(last, x.e);
   });
   if (!nowDone) html += nowLine();
@@ -1583,7 +1624,7 @@ function anytimeHtml(p) {
   if (p.work) li = [...oneEach(li.filter(i => i.kind === "task")), ...li.filter(i => i.kind !== "task")];
   if (!li.length) return "";
   const open = li.filter(isOpen).length, canPlan = !p.off && li.some(i => i.kind === "task" && isOpen(i));
-  RO = { ctx: true, planner: true }; const rows = li.map(rowHtml).join(""); RO = {};
+  RO = { ctx: true, planner: true }; const rows = rgRows(li, "any"); RO = {};
   return cardHtml(rows + (canPlan ? `<div class="card-acts"><button type="button" class="btn sm" data-act="planfree">${ico("timer")}Plan My Free Time</button></div>` : ""), chHead("Any Time", null, `${li.length - open}/${li.length}`, "t:any", open === 0));
 }
 /* Today: the glance card, the morning plan, the load, then leftovers, all-day items, untimed items and the timeline. */
@@ -2740,7 +2781,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "1.1"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
+const APP_VERSION = "1.2"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(() => swConfig()).catch(() => {});
 let verAt = 0;
 async function checkVersion() {
