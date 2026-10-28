@@ -559,6 +559,8 @@ a.btn { text-decoration: none; }
 .pr .kind.close { color: var(--i-work); background: rgba(58, 98, 214, .12); }
 .pr .kind.engagement { color: #6A3FB8; background: rgba(122, 76, 194, .13); }
 :root[data-theme="dark"] .pr .kind.engagement { color: #B297DC; }
+.pr .kind.reopen { color: #A65A00; background: rgba(214, 128, 20, .14); }
+:root[data-theme="dark"] .pr .kind.reopen { color: #F2A54A; }
 .pr.busy { opacity: .5; pointer-events: none; }
 /* gym progress */
 html.lock .toast { bottom: auto; top: calc(12px + env(safe-area-inset-top, 0px)); }
@@ -652,8 +654,8 @@ const PRI = [["low", "Low"], ["", "Normal"], ["TRUE", "High"]];
 const priOf = t => { const p = t && t.priority; return p === true || p === "TRUE" || p === "true" || p === "high" ? "high" : p === "low" ? "low" : ""; };
 const priOut = p => p === true || p === "TRUE" || p === "true" || p === "high" ? "TRUE" : p === "low" ? "low" : "";
 const priRank = t => priOf(t) === "high" ? 0 : priOf(t) === "low" ? 2 : 1;
-/* Fields the page may send to the server on a task. outlookEventId is read only and never counts as a change. */
-const TASK_RO = ["outlookEventId"];
+/* Fields the page may send to the server on a task. outlookEventId and doneAt are read only and never count as a change; the server sets doneAt when a task is finished and clears it when it is reopened. */
+const TASK_RO = ["outlookEventId", "doneAt"];
 const CATS = ["Gym", "Supplements", "Faith", "Home", "Laundry", "Shopping", "Errands", "Car", "Money", "Self care", "Other"];
 const CAT_VAR = { Gym: "--k-gym", Supplements: "--k-supp", Faith: "--k-faith", Home: "--k-home", Laundry: "--k-laundry", Shopping: "--k-shop", Errands: "--k-errand", Car: "--k-car", Money: "--k-money", "Self care": "--k-self", Other: "--k-other" };
 const OWNERS = ["Me", "Client", "Aysha", "Noor", "Bhavish", "Shaikha", "Osama", "Abdulrahman"];
@@ -1180,14 +1182,16 @@ function quickSheet() {
 }
 
 /* ---------- inbox: changes the Outlook scans proposed, each accepted or dismissed with one tap ---------- */
-const P_KIND = { add: "New task", update: "Update", close: "Close task", engagement: "Engagement" };
+const P_KIND = { add: "New task", update: "Update", close: "Close task", engagement: "Engagement", reopen: "Reopen" };
+/* An update whose note starts with "Reopen", or an add whose note starts with "Reopens", brings finished work back, so it is labelled Reopen. */
+const pLabel = (kind, note) => (kind === "update" && /^\s*reopen/i.test(String(note || ""))) || (kind === "add" && /^\s*reopens/i.test(String(note || ""))) ? "reopen" : kind;
 const FIELD_LBL = { stage: "Stage", owner: "Owner", next_action: "Next action", next_date: "Next action date", last_action: "Last action", last_date: "Last action date", status: "Status", target: "Target date" };
 function proposalRow(p) {
   const kind = String(p.kind || "").toLowerCase(), eng = p.sub || "", t = p.taskId ? S.tasks.find(x => x.id === p.taskId) : null;
   const head = kind === "engagement" ? `${esc(FIELD_LBL[p.field] || p.field || "Field")} → ${esc(isDay(p.newValue) ? fD(p.newValue) : p.newValue || "")}` : esc(p.title || (t && t.title) || "");
   const meta = [eng ? esc(eng) : "", kind !== "engagement" && p.owner && p.owner !== "Me" ? "With " + esc(p.owner) : "", kind !== "engagement" && isDay(p.due) ? (p.owner && p.owner !== "Me" ? "Chase " : "Due ") + esc(rel(p.due)) : "", isDay(p.date) ? esc(fDM(p.date)) : ""].filter(Boolean).join('<span class="sep">·</span>');
-  const link = /^https?:\/\//i.test(String(p.link || "")) ? `<a class="btn sm" href="${esc(p.link)}" target="_blank" rel="noopener">${ico("mail")}Email</a>` : "";
-  return `<div class="pr${S.sheet && S.sheet.busy && S.sheet.busy[p.id] ? " busy" : ""}" data-pid="${esc(p.id)}"><div class="pr-h"><span class="kind ${esc(kind)}">${esc(P_KIND[kind] || kind)}</span><b>${head}</b></div>${meta ? `<div class="pr-m">${meta}</div>` : ""}${p.note ? `<div class="pr-n">${esc(p.note)}</div>` : ""}<div class="pr-a"><button type="button" class="btn sm primary" data-s="pacc">${ico("check")}Accept</button><button type="button" class="btn sm" data-s="pdis">Dismiss</button>${link}</div></div>`;
+  const link = /^https?:\/\//i.test(String(p.link || "")) ? `<a class="btn sm" href="${esc(p.link)}" target="_blank" rel="noopener">${ico("mail")}Email</a>` : "", lbl = pLabel(kind, p.note);
+  return `<div class="pr${S.sheet && S.sheet.busy && S.sheet.busy[p.id] ? " busy" : ""}" data-pid="${esc(p.id)}"><div class="pr-h"><span class="kind ${esc(lbl)}">${esc(P_KIND[lbl] || kind)}</span><b>${head}</b></div>${meta ? `<div class="pr-m">${meta}</div>` : ""}${p.note ? `<div class="pr-n">${esc(p.note)}</div>` : ""}<div class="pr-a"><button type="button" class="btn sm primary" data-s="pacc">${ico("check")}Accept</button><button type="button" class="btn sm" data-s="pdis">Dismiss</button>${link}</div></div>`;
 }
 function inboxSheet() {
   const li = (S.proposals || []).slice().sort((a, b) => String(a.area).localeCompare(String(b.area)) || String(a.sub || "").localeCompare(String(b.sub || "")) || String(b.at || "").localeCompare(String(a.at || "")));
@@ -1693,7 +1697,7 @@ function saveTask(t) {
   const i = S.tasks.findIndex(x => x.id === t.id); if (i >= 0) S.tasks[i] = t; else S.tasks.push(t); render(true);
   const o = outTask(t), keys = changedKeys(o);
   if (keys && !keys.length) return; // nothing differs from the server copy
-  (keys ? api("saveTask", o, keys) : api("saveTask", o)).then(n => { if (!n || !n.id) return; snapTask(n); const x = S.tasks.find(y => y.id === n.id); if (x) { x.eventId = n.eventId; if (n.outlookEventId !== undefined) x.outlookEventId = n.outlookEventId; } }).catch(fail);
+  (keys ? api("saveTask", o, keys) : api("saveTask", o)).then(n => { if (!n || !n.id) return; snapTask(n); const x = S.tasks.find(y => y.id === n.id); if (x) { x.eventId = n.eventId; if (n.outlookEventId !== undefined) x.outlookEventId = n.outlookEventId; if (n.doneAt !== undefined) x.doneAt = n.doneAt; } }).catch(fail);
 }
 function saveRoutine(r) { const i = S.routines.findIndex(x => x.id === r.id); if (i >= 0) S.routines[i] = r; else S.routines.push(r); render(true); api("saveRoutine", r).then(n => { const x = S.routines.find(y => y.id === n.id); if (x) x.eventId = n.eventId; }).catch(fail); }
 function setLog(rid, d, status, to) { const id = logId(rid, d), prev = S.logs[id] ? { ...S.logs[id] } : null, obj = { ...(prev || {}), id, routineId: rid, date: d, status, to: to || "" }; S.logs[id] = obj; render(true); api("setLog", obj).catch(fail); return prev; }
