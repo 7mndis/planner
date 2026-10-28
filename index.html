@@ -2105,6 +2105,9 @@ function settingsSheet() {
     : `<div class="list"><div class="empty">This device doesn't offer notifications to web apps. iOS 16.4 or later is needed.</div></div>`;
   return bar("Settings", "", `<button type="button" class="txtbtn strong" data-s="close">Done</button>`) + `<div class="sh-body">
     <div class="lbl">Notifications and Badge</div>${notif}
+    <div class="lbl">New Device</div>
+    <div class="list"><div class="cell"><span>Setup Link</span><button type="button" class="btn sm" data-s="cplink">Copy</button></div></div>
+    <p class="foot" style="margin-top:-10px">Save this link in Apple Passwords or a locked note. Opening it once on a new phone or computer connects it with no key to type. Anyone with the link can open your planner, so never share it.</p>
     <div class="lbl">Add From Siri</div>
     <div class="list"><ol class="steps">
       <li>Open the Shortcuts app, tap <b>+</b> and name it <b>Add to Planner</b>.</li>
@@ -2712,6 +2715,7 @@ sheet.addEventListener("click", e => {
     if (a === "pushoff") { disablePush(); return; }
     if (a === "cpurl") { copyText(API_URL, "Address"); return; }
     if (a === "cpkey") { copyText(KEY, "Key"); return; }
+    if (a === "cplink") { copyText(location.origin + location.pathname + "#key=" + KEY, "Setup link"); return; }
     return;
   }
   if (s.type === "quick") {
@@ -2806,7 +2810,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "1.6"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
+const APP_VERSION = "1.7"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(() => swConfig()).catch(() => {});
 let verAt = 0;
 async function checkVersion() {
