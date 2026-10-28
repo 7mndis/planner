@@ -748,7 +748,7 @@ const P = {
 const ico = k => `<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[k] || P.Other}</svg>`;
 
 /* ---------- state ---------- */
-const S = { tasks: [], routines: [], logs: {}, touches: [], audits: [], stages: { ...DEFAULT_STAGES }, contacts: [], proposals: [], notes: [], notesOk: false, engOk: true, mode: "work", ready: false, view: "today", sub: { work: "clients", personal: "cats" }, q: "", qOpen: false, meetings: {}, meetNote: "", loadedAt: 0, sheet: null, swipe: null, just: null, fold: {}, cf: "", calMode: "month" };
+const S = { tasks: [], routines: [], logs: {}, touches: [], audits: [], stages: { ...DEFAULT_STAGES }, contacts: [], proposals: [], notes: [], notesOk: false, engOk: true, mode: "work", ready: false, view: "today", sub: { work: "clients", personal: "cats" }, q: "", qOpen: false, meetings: {}, meetNote: "", loadedAt: 0, sheet: null, swipe: null, just: null, fold: {}, cf: "", pf: "", calMode: "month" };
 
 /* Calls go to Apps Script as plain-text POSTs (no CORS preflight). Writes run one at a time, in order,
    so a quick tick and untick can never arrive at the server in the wrong order. */
@@ -822,8 +822,8 @@ function api(fn, ...args) {
 addEventListener("online", () => { showOffline(); flush(); });
 addEventListener("offline", showOffline);
 setInterval(() => { if (outbox.length) flush(); }, 30000);
-try { const v = JSON.parse(localStorage.getItem("pa4") || "{}"); if (v.view && VIEWS.some(x => x[0] === v.view)) S.view = v.view; if (v.sub) Object.assign(S.sub, v.sub); if (!WORK_SUBS.some(x => x[0] === S.sub.work)) S.sub.work = "clients"; if (!PERS_SUBS.some(x => x[0] === S.sub.personal)) S.sub.personal = "cats"; if (v.fold && typeof v.fold === "object") S.fold = v.fold; if (typeof v.cf === "string" && CLIENTS.includes(v.cf)) S.cf = v.cf; if (v.calMode === "week") S.calMode = "week"; } catch (e) {}
-const persist = () => { try { localStorage.setItem("pa4", JSON.stringify({ view: S.view, sub: S.sub, fold: S.fold, cf: S.cf, calMode: S.calMode })); } catch (e) {} };
+try { const v = JSON.parse(localStorage.getItem("pa4") || "{}"); if (v.view && VIEWS.some(x => x[0] === v.view)) S.view = v.view; if (v.sub) Object.assign(S.sub, v.sub); if (!WORK_SUBS.some(x => x[0] === S.sub.work)) S.sub.work = "clients"; if (!PERS_SUBS.some(x => x[0] === S.sub.personal)) S.sub.personal = "cats"; if (v.fold && typeof v.fold === "object") S.fold = v.fold; if (typeof v.cf === "string" && CLIENTS.includes(v.cf)) S.cf = v.cf; if (v.calMode === "week") S.calMode = "week"; if (typeof v.pf === "string" && CATS.includes(v.pf)) S.pf = v.pf; } catch (e) {}
+const persist = () => { try { localStorage.setItem("pa4", JSON.stringify({ view: S.view, sub: S.sub, fold: S.fold, cf: S.cf, pf: S.pf, calMode: S.calMode })); } catch (e) {} };
 
 /* ---------- time, Bahrain ---------- */
 const pad = n => String(n).padStart(2, "0");
@@ -984,6 +984,12 @@ const cfOk = t => !S.cf || t.scope !== "work" || t.area === S.cf;
 function chipRow() {
   const ch = (v, l, c) => `<button type="button" class="cfc${c ? "" : " all"}" data-act="cf" data-cf="${esc(v)}" aria-pressed="${S.cf === v}"${c ? ` style="--ic:var(${c})"` : ""}>${c ? '<span class="dot"></span>' : ""}${esc(l)}</button>`;
   return `<div class="cfrow" role="group" aria-label="Filter by client">${ch("", "All")}${CLIENTS.map(c => ch(c, c, CLIENT_VAR[c])).join("")}</div>`;
+}
+/* Category chips for Personal's Categories view: only categories that hold an open task or an active routine. */
+function catChipRow() {
+  const has = new Set([...S.tasks.filter(t => t.scope === "personal" && tOpen(t)).map(t => t.area), ...S.routines.filter(r => r.scope === "personal" && r.active !== false).map(r => r.area)].map(a => CATS.includes(a) ? a : "Other"));
+  const ch = (v, l, c) => `<button type="button" class="cfc${c ? "" : " all"}" data-act="pcf" data-cf="${esc(v)}" aria-pressed="${S.pf === v}"${c ? ` style="--ic:var(${c})"` : ""}>${c ? '<span class="dot"></span>' : ""}${esc(l)}</button>`;
+  return `<div class="cfrow" role="group" aria-label="Filter by category">${ch("", "All")}${CATS.filter(c => has.has(c)).map(c => ch(c, c, CAT_VAR[c] || "--k-other")).join("")}</div>`;
 }
 const ready = () => S.ready;
 
@@ -1715,14 +1721,14 @@ function viewWork() {
 function viewPersonal() {
   const s = S.sub.personal;
   const head = `<header class="navbar"><div><h1>Personal</h1></div><div class="acts">${inboxBtn()}${searchBtn()}${rfBtn()}<button type="button" class="icon-btn" data-act="${s === "routines" ? "newr" : "new"}" aria-label="New ${s === "routines" ? "routine" : "task"}">${ico("plus")}</button></div></header>
-  <div class="tools">${segHtml("Show", PERS_SUBS, s, "sub")}${searchField()}</div>`;
+  <div class="tools">${segHtml("Show", PERS_SUBS, s, "sub")}${s === "cats" ? catChipRow() : ""}${searchField()}</div>`;
   let cards;
   if (s === "cats") {
     // like Clients in Work: one card per category holding its open tasks (soonest first) and its routines
     const ts = S.tasks.filter(t => t.scope === "personal" && tOpen(t) && match(t)).map(tItem).sort(byDayPri);
     const rs = S.routines.filter(r => r.scope === "personal" && r.active !== false && match(r)).map(r => nextOcc(r) || occ(r, today())).sort((a, b) => (a.r.time || "99").localeCompare(b.r.time || "99"));
     const cat = a => CATS.includes(a) ? a : "Other";
-    cards = CATS.map(c => [c, ts.filter(i => cat(i.area) === c), rs.filter(o => cat(o.area) === c)]).filter(x => x[1].length || x[2].length).map(([c, a, b]) => {
+    cards = CATS.filter(c => !S.pf || c === S.pf).map(c => [c, ts.filter(i => cat(i.area) === c), rs.filter(o => cat(o.area) === c)]).filter(x => x[1].length || x[2].length).map(([c, a, b]) => {
       RO = {}; const tr = a.map(rowHtml).join(""); RO = { rfreq: true }; const rr = b.map(rowHtml).join(""); RO = {};
       const late = a.filter(i => isDay(i.t.due) && diff(i.t.due) < 0).length;
       return cardHtml((a.length && b.length ? subGroup("Tasks", tr, "cat:" + c) + subGroup("Routines", rr, "cat:" + c) : tr + rr), chHead(c, CAT_VAR[c] || "--k-other", (a.length + b.length) + (late ? ` · ${late} overdue` : ""), "cat:" + c));
@@ -1741,7 +1747,7 @@ function viewPersonal() {
     const li = [...S.routines.filter(r => r.scope === "personal" && r.active === false && match(r)).map(r => ({ ...occ(r, today()), status: "ended" })), ...S.tasks.filter(t => t.scope === "personal" && !tOpen(t) && match(t)).sort((a, b) => String(b.updated || "").localeCompare(String(a.updated || ""))).map(tItem)];
     cards = CATS.map(c => [c, li.filter(i => i.area === c)]).concat([["Other ", li.filter(i => !CATS.includes(i.area))]]).filter(x => x[1].length).map(([c, l2]) => cardHtml(l2.map(rowHtml).join(""), chHead(c.trim(), CAT_VAR[c.trim()] || null, l2.length, "done:" + c.trim())));
   }
-  const empty = S.q ? "Nothing matches your search." : s === "cats" ? "Nothing open in any category. Tap + to add a task." : s === "routines" ? "No routines yet. Tap + to add one." : s === "done" ? "Completed tasks and ended routines appear here." : "Nothing open. Tap + to add a task.";
+  const empty = S.q ? "Nothing matches your search." : s === "cats" ? (S.pf ? `Nothing open in ${esc(S.pf)}.` : "Nothing open in any category. Tap + to add a task.") : s === "routines" ? "No routines yet. Tap + to add one." : s === "done" ? "Completed tasks and ended routines appear here." : "Nothing open. Tap + to add a task.";
   return head + (cards.length ? twoCols(cards) : cardHtml(`<div class="empty">${empty}</div>`));
 }
 
@@ -1900,6 +1906,7 @@ view.addEventListener("click", e => {
   if (a === "fold") { S.fold[b.dataset.f] = b.dataset.o === "1" ? 1 : 0; S.swipe = null; saveFold(); renderMain(true); return; }
   if (a === "dayopen") { const it = findItem(b.dataset.k); if (it) openSheet(isPlan(it) ? { type: "plan" } : { type: "item", key: b.dataset.k }); return; }
   if (a === "sub") { S.sub[S.view] = b.dataset.sub; S.swipe = null; persist(); renderMain(); return; }
+  if (a === "pcf") { S.pf = CATS.includes(b.dataset.cf) ? b.dataset.cf : ""; S.swipe = null; persist(); renderMain(true); return; }
   if (a === "cf") { S.cf = CLIENTS.includes(b.dataset.cf) ? b.dataset.cf : ""; S.swipe = null; persist(); renderMain(true); return; }
   const sw = b.closest(".sw"); if (!sw) return;
   const it = findItem(sw.dataset.key); if (!it) return;
@@ -2795,7 +2802,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "1.3"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
+const APP_VERSION = "1.4"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(() => swConfig()).catch(() => {});
 let verAt = 0;
 async function checkVersion() {
