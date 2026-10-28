@@ -1808,13 +1808,13 @@ function cardioOf(x) {
     ...(useRes ? { res: res ?? 6 } : { spd: spd ?? 5 })
   };
 }
-const cardioTxt = c => c.min + " min · incline " + fmtN(c.inc) + " · " + (c.res !== undefined ? "resistance " + fmtN(c.res) : "speed " + fmtN(c.spd));
+const cardioTxt = c => c.min + " min · incline " + fmtN(c.inc) + " · " + (c.res !== undefined ? "resistance " + fmtN(c.res) : "speed " + fmtN(c.spd) + " km/h");
 const fmtN = v => String(Math.round(Number(v || 0) * 10) / 10);
 const numRange = (a, b, st) => { const o = []; for (let v = a; v <= b + 1e-9; v += st) o.push(Math.round(v * 10) / 10); return o; };
 const CARDIO_OPTS = {
   min: { l: "Time", list: [...numRange(1, 10, 1), 12, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 75, 90, 120], f: v => v + " min" },
   inc: { l: "Incline", list: numRange(0, 15, .5), f: fmtN },
-  spd: { l: "Speed", list: numRange(1, 16, .5), f: fmtN },
+  spd: { l: "Speed", list: numRange(1, 16, .5), f: v => fmtN(v) + " km/h" },
   res: { l: "Resistance", list: numRange(1, 20, 1), f: fmtN }
 };
 function cardioHtml(x) {
@@ -2207,7 +2207,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "2026-10-28.1";
+const APP_VERSION = "2026-10-28.2";
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {});
 let verAt = 0;
 async function checkVersion() {
