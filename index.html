@@ -1119,7 +1119,11 @@ function parseQuick(raw, side) {
   // time
   let m = cut(/\b(?:at\s+|@\s*)?(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)\b/i);
   if (m) { let h = Number(m[1]) % 12; if (/pm/i.test(m[3])) h += 12; o.time = pad(h) + ":" + pad(Number(m[2] || 0)); }
-  else if ((m = cut(/\b(?:at\s+|@\s*)([01]?\d|2[0-3]):([0-5]\d)\b/i)) || (m = cut(/\b([01]?\d|2[0-3]):([0-5]\d)\b/))) o.time = pad(Number(m[1])) + ":" + m[2];
+  else if ((m = cut(/\b(?:at\s+|@\s*)([01]?\d|2[0-3]):([0-5]\d)\b/i)) || (m = cut(/\b([01]?\d|2[0-3]):([0-5]\d)\b/))) {
+    let h = Number(m[1]); const mi = Number(m[2]);
+    if (h >= 1 && h <= 11 && h * 60 + mi <= nowMin() && (h + 12) * 60 + mi > nowMin()) h += 12; // no AM or PM: the next one to come, so 4:30 said at 4:15 PM is 4:30 PM today
+    o.time = pad(h) + ":" + m[2];
+  }
   else if (cut(/\b(at\s+)?noon\b/i)) o.time = "12:00";
   else if (cut(/\b(at\s+)?midnight\b/i)) o.time = "23:59";
   // date
@@ -2672,7 +2676,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "2026-10-28.7";
+const APP_VERSION = "2026-10-28.8";
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(() => swConfig()).catch(() => {});
 let verAt = 0;
 async function checkVersion() {
