@@ -1969,6 +1969,7 @@ async function disablePush() {
   catch (e) { toast("Couldn't turn off: " + ((e && e.message) || e)); }
   renderSheet();
 }
+if (navigator.serviceWorker) navigator.serviceWorker.addEventListener("controllerchange", swConfig); // a newer worker took over: hand it the config too
 if (navigator.serviceWorker) navigator.serviceWorker.addEventListener("message", e => { const d = e.data || {}; if (d.type === "pa-open" && d.hash) { try { history.replaceState(null, "", location.pathname + location.search + d.hash); } catch (x) {} if (S.sheet) closeSheet(); setTimeout(checkHash, 450); } });
 function settingsSheet() {
   const st = notifState(), busy = S.sheet && S.sheet.busy;
@@ -2673,7 +2674,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "2026-10-28.4";
+const APP_VERSION = "2026-10-28.5";
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(() => swConfig()).catch(() => {});
 let verAt = 0;
 async function checkVersion() {
