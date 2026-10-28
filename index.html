@@ -1664,21 +1664,7 @@ function renderMain(keep) {
   if (S.just) setTimeout(() => { S.just = null; }, 400);
 }
 function render(keep) { renderNav(); renderMain(keep); if (S.ready) { saveCache(); updateBadge(); } }
-let tsw = null;
-view.addEventListener("touchstart", e => {
-  if (e.touches.length !== 1 || S.sheet) { tsw = null; return; }
-  const t = e.touches[0], el = e.target;
-  if (t.clientX < 24 || t.clientX > innerWidth - 24 || el.closest(".sw-under, .row:not(.meet), input, textarea, select, .seg")) { tsw = null; return; }
-  tsw = { x: t.clientX, y: t.clientY, t: e.timeStamp };
-}, { passive: true });
-view.addEventListener("touchend", e => {
-  if (!tsw) return;
-  const t = e.changedTouches[0], dx = t.clientX - tsw.x, dy = t.clientY - tsw.y, dt = e.timeStamp - tsw.t; tsw = null;
-  if (Math.abs(dx) < 70 || Math.abs(dy) > Math.abs(dx) * .5 || dt > 600) return;
-  const i = VIEWS.findIndex(v => v[0] === S.view), j = i + (dx < 0 ? 1 : -1);
-  if (j < 0 || j >= VIEWS.length) return;
-  S.dir = dx < 0 ? 1 : -1; go(VIEWS[j][0]);
-}, { passive: true });
+let tsw = null; // swiping between pages was removed: it fired while scrolling the client chips sideways
 /* While a finger is on the screen or the page is still moving, background refreshes wait. */
 let lastMove = 0, touching = false;
 addEventListener("scroll", () => { lastMove = Date.now(); }, { passive: true });
@@ -1794,7 +1780,7 @@ view.addEventListener("click", e => {
   if (a === "pdrop") { dropProp(b.dataset.id); return; }
   if (a === "gap") { openSheet({ type: "gap", a: Number(b.dataset.a), b: Number(b.dataset.b) }); return; }
   if (a === "resched") { openSheet({ type: "resched" }); return; }
-  if (a === "settings") { S.pushSub = undefined; openSheet({ type: "settings" }); refreshPush(); return; }
+  if (a === "settings") { S.pushSub = undefined; openSheet({ type: "settings" }); refreshPush(); refreshAlertMode(); return; }
   if (a === "loadday") { S.calMode = "month"; S.calDay = b.dataset.d; S.calMonth = monthStart(b.dataset.d); persist(); renderMain(); return; }
   if (a === "calmode") { S.calMode = b.dataset.sub === "week" ? "week" : "month"; S.swipe = null; persist(); renderMain(); return; }
   if (a === "calday") { S.calDay = b.dataset.d; if (S.calDay.slice(0, 7) !== (S.calMonth || "").slice(0, 7)) S.calMonth = monthStart(S.calDay); renderMain(true); return; }
@@ -1941,6 +1927,16 @@ function updateBadge() {
   } catch (e) {}
 }
 /* ---------- planner alerts: Web Push from the planner's own server ---------- */
+/* Where item alerts come from, as the server last said: "push" (the planner) or "calendar" (Planner Alerts calendar). */
+const alertMode = () => { try { return localStorage.getItem("pa-alerts") || "calendar"; } catch (e) { return "calendar"; } };
+async function refreshAlertMode() { try { const r = await call("getAlertMode"); if (r && r.mode) localStorage.setItem("pa-alerts", r.mode); } catch (e) {} if (S.sheet && S.sheet.type === "settings") renderSheet(); }
+async function setAlertSource(mode) {
+  if (mode === alertMode()) return;
+  if (S.sheet) S.sheet.busy = "alerts"; renderSheet();
+  try { const r = await call("setAlertMode", mode); try { localStorage.setItem("pa-alerts", r.mode); } catch (e) {} toast(mode === "push" ? "Alerts now come from the planner. Calendar alerts removed." : "Alerts now come from Google Calendar again."); }
+  catch (e) { toast((e && e.message) || "Couldn't switch"); }
+  if (S.sheet) S.sheet.busy = false; renderSheet();
+}
 const pushOK = () => { try { return "serviceWorker" in navigator && "PushManager" in window; } catch (e) { return false; } };
 const b64uBytes = s => { const b = atob(s.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((s.length + 3) % 4)); return Uint8Array.from(b, c => c.charCodeAt(0)); };
 /* The background worker gets the server address and key, so it can read a push while the planner is closed. */
@@ -1974,8 +1970,9 @@ if (navigator.serviceWorker) navigator.serviceWorker.addEventListener("message",
 function settingsSheet() {
   const st = notifState(), busy = S.sheet && S.sheet.busy;
   const pushRow = !pushOK() ? "" : S.pushSub === undefined ? `<div class="list"><div class="empty">Checking this device.</div></div>`
-    : S.pushSub ? `<div class="list"><div class="cell"><span>Planner Alerts on This Device</span><span class="v">On</span></div><div class="cell"><button type="button" class="btn sm primary" data-s="pushtest" ${busy ? "disabled" : ""}>Send a Test</button><button type="button" class="btn sm" data-s="pushoff" ${busy ? "disabled" : ""}>Turn Off</button></div></div><p class="foot" style="margin-top:-10px">From the planner itself: Plan Your Day at 8 AM, and a nudge once when a timed task is missed. Tapping one opens the right screen.</p>`
-    : `<button type="button" class="btn primary" data-s="pushon" ${busy ? "disabled" : ""}>${ico("alert")}Turn On Planner Alerts</button><p class="foot" style="margin-top:-10px">Lets the planner itself notify this device: Plan Your Day at 8 AM and missed tasks.</p>`;
+    : S.pushSub ? `<div class="lbl">Item Alerts Come From</div><div class="seg" role="radiogroup" aria-label="Item alerts come from">${[["push", "Planner"], ["calendar", "Google Calendar"]].map(([k, l]) => `<button type="button" data-s="alsrc" data-v="${k}" aria-pressed="${alertMode() === k}" ${busy ? "disabled" : ""}>${l}</button>`).join("")}</div><p class="foot" style="margin-top:-10px">${busy === "alerts" ? "Switching. This takes up to a minute while the calendar side is updated." : alertMode() === "push" ? "Every item with Alert on notifies each iPhone where planner alerts are on, at its alert time, and opens the item when tapped. Turn alerts on for each iPhone you use." : "Item alerts come from the Planner Alerts calendar. Switch to Planner to get them as notifications that open the item."}</p>
+    <div class="list"><div class="cell"><span>Planner Alerts on This Device</span><span class="v">On</span></div><div class="cell"><button type="button" class="btn sm primary" data-s="pushtest" ${busy ? "disabled" : ""}>Send a Test</button><button type="button" class="btn sm" data-s="pushoff" ${busy ? "disabled" : ""}>Turn Off</button></div></div><p class="foot" style="margin-top:-10px">From the planner itself: Plan Your Day at 8 AM, and a nudge once when a timed task is missed. Tapping one opens the right screen.</p>`
+    : `<button type="button" class="btn primary" data-s="pushon" ${busy ? "disabled" : ""}>${ico("alert")}Turn On Planner Alerts</button><p class="foot" style="margin-top:-10px${alertMode() === "push" ? ';color:var(--late)' : ""}">${alertMode() === "push" ? "Item alerts come from the planner, and this device isn't receiving them yet. Turn it on here." : "Lets the planner itself notify this device: Plan Your Day at 8 AM and missed items."}</p>`;
   const notif = st === "granted" ? `<div class="list"><div class="cell"><span>Notifications</span><span class="v">Allowed</span></div></div><p class="foot" style="margin-top:-10px">The app icon shows how many of your tasks are due today or overdue (${badgeCount()} now).</p>${pushRow}`
     : st === "denied" ? `<div class="list"><div class="cell"><span>Notifications</span><span class="v">Off</span></div></div><p class="foot" style="margin-top:-10px">They were declined for this app. Turn them on in iPhone Settings, Notifications, Personal Assistant.</p>`
     : st === "default" ? `<button type="button" class="btn primary" data-s="notif">${ico("alert")}Allow Notifications</button><p class="foot" style="margin-top:-10px">iPhone asks once. After that the planner can notify you itself, the app icon shows how many tasks are due, and the planner appears in iPhone Settings, Notifications.</p>`
@@ -2130,9 +2127,9 @@ function itemSheet(it) {
     <div class="lbl">Details</div><div class="list">${info.map(([k, v, late, raw]) => `<div class="cell"><span>${k}</span><span class="v${late ? " late" : ""}">${raw ? v : esc(v)}</span></div>`).join("")}</div>
     ${fileLink}${isT && it.t.link && /^https?:\/\//i.test(it.t.link) ? `<a class="btn" href="${esc(it.t.link)}" target="_blank" rel="noopener">${ico("mail")}Open Email in Outlook</a>` : ""}
     ${touchSec}
-    <div class="list"><div class="cell"><label for="alarmSw">Calendar Alert</label><span class="switch"><input type="checkbox" role="switch" id="alarmSw" ${src.alert ? "checked" : ""} ${it.time ? "" : "disabled"}><span></span></span></div>
+    <div class="list"><div class="cell"><label for="alarmSw">Alert</label><span class="switch"><input type="checkbox" role="switch" id="alarmSw" ${src.alert ? "checked" : ""} ${it.time ? "" : "disabled"}><span></span></span></div>
       <div class="cell"><label for="leadSel">Alert Time</label><select id="leadSel" ${it.time && src.alert ? "" : "disabled"}>${opt(LEADS, String(src.lead || ""))}</select></div></div>
-    <p class="foot" style="margin-top:-10px">${it.time ? "Pops up " + (src.lead ? leadLabel(src.lead).toLowerCase() : "at the item's time") + " from your Planner Alerts calendar." : "Give it a time to turn on an alert."}</p>
+    <p class="foot" style="margin-top:-10px">${it.time ? "Pops up " + (src.lead ? leadLabel(src.lead).toLowerCase() : "at the item's time") + (alertMode() === "push" ? " as a notification from the planner." : " from your Planner Alerts calendar.") : "Give it a time to turn on an alert."}</p>
     ${src.notes ? `<div class="lbl">Notes</div><div class="list"><div class="notes">${esc(src.notes)}</div></div>` : ""}
     ${pays.length ? `<div class="lbl">Payments</div><div class="list">${pays.slice().reverse().map(x => `<div class="cell"><span>${esc(fD(x.date))}</span><span class="v">${fAmt(x.amt)} BHD</span></div>`).join("")}</div>` : ""}
     ${isT ? (doneLike ? "" : `<button type="button" class="btn" data-s="torout">${ico("repeat")}Make It Repeat</button><p class="foot" style="margin-top:-10px">Turns this task into a routine, for example monthly${it.t.area === "Money" ? ", with a balance that drops each time a payment is made" : ""}.</p>`)
@@ -2489,7 +2486,7 @@ function taskForm(t) {
       <div class="cell"><label for="f-time">Time</label><input id="f-time" name="time" type="time" value="${esc(t.time)}"></div>
       <div class="cell"><label for="f-dur">Duration</label><select id="f-dur" name="dur">${opt(durOpts(t.dur), String(t.dur || ""))}</select></div>
       <div class="cell"><span id="f-pri-l">Priority</span><div class="seg" role="radiogroup" aria-labelledby="f-pri-l">${PRI.map(([v, l]) => `<label><input type="radio" name="priority" value="${v}" ${priOut(t.priority) === v ? "checked" : ""}><span>${l}</span></label>`).join("")}</div></div>
-      <div class="cell"><label for="f-al">Calendar Alert</label><span class="switch"><input type="checkbox" role="switch" id="f-al" name="alert" ${t.alert ? "checked" : ""}><span></span></span></div>
+      <div class="cell"><label for="f-al">Alert</label><span class="switch"><input type="checkbox" role="switch" id="f-al" name="alert" ${t.alert ? "checked" : ""}><span></span></span></div>
       <div class="cell"><label for="f-lead">Alert Time</label><select id="f-lead" name="lead">${opt(LEADS, String(t.lead || ""))}</select></div></div>
     <div class="list"><div class="cell stack"><label for="f-notes">Notes</label><textarea id="f-notes" name="notes">${esc(t.notes)}</textarea></div></div>
     ${t.scope === "work" ? workDetails(t) : ""}
@@ -2513,7 +2510,7 @@ function routineForm(r) {
       ${r.freq === "yearly" ? `<div class="cell"><label for="r-month">Month</label><select id="r-month" name="month">${opt(Array.from({ length: 12 }, (_, i) => [i + 1, new Date(Date.UTC(2026, i, 1)).toLocaleDateString("en-GB", { month: "long", timeZone: "UTC" })]), r.month || 1)}</select></div>` : ""}
       <div class="cell"><label for="r-time">Usual Time</label><input id="r-time" name="time" type="time" value="${esc(r.time)}"></div>
       <div class="cell"><label for="r-dur">Duration</label><select id="r-dur" name="dur">${opt(durOpts(r.dur), String(r.dur || ""))}</select></div>
-      <div class="cell"><label for="r-al">Calendar Alert</label><span class="switch"><input type="checkbox" role="switch" id="r-al" name="alert" ${r.alert ? "checked" : ""}><span></span></span></div>
+      <div class="cell"><label for="r-al">Alert</label><span class="switch"><input type="checkbox" role="switch" id="r-al" name="alert" ${r.alert ? "checked" : ""}><span></span></span></div>
       <div class="cell"><label for="r-lead">Alert Time</label><select id="r-lead" name="lead">${opt(LEADS, String(r.lead || ""))}</select></div></div>
     ${showBal ? `<div class="list"><div class="cell"><label for="r-bal">Amount Owed (BHD)</label><input id="r-bal" name="bal" type="number" inputmode="decimal" min="0" step="0.001" class="r" placeholder="Optional" value="${esc(balVal)}"></div></div>
     <p class="foot" style="margin-top:-10px">${plan ? "What is still owed. " : ""}Each time you tick it Done you enter what was paid. What is left shows in the details, and it ends at zero. Leave empty to not track an amount.</p>` : ""}
@@ -2585,6 +2582,7 @@ sheet.addEventListener("click", e => {
   if (s.type === "settings") {
     if (a === "notif") { try { Promise.resolve(Notification.requestPermission()).then(r => { if (r === "granted") { lastBadge = -1; updateBadge(); if (pushOK()) enablePush(); else toast("Notifications on"); } renderSheet(); }); } catch (e) { toast("Notifications aren't available here."); } return; }
     if (a === "pushon") { enablePush(); return; }
+    if (a === "alsrc") { setAlertSource(b.dataset.v); return; }
     if (a === "pushtest") { testPush(); return; }
     if (a === "pushoff") { disablePush(); return; }
     if (a === "cpurl") { copyText(API_URL, "Address"); return; }
@@ -2674,7 +2672,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "2026-10-28.6";
+const APP_VERSION = "2026-10-28.7";
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(() => swConfig()).catch(() => {});
 let verAt = 0;
 async function checkVersion() {
@@ -2792,7 +2790,7 @@ function ingestCaptures() {
     if (capSeen.has(c.id)) return; capSeen.add(c.id);
     const id = "t" + c.id;
     if (!S.tasks.some(t => t.id === id)) {
-      const q = parseQuick(String(c.title || ""), autoMode());
+      const q = parseQuick(String(c.title || ""), "personal"); // work only when a client or work words are named
       if (q.title) { const t = { ...newTask(), ...q, id, source: "siri", status: q.owner !== "Me" ? "waiting" : "due", created: c.at || new Date().toISOString() }; delete t._new; saveTask(t); toast("Added from Siri: " + t.title); }
     }
     api("applyProposals", [c.id], "dismiss").catch(() => {});
