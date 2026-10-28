@@ -154,6 +154,99 @@ svg.i { width: 1.15em; height: 1.15em; flex: none; }
 .flag svg { width: 18px; height: 18px; }
 .flag.late { color: var(--late); }
 
+/* timeline: time gutter with a coloured rail, rows without the icon tile, free gaps and a now line */
+.tl { display: grid; }
+.tl > * { position: relative; }
+.tl > * + *::before, .tl-grp > .fb > .tl-it::before { content: ""; position: absolute; top: 0; left: 62px; right: 0; border-top: .5px solid var(--sep); z-index: 1; }
+.tl-it { display: grid; grid-template-columns: 62px minmax(0, 1fr); align-items: stretch; }
+.tl-g { position: relative; padding: 15px 10px 0 14px; font-size: .84rem; line-height: 1.15; font-variant-numeric: tabular-nums; color: var(--label); }
+.tl-g b { display: block; font-weight: 600; }
+.tl-g small { display: block; font-size: .68rem; color: var(--label2); margin-top: 1px; }
+.tl-it > .tl-g::after { content: ""; position: absolute; right: 2px; top: 12px; bottom: 12px; width: 3px; border-radius: 2px; background: var(--ic, var(--label2)); }
+.tl-it.past > .tl-g { color: var(--label2); }
+.tl-it.past > .tl-g::after { opacity: .35; }
+.tl .row { grid-template-columns: 44px minmax(0, 1fr) auto; padding-left: 0; }
+.tl .row .itile { display: none; }
+.tl-it.sub > .tl-g { padding-left: 22px; font-size: .78rem; }
+.tl-now { display: grid; grid-template-columns: 62px minmax(0, 1fr); align-items: center; min-height: 24px; }
+.tl-now::before { display: none; }
+.tl-now .tl-g { padding: 0 0 0 14px; color: var(--late); }
+.tl-now .tl-g b { font-weight: 700; }
+.tl-now i { position: relative; height: 2px; background: var(--late); margin-right: 14px; }
+.tl-now i::before { content: ""; position: absolute; left: -4px; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: var(--late); }
+.tl-now + *::before { display: none; }
+.tl-gap { display: grid; grid-template-columns: 62px minmax(0, 1fr) auto; align-items: center; width: 100%; border: 0; background: none; color: var(--done); font: inherit; text-align: left; padding: 6px 14px 6px 0; min-height: 44px; cursor: pointer; }
+.tl-gap .gp { border: 1.5px dashed color-mix(in srgb, var(--done) 50%, transparent); border-radius: 10px; padding: 6px 10px; font-size: .86rem; font-weight: 600; }
+.tl-gap .go { width: 14px; height: 14px; margin-left: 8px; opacity: .7; }
+.tl-gap:active .gp { background: color-mix(in srgb, var(--done) 12%, transparent); }
+.tl-gh { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto auto; align-items: center; gap: 0 10px; width: 100%; border: 0; background: none; color: inherit; font: inherit; text-align: left; padding: 6px 14px 6px 0; min-height: 56px; cursor: pointer; }
+.tl-gh .ttl { cursor: inherit; }
+.tl-grp.folded .tl-gh .chev { transform: rotate(-90deg); }
+.ring { width: 24px; height: 24px; border-radius: 50%; justify-self: center; position: relative; background: conic-gradient(var(--done) var(--p), var(--fill) 0); }
+.ring::after { content: ""; position: absolute; inset: 4px; border-radius: 50%; background: var(--card); }
+.ring.full::after { inset: 0; background: var(--done); }
+.ring.full::before { content: ""; position: absolute; z-index: 1; left: 7px; top: 7px; width: 10px; height: 5px; border-left: 2.5px solid #fff; border-bottom: 2.5px solid #fff; transform: rotate(-45deg); }
+.tl-it.prop .prop-b { display: flex; align-items: center; gap: 6px; margin: 6px 14px 6px 0; padding: 4px 4px 4px 12px; border: 1.5px dashed var(--label2); border-radius: 12px; min-width: 0; }
+.prop-b .ttl { flex: 1; padding: 4px 0; cursor: default; }
+.ib.ok { color: var(--done); }
+.propbar { display: flex; align-items: center; gap: 8px; padding: 4px 14px 10px 16px; font-weight: 600; font-size: .9rem; }
+.propbar span { flex: 1; }
+.card-acts { display: flex; gap: 8px; padding: 8px 16px 14px; flex-wrap: wrap; border-top: .5px solid var(--sep); }
+.ch + .card-acts, .fb > .card-acts:first-child { border-top: 0; }
+/* today's load */
+.cap { background: var(--card); border-radius: var(--r); padding: 12px 16px; display: grid; gap: 8px; }
+.cap-h { display: flex; justify-content: space-between; align-items: baseline; gap: 4px 12px; flex-wrap: wrap; font-size: .84rem; color: var(--label2); font-variant-numeric: tabular-nums; }
+.cap-h b { color: var(--label); font-size: .95rem; font-weight: 600; }
+.cap-bar { height: 8px; border-radius: 4px; background: var(--fill); overflow: hidden; }
+.cap-bar i { display: block; height: 100%; border-radius: 4px; background: var(--done); transition: width .4s cubic-bezier(.2, .8, .2, 1); }
+.cap-bar.warn i { background: #C98A12; }
+.cap-bar.over i { background: var(--late); }
+.cap-n { font-size: .78rem; color: var(--label2); }
+.cap-n.late { color: var(--late); font-weight: 600; }
+/* morning plan */
+.planb { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; align-items: center; gap: 0 14px; width: 100%; border: 0; border-radius: 18px; padding: 14px 16px; background: var(--card); color: inherit; font: inherit; text-align: left; cursor: pointer; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--done) 55%, transparent); }
+.planb .big { width: 52px; height: 52px; border-radius: 14px; background: var(--fill2); display: grid; place-items: center; color: var(--done); }
+.planb .big svg { width: 26px; height: 26px; }
+.planb .ey { font-size: .82rem; font-weight: 600; color: var(--label2); }
+.planb b { font-weight: 700; font-size: 1.1rem; }
+.planb small { display: block; color: var(--label2); font-size: .8rem; margin-top: 2px; }
+.planb .go { width: 14px; height: 14px; color: var(--label2); }
+.planb:active { transform: scale(.98); }
+.pl-row { display: flex; align-items: center; gap: 10px; padding: 10px 16px; min-height: 52px; }
+.pl-row + .pl-row { border-top: .5px solid var(--sep); }
+.pl-row .ttl { flex: 1; padding: 0; cursor: default; }
+.pl-row.ov { flex-wrap: wrap; }
+.pl-row.ov .pl-acts { width: 100%; }
+.pl-acts { display: flex; gap: 6px; flex-wrap: wrap; }
+.pl-row input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--done); flex: none; margin: 0; }
+.steps { margin: 0; padding: 12px 16px 12px 34px; display: grid; gap: 8px; font-size: .92rem; line-height: 1.4; }
+.steps code { background: var(--fill); padding: 1px 5px; border-radius: 6px; font-size: .85em; }
+/* rest timer */
+.rest { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 72px); z-index: 60; display: flex; align-items: center; gap: 8px; background: var(--label); color: var(--card); border-radius: 28px; padding: 6px 6px 6px 18px; box-shadow: var(--shadow); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rest .rl { font-size: .8rem; font-weight: 600; opacity: .75; }
+.rest b { font-size: 1.25rem; font-family: var(--font-round); min-width: 3.4ch; }
+.rest button { border: 0; border-radius: 18px; min-height: 40px; min-width: 44px; padding: 0 12px; background: color-mix(in srgb, var(--card) 22%, transparent); color: var(--card); font-weight: 700; }
+.set .sn { border: 0; padding: 0; cursor: pointer; }
+.set .sn.on { background: var(--done); color: #fff; }
+.set .sn svg { width: 13px; height: 13px; }
+.ex-last { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.chip.pr { background: color-mix(in srgb, var(--done) 18%, transparent); color: var(--done); }
+.ex-t .chip { white-space: nowrap; line-height: 1.4; align-self: center; }
+.cell.pk { gap: 12px; min-height: 56px; }
+.cell.pk > span { flex: 1; padding: 10px 0; line-height: 1.3; }
+.cell.pk .go { width: 14px; height: 14px; color: var(--label2); flex: none; }
+.cell.pk:disabled { opacity: .5; }
+/* calendar load */
+.loads { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 4px; margin: -8px 0 -6px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.loads::-webkit-scrollbar { display: none; }
+.ld { flex: 1 0 74px; border: 0; border-radius: 12px; background: var(--card); padding: 8px 10px; display: grid; gap: 2px; text-align: left; font-size: .76rem; color: var(--label2); font-variant-numeric: tabular-nums; }
+.ld b { color: var(--done); font-size: .92rem; font-weight: 600; }
+.ld.heavy b { color: #C98A12; }
+.ld.over b { color: var(--late); }
+.ld.off b { color: var(--label2); }
+.cd { position: relative; }
+.cd .cn { position: absolute; top: 3px; right: 5px; font-size: .62rem; font-weight: 600; color: var(--label2); }
+
 /* up next: Last, Now and Up Next in one card */
 .next.trio { display: block; padding: 0; overflow: hidden; }
 .tr-row { width: 100%; border: 0; background: none; color: inherit; font: inherit; text-align: left; display: grid; grid-template-columns: 38px minmax(0, 1fr) auto auto; align-items: center; gap: 0 12px; padding: 10px 16px; min-height: 60px; cursor: pointer; }
@@ -552,7 +645,7 @@ const CLIENTS = ["Tamkeen", "Ashraq", "Arcapita", "Tayseer", "RAM Clinics", "Int
 const CLIENT_VAR = { Tamkeen: "--c-tamkeen", Ashraq: "--c-ashraq", Arcapita: "--c-arcapita", Tayseer: "--c-tayseer", "RAM Clinics": "--c-ram", DWE: "--c-dwe", Internal: "--c-internal" };
 /* Other names a client goes by in quick add. */
 const CLIENT_ALIAS = { "RAM Clinics": ["RAM Clinics", "RAM"] };
-const SOURCES = { chat: "Chat", email: "Email", review: "Review", scan: "Scan", manual: "Manual" };
+const SOURCES = { chat: "Chat", email: "Email", review: "Review", scan: "Scan", manual: "Manual", siri: "Siri" };
 const KINDS = [["chased", "Chased"], ["sent", "Sent"], ["received", "Received"], ["note", "Note"], ["meeting", "Meeting"]];
 /* Priority is stored as a string: "" normal, "TRUE" high, "low" low. Older rows may hold "true" or a boolean; all of those read as high. */
 const PRI = [["low", "Low"], ["", "Normal"], ["TRUE", "High"]];
@@ -927,10 +1020,13 @@ const key = it => it.kind + ":" + encodeURIComponent(it.id) + (it.kind !== "task
    noDate: skip the date · chase: the date shown is the chase date · noWho: the group already says who it is with · rfreq: routines show how they repeat. */
 let RO = {};
 function metaHtml(it) {
+  if (it.kind === "meet" && RO.tl && it.cal === "Outlook") return `<span class="meta">${it.end ? "Until " + esc(fT(it.end)) : ""}${it.end && it.organizer ? '<span class="sep">·</span>' : ""}${it.organizer ? esc(it.organizer) : ""}</span>`;
   if (it.kind === "meet") return it.cal === "Outlook" ? `<span class="meta"><span class="chip">Outlook</span>${it.organizer ? esc(it.organizer) : ""}</span>` : it.etype === "event" && it.time && (it.end || it.loc) ? `<span class="meta">${it.end ? "Until " + esc(fT(it.end)) : ""}${it.end && it.loc ? '<span class="sep">·</span>' : ""}${it.loc ? esc(it.loc) : ""}</span>` : RO.evDate ? `<span class="meta">${esc(rel(it.date))}</span>` : "";
   const parts = [];
   if (it.kind === "routine") {
     if (RO.rfreq) parts.push(it.r.freq === "daily" ? (it.r.time ? esc(fT(it.r.time)) : "Any time") : esc(freqText(it.r)) + (it.r.time ? ", " + esc(fT(it.r.time)) : ""));
+    else if (RO.tl) { const m = durMins(it.r, it.date); if (m) parts.push(esc(dur(m))); }
+    else if (RO.ctx && RO.planner) { if (it.time) parts.push(esc(fT(it.time))); }
     else if (RO.ctx) parts.push(esc(rel(it.date)) + (it.time ? ", " + esc(fT(it.time)) : ""));
     else if (RO.planner && it.time) parts.push(esc(fT(it.time)));
     return parts.length ? `<span class="meta">${parts.join('<span class="sep">·</span>')}</span>` : "";
@@ -945,10 +1041,12 @@ function metaHtml(it) {
   else if (isDay(t.due)) {
     const late = diff(t.due) < 0;
     if (late) parts.push(`<span class="late">${esc(relShort(t.due))}${t.time ? ", " + esc(fT(t.time)) : ""}</span>`);
+    else if (RO.tl) { const m = durMins(t, t.due); if (m) parts.push(esc(dur(m))); }
     else if (!RO.planner && !RO.noDate) parts.push(esc(rowDate(t.due, t.time)));
     else if (t.time) parts.push(esc(fT(t.time)));
   }
   if (RO.ctx) { const a = t.scope === "work" ? engOf(t) : null; if (t.scope === "work") parts.push(esc(t.area) + (a ? " · " + esc(a.engagement) : t.sub ? " · " + esc(t.sub) : "")); else if (t.area && t.area !== "Other") parts.push(esc(t.area)); }
+  if (tOpen(t) && Number(t.rolls) >= 2) parts.push(`<span${Number(t.rolls) >= 3 ? ' class="late"' : ""}>Moved ${Number(t.rolls)}×</span>`);
   if (it.more) parts.push(`+${it.more} more`);
   return parts.length ? `<span class="meta">${parts.join('<span class="sep">·</span>')}</span>` : "";
 }
@@ -957,7 +1055,7 @@ function rowHtml(it) {
   const k = key(it), ic = itemIcon(it), sw = S.swipe === k;
   const canSwipe = it.kind !== "meet" && it.status !== "done" && it.status !== "skipped" && it.status !== "ended";
   const hi = it.kind === "task" && tOpen(it.t) ? priMark(priOf(it.t)) : "";
-  const flag = it.kind === "meet" ? `<span class="when-t">${it.time ? fT(it.time) : it.etype === "birthday" ? "Birthday" : it.etype === "holiday" ? "Holiday" : "All day"}</span>` : it.status === "missed" ? `<span class="flag late" title="Missed">${ico("alert")}<span class="sr">Missed</span></span>` : it.status === "delayed" ? `<span class="flag" title="Delayed">${ico("clock")}<span class="sr">Delayed</span></span>` : it.status === "waiting" && !RO.noWho ? `<span class="flag" title="Waiting on others">${ico("people")}<span class="sr">Waiting</span></span>` : it.status === "progress" ? `<span class="prog-t">In-progress</span>` : "";
+  const flag = it.kind === "meet" && RO.tl ? "" : it.kind === "meet" ? `<span class="when-t">${it.time ? fT(it.time) : it.etype === "birthday" ? "Birthday" : it.etype === "holiday" ? "Holiday" : "All day"}</span>` : it.status === "missed" ? `<span class="flag late" title="Missed">${ico("alert")}<span class="sr">Missed</span></span>` : it.status === "delayed" ? `<span class="flag" title="Delayed">${ico("clock")}<span class="sr">Delayed</span></span>` : it.status === "waiting" && !RO.noWho ? `<span class="flag" title="Waiting on others">${ico("people")}<span class="sr">Waiting</span></span>` : it.status === "progress" ? `<span class="prog-t">In-progress</span>` : "";
   return `<div class="sw" data-key="${esc(k)}">
     ${canSwipe ? `<div class="sw-under" aria-hidden="${!sw}"><div><button type="button" class="u-done" data-act="done" tabindex="${sw ? 0 : -1}">${ico("check")}Done</button></div><div><button type="button" class="u-delay" data-act="open" tabindex="${sw ? 0 : -1}">${ico("clock")}Delay</button><button type="button" class="u-skip" data-act="skip" tabindex="${sw ? 0 : -1}">${ico("skip")}Skip</button></div></div>` : ""}
     <div class="row ${it.kind} s-${it.status}${S.just === k ? " just" : ""}" ${sw ? 'style="transform:translate3d(-152px, 0, 0)"' : ""}>
@@ -1164,16 +1262,105 @@ function oneEach(items) {
   items.forEach(it => { const a = engOf(it.t), k = a ? a.id : ""; if (!k) { out.push(it); return; } if (seen[k]) { seen[k].more = (seen[k].more || 0) + 1; return; } seen[k] = it; out.push(it); });
   return out;
 }
-/* The first gap today, from now until 11 PM, long enough for an item of len minutes. Busy time is what is timed today in the current mode. */
-function freeSlot(len, skipKey) {
-  const d = today(), wk = isWeekend(d);
-  const busy = [...S.tasks.filter(t => mine(t) && t.due === d && tOpen(t)).map(tItem), ...occsOn(d), ...(S.meetings[d] || []).map(m => mItem(m, d))]
-    .filter(it => it.time && inMode(it) && key(it) !== skipKey && !(it.scope === "work" && wk) && it.status !== "done" && it.status !== "skipped")
-    .map(it => { const s0 = tm(it.time); return [s0, it.kind === "meet" ? Math.max(tm(it.end || it.time), s0 + 1) : s0 + (durMins(it.kind === "task" ? it.t : it.r, d) || (it.kind === "task" ? 30 : 15))]; })
-    .sort((a, b) => a[0] - b[0]);
-  let t = Math.ceil((nowMin() + 5) / 15) * 15;
+/* ---------- the day as one timeline: window, spans, free gaps ---------- */
+/* Work days run 8 AM to 6 PM; personal days 5 AM to 11 PM. */
+const DAY_END = { work: 1080, personal: 1380 };
+const dayStartOf = m => m === "work" ? 480 : 300;
+const fTh = m => { m = Math.round(m); const h = Math.floor(m / 60) % 24; return ((h % 12) || 12) + ":" + pad(m % 60); };
+const ampm = m => Math.floor(m / 60) % 24 >= 12 ? "PM" : "AM";
+const isOpen = it => it.status !== "done" && it.status !== "skipped" && it.status !== "ended";
+/* Minutes an item occupies: meetings from start to end, tasks their duration (30 if not set), routines theirs (15 if not set). */
+function spanEnd(it, d) { const s0 = tm(it.time); if (it.kind === "meet") return Math.max(tm(it.end || it.time), s0 + 1); return s0 + (durMins(it.kind === "task" ? it.t : it.r, d) || (it.kind === "task" ? 30 : 15)); }
+/* The next workday on or after d (Sunday to Thursday). */
+const workdayFrom = d => { let x = d; while (isWeekend(x)) x = add(x, 1); return x; };
+/* What today holds in the current mode. Work items stay off on Friday and Saturday. */
+function todayParts() {
+  const d = today(), work = S.mode === "work", off = work && isWeekend(d);
+  const meets = (S.meetings[d] || []).map(m => mItem(m, d)).filter(inMode);
+  const tasks = off ? [] : S.tasks.filter(t => t.scope === S.mode && mine(t) && t.status !== "waiting" && t.due === d && cfOk(t)).map(tItem);
+  const rts = off ? [] : occsOn(d).filter(o => o.scope === S.mode && cfOk(o.r));
+  const overdue = S.tasks.filter(t => t.scope === S.mode && tOpen(t) && mine(t) && t.status !== "waiting" && isDay(t.due) && diff(t.due) < 0 && cfOk(t)).map(tItem).sort(byPri);
+  return { d, work, off, allDay: meets.filter(m => !m.time).sort(byEvent), timed: [...meets.filter(m => m.time), ...tasks.filter(i => i.time), ...rts.filter(o => o.time)], anytime: [...tasks.filter(i => !i.time).sort(byPri), ...rts.filter(o => !o.time)], overdue };
+}
+/* The first gap today, from now until the end of the mode's day, long enough for len minutes. extra adds busy spans (proposals already placed). */
+function freeSlot(len, skipKey, extra) {
+  if (S.mode === "work" && isWeekend(today())) return "";
+  const p = todayParts(), busy = [...p.timed.filter(it => key(it) !== skipKey && isOpen(it)).map(it => [tm(it.time), spanEnd(it, p.d)]), ...(extra || [])].sort((a, b) => a[0] - b[0]);
+  let t = Math.max(Math.ceil((nowMin() + 5) / 15) * 15, dayStartOf(S.mode));
   for (const [a, b] of busy) { if (b <= t) continue; if (a - t >= len) break; t = Math.max(t, Math.ceil(b / 15) * 15); }
-  return t + len <= 1380 ? hhmm(t) : "";
+  return t + len <= DAY_END[S.mode] ? hhmm(t) : "";
+}
+/* ---------- Plan My Free Time: unscheduled tasks placed into today's gaps as proposals, applied only on Accept ---------- */
+function propsNow() { const p = S.prop; return p && p.d === today() && p.mode === S.mode ? p.list.filter(x => { const t = S.tasks.find(y => y.id === x.id); return t && tOpen(t) && !t.time && t.due === p.d; }) : []; }
+function planFree(ids) {
+  const p = todayParts(), extra = [], list = []; let miss = 0;
+  p.anytime.filter(it => it.kind === "task" && isOpen(it) && (!ids || ids.includes(it.id))).forEach(it => {
+    const len = durMins(it.t, p.d) || 30, sl = freeSlot(len, "", extra);
+    if (!sl) { miss++; return; }
+    extra.push([tm(sl), tm(sl) + len]); list.push({ id: it.id, time: sl, len });
+  });
+  return { list, miss };
+}
+function proposeFree() {
+  const r = planFree();
+  if (!r.list.length) { toast(r.miss ? "No free time left today for these." : "Nothing unscheduled today."); return; }
+  S.prop = { d: today(), mode: S.mode, list: r.list }; render(true);
+  toast(`${r.list.length} proposed${r.miss ? `, ${r.miss} didn't fit` : ""}. Accept or drop each.`);
+}
+/* Gives each listed task its time today; one Undo puts them all back. */
+function scheduleList(li, msg) {
+  if (!li.length) return;
+  const before = li.map(x => clone(S.tasks.find(t => t.id === x.id))).filter(Boolean);
+  li.forEach(x => { const t = S.tasks.find(y => y.id === x.id); if (t) saveTask({ ...t, time: x.time, due: today(), status: t.status === "progress" ? "progress" : "due" }); });
+  if (S.prop) S.prop.list = S.prop.list.filter(x => !li.some(y => y.id === x.id));
+  render(true);
+  toast(msg || (li.length === 1 ? "Scheduled for " + fT(li[0].time) : `Scheduled ${li.length}`), () => before.forEach(b => saveTask(b)));
+}
+const acceptProps = ids => scheduleList(propsNow().filter(x => !ids || ids.includes(x.id)));
+function dropProp(id) { if (S.prop) S.prop.list = S.prop.list.filter(x => x.id !== id); render(true); }
+/* ---------- moving tasks to another day: rollover count, and work only lands on Sunday to Thursday ---------- */
+function moveTasks(ts, fn, msg) {
+  if (!ts.length) return;
+  const before = ts.map(t => clone(t));
+  ts.forEach(t => { const o = fn(t); let d2 = o.due; if (t.scope === "work" && isDay(d2)) d2 = workdayFrom(d2); saveTask({ ...t, due: d2, time: o.time || "", status: "delayed", delayedFrom: t.delayedFrom || ((t.due || today()) + (t.time ? "T" + t.time : "")), rolls: (Number(t.rolls) || 0) + 1 }); });
+  toast(msg || (ts.length === 1 ? "Moved" : `Moved ${ts.length}`), () => before.forEach(b => saveTask(b)));
+}
+function reschedOpts(work) {
+  const d0 = today(), n = nowMin(), wk = isWeekend(d0), nd = work ? nextWorkday() : add(d0, 1), o = [];
+  if (!(work && wk)) { if (freeSlot(15)) o.push(["fit", "Fit Into Today's Free Time", "Each goes into the next free slot; the rest stay on today"]); if (n < DAY_END[S.mode]) o.push(["today", "Today, Any Time", fD(d0)]); }
+  if (!work && n < 1200) o.push(["tonight", "Tonight", fD(d0) + ", 8:00 PM"]);
+  o.push(["next", work ? "Next Workday Morning" : "Tomorrow Morning", fD(nd) + ", 9:00 AM"]);
+  return o;
+}
+function applyResched(kind, ts, pick) {
+  const d0 = today(), work = S.mode === "work", nd = work ? nextWorkday() : add(d0, 1);
+  if (kind === "fit") {
+    const extra = [], plan = {};
+    ts.forEach(t => { const len = durMins(t, d0) || 30, sl = freeSlot(len, "", extra); if (sl) { extra.push([tm(sl), tm(sl) + len]); plan[t.id] = sl; } });
+    const n = Object.keys(plan).length;
+    moveTasks(ts, t => ({ due: d0, time: plan[t.id] || "" }), n === ts.length ? `Fitted ${n} into today` : `Fitted ${n}; ${ts.length - n} on today with no time`);
+  }
+  else if (kind === "today") moveTasks(ts, () => ({ due: d0, time: "" }), "Moved to today");
+  else if (kind === "tonight") moveTasks(ts, () => ({ due: d0, time: "20:00" }), "Moved to tonight");
+  else if (kind === "next") moveTasks(ts, () => ({ due: nd, time: "09:00" }), "Moved to " + rel(nd).toLowerCase() + ", 9:00 AM");
+  else if (kind === "pick" && isDay(pick)) moveTasks(ts, () => ({ due: pick, time: "" }), "Moved to " + rel(work ? workdayFrom(pick) : pick).toLowerCase());
+}
+/* ---------- Plan Your Day: a 2-minute morning check from 8 AM, ticked off by the "Plan Your Day" routine ---------- */
+const PLAN_ID = "r_plan";
+const isPlan = it => !!it && it.kind === "routine" && it.r.id === PLAN_ID && it.date === today();
+function planDone() {
+  const l = S.logs[logId(PLAN_ID, today())]; if (l && (l.status === "done" || l.status === "skipped")) return true;
+  try { return localStorage.getItem("pa-planned") === today(); } catch (e) { return false; }
+}
+function markPlanned(status) {
+  try { localStorage.setItem("pa-planned", today()); } catch (e) {}
+  const r = S.routines.find(x => x.id === PLAN_ID);
+  if (r && occursOn(r, today())) setLog(PLAN_ID, today(), status);
+  else render(true);
+}
+function planBanner() {
+  const n = nowMin(); if (n < 480 || n >= 1080 || planDone() || (S.mode === "work" && isWeekend(today()))) return "";
+  return `<button type="button" class="planb" data-act="plan"><span class="big">${ico("today")}</span><span class="tr-t"><span class="ey">Morning Plan</span><b>Plan Your Day</b><small>Clear leftovers, check the load and give open tasks a time. About two minutes.</small></span>${chevR}</button>`;
 }
 /* Last, Now and Up Next in one card: what just happened, what is on now, and what comes next today. */
 function upNext() {
@@ -1225,9 +1412,24 @@ function dayDots(d) {
   if (ev.some(e => e.etype === "birthday")) dots.push("--i-bday");
   if (ev.some(e => e.etype === "meeting" || e.etype === "event" || e.etype === "holiday")) dots.push(S.mode === "work" ? "--i-meet" : "--i-event");
   const ts = S.tasks.filter(t => t.due === d && tOpen(t) && t.scope === S.mode);
-  if (ts.some(t => t.scope === "work")) dots.push("--i-work");
-  if (ts.some(t => t.scope === "personal")) dots.push("--i-personal");
+  if (ts.length && diff(d) < 0) dots.push("--late");
+  else if (ts.length) dots.push(S.mode === "work" ? "--i-work" : "--i-personal");
   return dots;
+}
+/* Open tasks on a day in this mode, shown as a small count on the month grid. */
+const dayCount = d => S.tasks.filter(t => t.due === d && tOpen(t) && t.scope === S.mode && mine(t)).length;
+/* Planned minutes on a day: timed events, tasks (30m if no duration) and routines (15m if none). */
+function dayLoad(d) {
+  if (S.mode === "work" && isWeekend(d)) return 0;
+  let m = 0;
+  (S.meetings[d] || []).map(x => mItem(x, d)).filter(inMode).forEach(it => { if (it.time) m += spanEnd(it, d) - tm(it.time); });
+  S.tasks.filter(t => t.scope === S.mode && mine(t) && t.status !== "waiting" && t.due === d && tOpen(t)).forEach(t => { m += durMins(t, d) || 30; });
+  occsOn(d).filter(o => o.scope === S.mode).forEach(o => { m += durMins(o.r, d) || 15; });
+  return m;
+}
+function loadStrip() {
+  const cap = S.mode === "work" ? DAY_END.work - dayStartOf("work") : DAY_END.personal - dayStartOf("personal") - 360;
+  return `<div class="loads" role="group" aria-label="Planned time per day">${Array.from({ length: 7 }, (_, i) => add(today(), i + 1)).map(d => { const m = dayLoad(d), r = m / cap, off = S.mode === "work" && isWeekend(d); return `<button type="button" class="ld${r > 1 ? " over" : r > .85 ? " heavy" : ""}${off ? " off" : ""}" data-act="loadday" data-d="${d}" aria-label="${esc(fDL(d))}: ${off ? "weekend" : esc(dur(m)) + " planned"}">${esc(DAYS[wd(d)])} ${Number(d.slice(8))}<b>${off ? "Off" : m ? esc(dur(m)) : "Free"}</b></button>`; }).join("")}</div>`;
 }
 /* Nav bar buttons. Inbox shows in Work mode with the count of proposals waiting; Search opens the field under the segments. */
 const inboxBtn = () => S.mode !== "work" ? "" : `<button type="button" class="icon-btn" data-act="inbox" aria-label="Inbox${inboxCount() ? ", " + inboxCount() + " proposed" : ""}">${ico("inbox")}${inboxCount() ? `<span class="badge-n">${inboxCount()}</span>` : ""}</button>`;
@@ -1238,14 +1440,14 @@ function viewCal() {
   const week = S.calMode === "week";
   const head = `<header class="navbar"><div><h1>Calendar</h1><div class="sub">${week ? esc(fD(add(today(), 1))) + " to " + esc(fD(add(today(), 7))) : S.mode === "work" ? "Outlook meetings and work tasks" : "Events, birthdays and personal tasks"}</div></div><div class="acts">${rfBtn()}<button type="button" class="icon-btn" data-act="${week ? "new" : "newday"}" aria-label="New task${week ? "" : " on this day"}">${ico("plus")}</button></div></header>
   ${segHtml("Show", [["month", "Month"], ["week", "Next 7 Days"]], S.calMode, "calmode")}`;
-  if (week) { const p = planner("week"); return head + `<div class="cols two"><div class="col">${p.meetSec}${p.workSec}${p.persSec}</div><div class="col">${p.routineSec}</div></div>`; }
+  if (week) { const p = planner("week"); return head + loadStrip() + `<div class="cols two"><div class="col">${p.meetSec}${p.workSec}${p.persSec}</div><div class="col">${p.routineSec}</div></div>`; }
   const sel = S.calDay || today(), m = S.calMonth || monthStart(sel), { from } = calRange(m);
   if (!monthsLoaded[m]) loadMonth(m);
   const title = D(m).toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
   let grid = DAYS.map((x, i) => `<div class="wd${i >= 5 ? " we" : ""}">${x.slice(0, 1)}</div>`).join("");
   for (let i = 0; i < 42; i++) {
     const d = add(from, i), cls = ["cd", d.slice(0, 7) !== m.slice(0, 7) ? "out" : "", isWeekend(d) ? "we" : "", d === today() ? "today" : "", d === sel ? "sel" : ""].filter(Boolean).join(" ");
-    grid += `<button type="button" class="${cls}" data-act="calday" data-d="${d}" aria-label="${esc(fDL(d))}"${d === sel ? ' aria-pressed="true"' : ""}><b>${Number(d.slice(8))}</b><span class="dots">${dayDots(d).map(c => `<i style="--ic:var(${c})"></i>`).join("")}</span></button>`;
+    grid += `<button type="button" class="${cls}" data-act="calday" data-d="${d}" aria-label="${esc(fDL(d))}"${d === sel ? ' aria-pressed="true"' : ""}><b>${Number(d.slice(8))}</b>${dayCount(d) ? `<small class="cn">${dayCount(d)}</small>` : ""}<span class="dots">${dayDots(d).map(c => `<i style="--ic:var(${c})"></i>`).join("")}</span></button>`;
   }
   const meets = (S.meetings[sel] || []).map(x => mItem(x, sel)).filter(inMode).sort(byEvent);
   const evL = S.mode === "work" ? "Meetings" : "Events";
@@ -1264,20 +1466,92 @@ function viewCal() {
   <div class="cal-key">${S.mode === "work" ? `<span><i style="--ic:var(--i-meet)"></i>Meetings</span>` : `<span><i style="--ic:var(--i-event)"></i>Events</span><span><i style="--ic:var(--i-bday)"></i>Birthdays</span>`}${S.mode === "work" ? `<span><i style="--ic:var(--i-work)"></i>Work tasks</span>` : `<span><i style="--ic:var(--i-personal)"></i>Personal tasks</span>`}</div></section></div>
   <div class="col">${agenda}</div></div>`;
 }
-/* Today's own items in this mode: how many are finished, for the line under the date. */
-function dayProgress() {
-  const d = today(); if (S.mode === "work" && isWeekend(d)) return "";
-  const li = [...S.tasks.filter(t => mine(t) && t.status !== "waiting" && t.due === d && t.scope === S.mode).map(tItem), ...occsOn(d).filter(o => o.scope === S.mode)];
-  if (!li.length) return "";
-  const n = li.filter(o => o.status === "done" || o.status === "skipped").length;
-  return n === li.length ? "All done for today" : `${n} of ${li.length} done`;
+/* Today's load: what is still planned against the time left until the end of the mode's day. */
+function capacityHtml(p) {
+  if (p.off) return "";
+  const n = nowMin(), end = DAY_END[S.mode], start = Math.max(n, dayStartOf(S.mode)), left = Math.max(0, end - start);
+  let planned = 0, noEst = 0;
+  p.timed.filter(isOpen).forEach(it => { const a = Math.max(tm(it.time), start), e = Math.min(spanEnd(it, p.d), end); if (e > a) planned += e - a; });
+  p.anytime.filter(isOpen).forEach(it => { const m = durMins(it.kind === "task" ? it.t : it.r, p.d); if (!m && it.kind === "task") noEst++; planned += m || (it.kind === "task" ? 30 : 15); });
+  const own = [...p.timed, ...p.anytime].filter(it => it.kind !== "meet"), done = own.filter(it => !isOpen(it)).length;
+  const ratio = left ? planned / left : 0, cls = ratio > 1 ? "over" : ratio > .85 ? "warn" : "";
+  const head = own.length ? (done === own.length ? "All done" : `${done} of ${own.length} done`) : "Nothing planned";
+  const right = left ? `${dur(planned)} planned · ${dur(left)} left until ${fT(hhmm(end))}` : "Day over";
+  const note = left && planned > left ? `<div class="cap-n late">Over by ${dur(planned - left)}. Move something to another day.</div>` : noEst ? `<div class="cap-n">${noEst} task${noEst > 1 ? "s" : ""} without a duration, counted as 30m</div>` : "";
+  return `<section class="cap" aria-label="Today's load"><div class="cap-h"><b>${esc(head)}</b><span>${esc(right)}</span></div>${left ? `<div class="cap-bar ${cls}" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(Math.min(100, ratio * 100))}"><i style="width:${Math.round(Math.min(100, ratio * 100))}%"></i></div>` : ""}${note}</section>`;
 }
+function overdueHtml(p) {
+  if (!p.overdue.length) return "";
+  RO = { ctx: true }; const rows = p.overdue.map(rowHtml).join(""); RO = {};
+  return cardHtml(rows + `<div class="card-acts"><button type="button" class="btn sm primary" data-act="resched">${ico("clock")}Reschedule All (${p.overdue.length})</button></div>`, chHead("Overdue", "--late", p.overdue.length, "t:overdue"));
+}
+/* One row on the timeline: the time in the gutter with a rail in the item's colour, then the usual row. */
+function tlRowHtml(it, d, cls) {
+  const s0 = tm(it.time), e = spanEnd(it, d), ic = itemIcon(it), past = d === today() && e <= nowMin();
+  return `<div class="tl-it${cls ? " " + cls : ""}${past ? " past" : ""}" style="--ic:var(${ic.c})"><div class="tl-g"><b>${fTh(s0)}</b><small>${ampm(s0)}</small></div>${rowHtml(it)}</div>`;
+}
+/* Morning and Night routines sit on the timeline as one block that opens to its steps. */
+function grpHtml(g, d) {
+  const k = fk("tg", g.block), all = g.li.length, done = g.li.filter(o => !isOpen(o)).length, nx = g.li.find(o => isOpen(o));
+  const n = nowMin(), live = d === today() && n >= g.start - 30 && n <= g.end + 30, miss = g.li.some(o => o.status === "missed");
+  const f = folded(k, done === all || (!live && !miss)), pct = Math.round(done / all * 100), lbl = g.block === "morning" ? "Morning Routine" : "Night Routine";
+  return `<div class="tl-grp${f ? " folded" : ""}"><div class="tl-it${d === today() && g.end <= n ? " past" : ""}" style="--ic:var(--i-personal)"><div class="tl-g"><b>${fTh(g.start)}</b><small>${ampm(g.start)}</small></div><button type="button" class="tl-gh" data-act="fold" data-f="${esc(k)}" data-o="${f ? 0 : 1}" aria-expanded="${!f}"><span class="ring${done === all ? " full" : ""}" style="--p:${pct}%" aria-hidden="true"></span><span class="ttl"><span class="tt">${lbl}</span><span class="meta">${done} of ${all} done<span class="sep">·</span>${esc(dur(g.end - g.start))}${nx ? '<span class="sep">·</span>Next: ' + esc(nx.title) : ""}</span></span>${miss ? `<span class="flag late" title="Missed">${ico("alert")}<span class="sr">Something missed</span></span>` : ""}${chev}</button></div><div class="fb">${g.li.map(o => tlRowHtml(o, d, "sub")).join("")}</div></div>`;
+}
+function propHtml(x) {
+  const s0 = tm(x.time);
+  return `<div class="tl-it prop" style="--ic:var(--label2)"><div class="tl-g"><b>${fTh(s0)}</b><small>${ampm(s0)}</small></div><div class="prop-b"><span class="ttl"><span class="tt">${esc(x.title)}</span><span class="meta">Proposed<span class="sep">·</span>${esc(dur(x.len))}</span></span><button type="button" class="ib ok" data-act="pacc1" data-id="${esc(x.id)}" aria-label="Accept ${esc(x.title)} at ${esc(fT(x.time))}">${ico("check")}</button><button type="button" class="ib" data-act="pdrop" data-id="${esc(x.id)}" aria-label="Drop the proposal for ${esc(x.title)}">${ico("skip")}</button></div></div>`;
+}
+/* The timeline: items in time order, Morning and Night blocks, proposed blocks, a now line and the free gaps after it. */
+function timelineHtml(p) {
+  const d = p.d, n = nowMin(), isToday = d === today(), end = DAY_END[S.mode], ents = [], groups = {};
+  p.timed.forEach(it => { const b = it.kind === "routine" ? it.r.block : ""; if (b === "morning" || b === "night") (groups[b] = groups[b] || []).push(it); else ents.push({ s: tm(it.time), e: spanEnd(it, d), it }); });
+  Object.keys(groups).forEach(b => { const li = groups[b].sort(byTime); if (li.length === 1) { ents.push({ s: tm(li[0].time), e: spanEnd(li[0], d), it: li[0] }); return; } const st = Math.min(...li.map(o => tm(o.time))), e = Math.max(...li.map(o => spanEnd(o, d))); ents.push({ s: st, e, g: { block: b, li, start: st, end: e } }); });
+  propsNow().forEach(x => { const t = S.tasks.find(y => y.id === x.id); ents.push({ s: tm(x.time), e: tm(x.time) + x.len, prop: { ...x, title: t.title } }); });
+  ents.sort((a, b) => a.s - b.s || (a.it && a.it.kind === "meet" ? -1 : b.it && b.it.kind === "meet" ? 1 : 0));
+  const nowLine = () => `<div class="tl-now" role="separator" aria-label="Now, ${esc(fT(hhmm(n)))}"><div class="tl-g"><b>${fTh(n)}</b></div><i></i></div>`;
+  const gap = (a, b) => { a = Math.ceil(a / 5) * 5; return b - a >= 15 ? `<button type="button" class="tl-gap" data-act="gap" data-a="${a}" data-b="${b}"><span class="tl-g"></span><span class="gp">${esc(dur(b - a))} free${b >= end ? " until " + esc(fT(hhmm(end))) : ""}</span>${chevR}</button>` : ""; };
+  let html = "", last = dayStartOf(S.mode), nowDone = !isToday || n >= 1440;
+  RO = { tl: true, ctx: true };
+  ents.forEach(x => {
+    if (!nowDone && x.s > n) { html += nowLine(); nowDone = true; }
+    if (isToday && x.s > n) html += gap(Math.max(last, n), x.s);
+    html += x.g ? grpHtml(x.g, d) : x.prop ? propHtml(x.prop) : tlRowHtml(x.it, d);
+    last = Math.max(last, x.e);
+  });
+  if (!nowDone) html += nowLine();
+  if (isToday) html += gap(Math.max(last, n), end);
+  RO = {};
+  return html;
+}
+function anytimeHtml(p) {
+  const shown = new Set(propsNow().map(x => x.id));
+  let li = p.anytime.filter(it => !(it.kind === "task" && shown.has(it.id)));
+  if (p.work) li = [...oneEach(li.filter(i => i.kind === "task")), ...li.filter(i => i.kind !== "task")];
+  if (!li.length) return "";
+  const open = li.filter(isOpen).length, canPlan = !p.off && li.some(i => i.kind === "task" && isOpen(i));
+  RO = { ctx: true, planner: true }; const rows = li.map(rowHtml).join(""); RO = {};
+  return cardHtml(rows + (canPlan ? `<div class="card-acts"><button type="button" class="btn sm" data-act="planfree">${ico("timer")}Plan My Free Time</button></div>` : ""), chHead("Any Time", null, `${li.length - open}/${li.length}`, "t:any", open === 0));
+}
+/* Today: the glance card, the morning plan, the load, then leftovers, all-day items, untimed items and the timeline. */
 function viewToday() {
-  const p = planner("today"), d = today();
-  return `<header class="navbar"><div><h1>Today</h1><div class="sub">${esc(fDL(d))}</div>${dayProgress() ? `<div class="sub">${esc(dayProgress())}</div>` : ""}</div><div class="acts">${inboxBtn()}${rfBtn()}<button type="button" class="icon-btn" data-act="new" aria-label="New task">${ico("plus")}</button></div></header>
+  const p = todayParts(), d = p.d;
+  const head = `<header class="navbar"><div><h1>Today</h1><div class="sub">${esc(fDL(d))}</div></div><div class="acts">${inboxBtn()}${rfBtn()}<button type="button" class="icon-btn" data-act="new" aria-label="New task">${ico("plus")}</button></div></header>`;
+  RO = { planner: true }; const allDay = p.allDay.length ? cardHtml(p.allDay.map(rowHtml).join(""), chHead("All Day", null, p.allDay.length, "t:allday")) : ""; RO = {};
+  const props = propsNow();
+  const propBar = props.length ? `<div class="propbar"><span>${props.length} proposed</span><button type="button" class="btn sm primary" data-act="paccall">Accept All</button><button type="button" class="btn sm" data-act="pclear">Clear</button></div>` : "";
+  const tlOpen = p.timed.filter(isOpen).length;
+  const tl = p.off ? cardHtml(`<div class="empty">Weekend. Work returns on Sunday.</div>`, chHead("Schedule", null)) : (() => { const k = fk("c", "t:tl"), f = folded(k); return `<div class="card tlc${f ? " folded" : ""}"><button type="button" class="ch" data-act="fold" data-f="${esc(k)}" data-o="${f ? 0 : 1}" aria-expanded="${!f}">Schedule<span class="cnt">${p.timed.length - tlOpen}/${p.timed.length}</span>${chev}</button><div class="fb">${propBar}<div class="tl">${timelineHtml(p)}</div></div></div>`; })();
+  let chase = "";
+  if (p.work && !p.off) { const li = S.tasks.filter(t => t.scope === "work" && isWaiting(t) && cfOk(t) && chaseDate(t) && diff(chaseDate(t)) <= 0).map(chaseItem).sort(byDayPri); if (li.length) { RO = { ctx: true }; chase = cardHtml(li.map(rowHtml).join(""), chHead("To Chase", "--i-meet", li.length, "chase")); RO = {}; } }
+  let soon = "";
+  if (!p.work) { const li = Array.from({ length: 7 }, (_, i) => add(d, i + 1)).flatMap(x => (S.meetings[x] || []).map(m => mItem(m, x))).filter(it => it.etype === "birthday" || it.etype === "holiday").sort(byEvent); if (li.length) { RO = { planner: true, evDate: true }; soon = cardHtml(li.map(rowHtml).join(""), chHead("Coming Up", "--i-bday", li.length, "ev:soon")); RO = {}; } }
+  const note = !p.off && S.meetNote ? `<p class="foot">${esc(S.meetNote)}</p>` : "";
+  return `${head}
   ${upNext()}
-  ${S.mode === "work" ? `<div class="cols two"><div class="col">${p.workSec}</div><div class="col">${p.meetSec}${p.routineSec}</div></div>` : `<div class="cols two"><div class="col">${p.meetSec}${p.persSec}</div><div class="col">${p.routineSec}</div></div>`}
-  <p class="foot" style="text-align:center">Version ${esc(APP_VERSION)}</p>`;
+  ${planBanner()}
+  ${capacityHtml(p)}
+  ${(() => { const c1 = overdueHtml(p) + allDay + anytimeHtml(p) + chase, c2 = tl + note + soon; return c1 ? `<div class="cols two"><div class="col">${c1}</div><div class="col">${c2}</div></div>` : `<div class="col">${c2}</div>`; })()}
+  <p class="foot" style="text-align:center"><button type="button" class="txtbtn sm" data-act="settings">Settings</button> · Version ${esc(APP_VERSION)}</p>`;
 }
 
 /* ---------- Work: Actions (mine, by date), Waiting (by person), Audits (by client), Done ---------- */
@@ -1389,7 +1663,7 @@ function renderMain(keep) {
   else if (keep) window.scrollTo(0, y);
   if (S.just) setTimeout(() => { S.just = null; }, 400);
 }
-function render(keep) { renderNav(); renderMain(keep); if (S.ready) saveCache(); }
+function render(keep) { renderNav(); renderMain(keep); if (S.ready) { saveCache(); updateBadge(); } }
 let tsw = null;
 view.addEventListener("touchstart", e => {
   if (e.touches.length !== 1 || S.sheet) { tsw = null; return; }
@@ -1494,14 +1768,14 @@ function applyBalance(o) {
 }
 function delay(it, date, time) {
   if (it.kind === "task" && !it.t.time && it.status !== "missed") { const t = it.t, b = { ...t }; saveTask({ ...t, due: date, time, status: t.status === "progress" ? "progress" : "due" }); toast("Scheduled " + rel(date).toLowerCase() + (time ? ", " + fT(time) : ""), () => saveTask(b)); return; } // giving an untimed task a slot is planning, not a delay
-  if (it.kind === "task") { const t = it.t, b = { ...t }; saveTask({ ...t, delayedFrom: t.delayedFrom || ((t.due || today()) + (t.time ? "T" + t.time : "")), due: date, time, status: "delayed" }); toast("Moved to " + rel(date) + (time ? ", " + fT(time) : ""), () => saveTask(b)); }
+  if (it.kind === "task") { const t = it.t, b = { ...t }; if (t.scope === "work" && isDay(date) && isWeekend(date)) { date = workdayFrom(date); toast("Work moves to workdays: " + rel(date)); } const later = isDay(date) && (!isDay(t.due) || date > t.due || diff(t.due) < 0); saveTask({ ...t, delayedFrom: t.delayedFrom || ((t.due || today()) + (t.time ? "T" + t.time : "")), due: date, time, status: "delayed", rolls: later ? (Number(t.rolls) || 0) + 1 : t.rolls }); toast("Moved to " + rel(date) + (time ? ", " + fT(time) : ""), () => saveTask(b)); }
   else { const p = setLog(it.r.id, it.date, "delayed", time); toast("Moved to " + fT(time), () => restoreLog(it.r.id, it.date, p)); }
 }
 
 /* ---------- clicks ---------- */
 view.addEventListener("click", e => {
   const nb = e.target.closest("[data-now]");
-  if (nb && S.nowKey) { const it = findItem(S.nowKey); if (!it) return; const a = nb.dataset.now; if (a === "done") markDone(it); else if (a === "skip") markSkip(it); else openSheet({ type: "item", key: S.nowKey }); return; }
+  if (nb && S.nowKey) { const it = findItem(S.nowKey); if (!it) return; const a = nb.dataset.now; if (a === "done") markDone(it); else if (a === "skip") markSkip(it); else openSheet(isPlan(it) ? { type: "plan" } : { type: "item", key: S.nowKey }); return; }
   const b = e.target.closest("[data-act]"); if (!b || !b.dataset.act) return;
   const a = b.dataset.act;
   if (a === "mode") { switchMode(b.dataset.m); return; }
@@ -1512,6 +1786,16 @@ view.addEventListener("click", e => {
   if (a === "search") { S.qOpen = !(S.qOpen || S.q); if (!S.qOpen) S.q = ""; renderMain(true); if (S.qOpen) { const q = document.getElementById("q"); if (q) q.focus({ preventScroll: true }); } return; }
   if (a === "refresh") { refreshNow(); return; }
   if (a === "lastdone") { const it = findItem(b.dataset.k); if (it) markDone(it); return; }
+  if (a === "plan") { openSheet({ type: "plan" }); return; }
+  if (a === "planfree") { proposeFree(); return; }
+  if (a === "paccall") { acceptProps(); return; }
+  if (a === "pclear") { S.prop = null; render(true); return; }
+  if (a === "pacc1") { acceptProps([b.dataset.id]); return; }
+  if (a === "pdrop") { dropProp(b.dataset.id); return; }
+  if (a === "gap") { openSheet({ type: "gap", a: Number(b.dataset.a), b: Number(b.dataset.b) }); return; }
+  if (a === "resched") { openSheet({ type: "resched" }); return; }
+  if (a === "settings") { openSheet({ type: "settings" }); return; }
+  if (a === "loadday") { S.calMode = "month"; S.calDay = b.dataset.d; S.calMonth = monthStart(b.dataset.d); persist(); renderMain(); return; }
   if (a === "calmode") { S.calMode = b.dataset.sub === "week" ? "week" : "month"; S.swipe = null; persist(); renderMain(); return; }
   if (a === "calday") { S.calDay = b.dataset.d; if (S.calDay.slice(0, 7) !== (S.calMonth || "").slice(0, 7)) S.calMonth = monthStart(S.calDay); renderMain(true); return; }
   if (a === "calnav") { const m = S.calMonth || monthStart(S.calDay || today()), dt = D(m); dt.setUTCMonth(dt.getUTCMonth() + Number(b.dataset.n)); S.calMonth = iso(dt); S.calDay = S.calMonth.slice(0, 7) === today().slice(0, 7) ? today() : S.calMonth; renderMain(true); return; }
@@ -1519,7 +1803,7 @@ view.addEventListener("click", e => {
   if (a === "newday") { const t = newTask(); t.due = S.calDay || today(); openSheet({ type: "editTask", obj: t }); return; }
   if (a === "newr") { openSheet({ type: "editRoutine", obj: newRoutine() }); return; }
   if (a === "fold") { S.fold[b.dataset.f] = b.dataset.o === "1" ? 1 : 0; S.swipe = null; saveFold(); renderMain(true); return; }
-  if (a === "dayopen") { if (findItem(b.dataset.k)) openSheet({ type: "item", key: b.dataset.k }); return; }
+  if (a === "dayopen") { const it = findItem(b.dataset.k); if (it) openSheet(isPlan(it) ? { type: "plan" } : { type: "item", key: b.dataset.k }); return; }
   if (a === "sub") { S.sub[S.view] = b.dataset.sub; S.swipe = null; persist(); renderMain(); return; }
   if (a === "cf") { S.cf = CLIENTS.includes(b.dataset.cf) ? b.dataset.cf : ""; S.swipe = null; persist(); renderMain(true); return; }
   const sw = b.closest(".sw"); if (!sw) return;
@@ -1529,7 +1813,7 @@ view.addEventListener("click", e => {
   if (a === "toggle") { if (it.status === "done" || it.status === "skipped") unmark(it); else markDone(it); return; }
   if (a === "done") { markDone(it); return; }
   if (a === "skip") { markSkip(it); return; }
-  if (a === "open") { if (wasOpen) renderMain(true); openSheet({ type: "item", key: sw.dataset.key }); return; }
+  if (a === "open") { if (wasOpen) renderMain(true); openSheet(isPlan(it) && it.status !== "done" ? { type: "plan" } : { type: "item", key: sw.dataset.key }); return; }
 });
 /* Quick add lives in the + sheet: the preview updates as you type; Add saves without opening the form. */
 document.getElementById("sheet").addEventListener("input", e => {
@@ -1603,6 +1887,83 @@ sheet.addEventListener("pointerup", gEnd); sheet.addEventListener("pointercancel
 
 const bar = (title, l, r) => `<button type="button" class="grab" data-s="close" aria-label="Close"></button><div class="sh-bar"><span class="l">${l || ""}</span><h2 id="shTitle">${esc(title)}</h2><span class="r">${r || ""}</span></div>`;
 const opt = (list, sel) => list.map(x => { const [v, l] = Array.isArray(x) ? x : [x, x]; return `<option value="${esc(v)}"${String(v) === String(sel) ? " selected" : ""}>${esc(l)}</option>`; }).join("");
+/* ---------- planning sheets ---------- */
+/* Plan Your Day: 1 leftovers, 2 the load, 3 untimed tasks with a proposed time each, then Start My Day. */
+function planSheet() {
+  const p = todayParts(), s = S.sheet, un = s.un || {};
+  RO = {};
+  const left = p.overdue.map(it => `<div class="pl-row ov"><span class="ttl"><span class="tt">${esc(it.title)}</span><span class="meta"><span class="late">${esc(relShort(it.t.due))}</span>${it.t.scope === "work" ? '<span class="sep">·</span>' + esc(it.t.area) : ""}${Number(it.t.rolls) >= 2 ? '<span class="sep">·</span>Moved ' + Number(it.t.rolls) + "×" : ""}</span></span><span class="pl-acts"><button type="button" class="btn sm" data-s="plt" data-id="${esc(it.id)}">Today</button><button type="button" class="btn sm" data-s="pll" data-id="${esc(it.id)}">${p.work ? "Next Workday" : "Tomorrow"}</button><button type="button" class="btn sm" data-s="pld" data-id="${esc(it.id)}">Drop</button></span></div>`).join("");
+  const r = planFree();
+  const fit = r.list.map(x => { const t = S.tasks.find(y => y.id === x.id); return `<label class="pl-row"><input type="checkbox" data-pl="${esc(x.id)}" ${un[x.id] ? "" : "checked"}><span class="ttl"><span class="tt">${esc(t.title)}</span><span class="meta">${esc(fT(x.time))}<span class="sep">·</span>${esc(dur(x.len))}${durMins(t, today()) ? "" : " (no duration set)"}</span></span></label>`; }).join("");
+  const sel = r.list.filter(x => !un[x.id]).length;
+  return bar("Plan Your Day", `<button type="button" class="txtbtn" data-s="planskip">Not Today</button>`, `<button type="button" class="txtbtn strong" data-s="close">Close</button>`) + `<div class="sh-body">
+    <p class="foot">${p.work ? "Work" : "Personal"} · ${esc(fDL(today()))}</p>
+    <div class="lbl">1. Left Over${p.overdue.length ? " · " + p.overdue.length : ""}</div><div class="list">${left || `<div class="empty">Nothing left over from earlier days.</div>`}</div>
+    <div class="lbl">2. Today's Load</div>${capacityHtml(p) || `<div class="list"><div class="empty">Work is off today.</div></div>`}
+    <div class="lbl">3. Give Open Tasks a Time</div><div class="list">${fit || `<div class="empty">${p.anytime.some(i => i.kind === "task" && isOpen(i)) ? "No free time left today for the open tasks." : "Every task today already has a time."}</div>`}</div>
+    ${r.list.length ? `<button type="button" class="btn" data-s="plsched" ${sel ? "" : "disabled"}>${ico("timer")}Schedule ${sel === r.list.length ? "All" : "Selected"} (${sel})</button>` : ""}${r.miss ? `<p class="foot" style="margin-top:-10px">${r.miss} more didn't fit before ${esc(fT(hhmm(DAY_END[S.mode])))}. They stay on today with no time.</p>` : ""}
+    <button type="button" class="btn primary" data-s="plstart">${ico("check")}Start My Day</button>
+  </div>`;
+}
+function reschedSheet() {
+  const p = todayParts(), ts = p.overdue.map(i => i.t), opts = reschedOpts(p.work);
+  return bar("Reschedule " + ts.length, `<button type="button" class="txtbtn" data-s="close">Cancel</button>`, "") + `<div class="sh-body">
+    <p class="foot">${ts.length ? ts.slice(0, 3).map(t => esc(t.title)).join(", ") + (ts.length > 3 ? ` and ${ts.length - 3} more` : "") : "Nothing overdue."}</p>
+    <div class="list">${opts.map(([k, l, sub]) => `<button type="button" class="cell pk" data-s="rs" data-k="${k}" ${ts.length ? "" : "disabled"}><span>${esc(l)}<small style="display:block;color:var(--label2);font-size:.78rem">${esc(sub)}</small></span>${chevR}</button>`).join("")}
+      <div class="cell"><label for="rsD">Pick a Date</label><input id="rsD" type="date" value="${esc(add(today(), 1))}" min="${esc(today())}"></div>
+      <div class="cell"><span></span><button type="button" class="btn sm primary" data-s="rspick" ${ts.length ? "" : "disabled"}>Move</button></div></div>
+    <p class="foot">${p.work ? "Work only moves to Sunday to Thursday; a Friday or Saturday becomes the next Sunday. " : ""}Each move is counted on the task, so things that keep slipping stand out.</p>
+  </div>`;
+}
+function gapSheet() {
+  const s = S.sheet, p = todayParts(), len = s.b - s.a;
+  const li = p.anytime.filter(it => it.kind === "task" && isOpen(it)).sort(byPri);
+  RO = { ctx: true };
+  const rows = li.map(it => { const m = durMins(it.t, p.d) || 30, fits = m <= len; return `<div class="pl-row"><span class="ttl"><span class="tt">${esc(it.title)}</span><span class="meta">${esc(dur(m))}${durMins(it.t, p.d) ? "" : " (no duration set)"}${fits ? "" : '<span class="sep">·</span>Longer than this gap'}</span></span><button type="button" class="btn sm${fits ? " primary" : ""}" data-s="gplace" data-id="${esc(it.id)}">${esc(fT(hhmm(s.a)))}</button></div>`; }).join("");
+  RO = {};
+  return bar("Free Time", "", `<button type="button" class="txtbtn strong" data-s="close">Done</button>`) + `<div class="sh-body">
+    <div class="hero"><span class="big" style="--ic:var(--done)">${ico("clock")}</span><h3>${esc(dur(len))} free</h3><span class="when">${esc(fT(hhmm(s.a)))} to ${esc(fT(hhmm(s.b)))}</span></div>
+    <div class="lbl">Put a Task Here</div><div class="list">${rows || `<div class="empty">No untimed tasks today.</div>`}</div>
+    <button type="button" class="btn" data-s="gnew">${ico("plus")}New Task at ${esc(fT(hhmm(s.a)))}</button>
+  </div>`;
+}
+/* ---------- settings: notifications and the icon badge, Siri capture, version ---------- */
+const standalone = () => { try { return matchMedia("(display-mode: standalone)").matches || navigator.standalone === true; } catch (e) { return false; } };
+function notifState() { if (!("Notification" in window)) return standalone() ? "unsupported" : "browser"; return Notification.permission; }
+/* The icon badge: tasks of yours due today or overdue, work ones only on workdays. */
+function badgeCount() { const d = today(), wk = isWeekend(d); return S.tasks.filter(t => tOpen(t) && mine(t) && t.status !== "waiting" && isDay(t.due) && t.due <= d && !(t.scope === "work" && wk && t.due === d)).length; }
+let lastBadge = -1;
+function updateBadge() {
+  try {
+    if (!("setAppBadge" in navigator) || !("Notification" in window) || Notification.permission !== "granted") return;
+    const n = badgeCount(); if (n === lastBadge) return; lastBadge = n;
+    (n ? navigator.setAppBadge(n) : navigator.clearAppBadge()).catch(() => {});
+  } catch (e) {}
+}
+function settingsSheet() {
+  const st = notifState();
+  const notif = st === "granted" ? `<div class="list"><div class="cell"><span>Notifications</span><span class="v">On</span></div></div><p class="foot" style="margin-top:-10px">The app icon shows how many of your tasks are due today or overdue (${badgeCount()} now). Alerts at item times still come from Google Calendar and Outlook.</p>`
+    : st === "denied" ? `<div class="list"><div class="cell"><span>Notifications</span><span class="v">Off</span></div></div><p class="foot" style="margin-top:-10px">They were declined for this app. Turn them on in iPhone Settings, Notifications, Personal Assistant.</p>`
+    : st === "default" ? `<button type="button" class="btn primary" data-s="notif">${ico("alert")}Allow Notifications</button><p class="foot" style="margin-top:-10px">iPhone asks once. After that the app icon shows how many tasks are due today or overdue, and the planner appears in iPhone Settings, Notifications.</p>`
+    : st === "browser" ? `<div class="list"><div class="empty">Open the planner from its Home Screen icon, then come back here to allow notifications. Safari tabs can't receive them.</div></div>`
+    : `<div class="list"><div class="empty">This device doesn't offer notifications to web apps. iOS 16.4 or later is needed.</div></div>`;
+  return bar("Settings", "", `<button type="button" class="txtbtn strong" data-s="close">Done</button>`) + `<div class="sh-body">
+    <div class="lbl">Notifications and Badge</div>${notif}
+    <div class="lbl">Add From Siri</div>
+    <div class="list"><ol class="steps">
+      <li>Open the Shortcuts app, tap <b>+</b> and name it <b>Add to Planner</b>.</li>
+      <li>Add <b>Ask for Input</b> (Text), prompt: What should I add?</li>
+      <li>Add <b>Get Contents of URL</b>. Paste the address below, set Method to <b>POST</b> and Request Body to <b>JSON</b>.</li>
+      <li>Add three fields: <b>key</b> (Text) with the key below, <b>fn</b> (Text) with <code>capture</code>, and <b>args</b> (Array) holding one Text item set to <b>Provided Input</b>.</li>
+      <li>Say "Hey Siri, Add to Planner", or put it on the Action Button. Write it like quick add: "Tamkeen send the agenda tomorrow 10am".</li>
+    </ol>
+    <div class="cell"><span>Address</span><button type="button" class="btn sm" data-s="cpurl">Copy</button></div>
+    <div class="cell"><span>Key</span><button type="button" class="btn sm" data-s="cpkey">Copy</button></div></div>
+    <p class="foot" style="margin-top:-10px">Captured items become tasks the next time the planner opens on either iPhone. Keep the key private; anyone with it can add to your planner.</p>
+    <p class="foot">Version ${esc(APP_VERSION)}</p>
+  </div>`;
+}
+async function copyText(t, what) { try { await navigator.clipboard.writeText(t); toast(what + " copied"); } catch (e) { toast("Couldn't copy. Long-press to copy instead."); } }
 function renderSheet() {
   const s = S.sheet; if (!s) return;
   if (s.type === "item") { const it = findItem(s.key); if (!it) { closeSheet(); return; } const b0 = sheet.querySelector(".sh-body"), y = b0 ? b0.scrollTop : 0; sheet.innerHTML = it.kind === "meet" ? meetSheet(it) : s.pick ? pickSheet(it) : itemSheet(it); const b1 = sheet.querySelector(".sh-body"); if (b1 && !s.pick) b1.scrollTop = y; return; }
@@ -1610,6 +1971,7 @@ function renderSheet() {
   if (s.type === "pay") { const it = findItem(s.key); if (!it) { closeSheet(); return; } sheet.innerHTML = paySheet(it); return; }
   if (s.type === "touch") { const it = findItem(s.key); if (!it || it.kind !== "task") { closeSheet(); return; } sheet.innerHTML = touchSheet(it); return; }
   if (s.type === "quick") { sheet.innerHTML = quickSheet(); return; }
+  if (s.type === "plan" || s.type === "resched" || s.type === "gap" || s.type === "settings") { const b0 = sheet.querySelector(".sh-body"), y = b0 ? b0.scrollTop : 0; sheet.innerHTML = s.type === "plan" ? planSheet() : s.type === "resched" ? reschedSheet() : s.type === "gap" ? gapSheet() : settingsSheet(); const b1 = sheet.querySelector(".sh-body"); if (b1) b1.scrollTop = y; return; }
   if (s.type === "audit") { const a = S.audits.find(x => x.id === s.id); if (!a) { closeSheet(); return; } const b0 = sheet.querySelector(".sh-body"), y = b0 ? b0.scrollTop : 0; sheet.innerHTML = auditSheet(a); const b1 = sheet.querySelector(".sh-body"); if (b1) b1.scrollTop = y; return; }
   if (s.type === "editAudit") { sheet.innerHTML = auditForm(s.obj); return; }
   if (s.type === "editTask") sheet.innerHTML = taskForm(s.obj);
@@ -1705,7 +2067,8 @@ function itemSheet(it) {
   const base = isT ? (it.date && diff(it.date) >= 0 ? it.date : today()) : it.date;
   const t0 = it.time && diff(base) === 0 ? Math.max(tm(it.time), nowMin()) : nowMin();
   const slot = isT ? freeSlot(durMins(it.t, today()) || 30, key(it)) : "";
-  const quick = isT ? [...(slot ? [["Next Free " + fT(slot), today(), slot]] : []), ["+1 Hour", today(), hhmm(Math.min(t0 + 60, 1439))], ["Tonight", today(), "20:00"], ["Tomorrow", add(today(), 1), it.time || ""], ["Next Workday", nextWorkday(), it.time || ""]] : [["+15 Min", it.date, hhmm(Math.min(t0 + 15, 1439))], ["+1 Hour", it.date, hhmm(Math.min(t0 + 60, 1439))], ["Tonight", it.date, "21:00"]];
+  const wk = isT && it.t.scope === "work", wkEnd = wk && isWeekend(today());
+  const quick = isT ? [...(slot && !wkEnd ? [["Next Free " + fT(slot), today(), slot]] : []), ...(wkEnd ? [] : [["+1 Hour", today(), hhmm(Math.min(t0 + 60, 1439))]]), ...(wk ? [] : [["Tonight", today(), "20:00"], ["Tomorrow", add(today(), 1), it.time || ""]]), ["Next Workday", nextWorkday(), it.time || ""]] : [["+15 Min", it.date, hhmm(Math.min(t0 + 15, 1439))], ["+1 Hour", it.date, hhmm(Math.min(t0 + 60, 1439))], ["Tonight", it.date, "21:00"]];
   const t = isT ? it.t : null, past = d => isDay(d) && diff(d) < 0;
   const info = isT
     ? [[it.scope === "work" ? "Client" : "Category", t.area], [it.scope === "work" ? "Audit" : "List", t.sub], ["Status", LABEL[it.status]], ["Duration", durMins(t, it.date) ? dur(durMins(t, it.date)) : ""], ["With", mine(t) ? "" : t.owner], ["Next Step", t.next], ["Priority", priOf(t) === "high" ? "High" : priOf(t) === "low" ? "Low" : ""],
@@ -1713,6 +2076,7 @@ function itemSheet(it) {
       ["Requested By", t.requestedBy ? t.requestedBy + (isDay(t.requestedOn) ? " on " + fDM(t.requestedOn) : "") : ""],
       ["Contact", t.contact], ["Client Deadline", isDay(t.clientDeadline) ? fD(t.clientDeadline) : "", past(t.clientDeadline) && tOpen(t)], ["Next Chase", isDay(t.nextChase) ? fD(t.nextChase) : ""],
       ["Outlook", t.scope === "work" && tOpen(t) && t.outlookEventId ? "In the Work plan digest" : ""],
+      ["Times Moved", Number(t.rolls) > 0 ? String(Number(t.rolls)) : "", Number(t.rolls) >= 3],
       ["Source", t.source || t.created ? `${esc(SOURCES[String(t.source || "").toLowerCase()] || t.source || "Manual")}${isDay(isoDay(t.created)) ? `<small style="display:block">Added ${esc(fDMY(isoDay(t.created)))}</small>` : ""}` : "", false, true]].filter(x => x[1])
     : [[it.scope === "work" ? "Client" : "Category", it.area], ["Repeats", freqText(it.r)], ["Usual Time", it.r.time ? fT(it.r.time) : "Any time"], ["Status", ended ? "Ended" : LABEL[it.status]], ["Duration", durMins(it.r, it.date) ? dur(durMins(it.r, it.date)) : ""], ["Block", it.r.block ? it.r.block[0].toUpperCase() + it.r.block.slice(1) : ""], ["Remaining", plan ? fAmt(balOf(it.r)) + " BHD" : ""], ["Paid So Far", plan && pays.length ? fAmt(sumPays(pays)) + " BHD" : ""]].filter(x => x[1]);
   const fileLink = isT && /^https?:\/\//i.test(String(t.fileLink || "")) ? `<a class="btn" href="${esc(t.fileLink)}" target="_blank" rel="noopener">${ico("doc")}Open File</a>` : "";
@@ -1722,6 +2086,7 @@ function itemSheet(it) {
   return bar(isT ? "Task" : "Routine", `<button type="button" class="txtbtn" data-s="edit">Edit</button>`, `<button type="button" class="txtbtn strong" data-s="close">Done</button>`) + `<div class="sh-body">
     <div class="hero"><span class="big" style="--ic:var(${ic.c})">${ico(ic.k)}</span><h3>${esc(it.title)}</h3><span class="when">${esc(ended ? freqText(it.r) : when)}</span></div>
     ${banner}
+    ${isT && tOpen(it.t) && Number(it.t.rolls) >= 3 ? `<div class="banner">${ico("repeat")}Moved ${Number(it.t.rolls)} times. Park it until it can have a real slot, or break it into a smaller step.</div><button type="button" class="btn" data-s="park">Park It (No Date)</button>` : ""}
     ${ended ? `<button type="button" class="btn primary" data-s="restart">${ico("repeat")}Restart Routine</button>` : doneLike ? `<button type="button" class="btn" data-s="undo">Mark as Not ${it.status === "done" ? "Done" : "Skipped"}</button>` : `<div class="chips"><button type="button" class="btn primary grow" data-s="done">${ico("check")}Done</button><button type="button" class="btn grow" data-s="progress">${it.status === "progress" ? "Back to Due" : "In-progress"}</button><button type="button" class="btn grow" data-s="skip">Skip</button></div>`}
     ${ended ? "" : listSection(it)}
     ${doneLike || ended ? "" : `<div class="lbl">${isT && !it.time && it.status !== "missed" ? "Schedule" : "Delay"}${isT ? "" : " (today only)"}</div><div class="list"><div class="cell stack"><div class="chips">${quick.map(([l, d, t]) => `<button type="button" class="btn sm" data-s="q" data-d="${d}" data-t="${t}">${l}</button>`).join("")}</div></div>
@@ -1892,6 +2257,33 @@ function progressHtml(name, unit) {
   const [lx, ly] = xy[xy.length - 1], gain = h[h.length - 1].w - h[0].w;
   return `<div class="prog"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><path d="${line} L${W} ${H} L0 ${H} Z" fill="var(--k-gym)" opacity=".12"/><path d="${line}" fill="none" stroke="var(--k-gym)" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="3" fill="var(--k-gym)" vector-effect="non-scaling-stroke"/></svg><small>Top set ${fmtW(h[h.length - 1].w)} ${unit} · best ${fmtW(hi)} ${unit} · ${gain >= 0 ? `<b>+${fmtW(gain)} ${unit}</b>` : `${fmtW(gain)} ${unit}`} over ${h.length} sessions since ${esc(fD(h[0].d))}</small></div>`;
 }
+/* A personal best: today's top weight above the best of every earlier session. Returns the margin, or 0. */
+function prOf(x, date) {
+  const u = x.unit || "kg", hist = historyFor(x.name, u).filter(p => p.d < date); if (!hist.length) return 0;
+  const best = Math.max(...hist.map(p => p.w)), cur = Math.max(...x.sets.map(st => Number(st.w) || 0));
+  return cur > best ? Math.round((cur - best) * 10) / 10 : 0;
+}
+/* Rest timer: starts when a set is marked done, counts from a timestamp so it stays right if the phone sleeps, keeps the screen awake while it runs. */
+let REST = null, restT = 0, wakeL = null, actx = null;
+function keepAwake(on) {
+  try { if (on && !wakeL && navigator.wakeLock) navigator.wakeLock.request("screen").then(l => { wakeL = l; l.addEventListener("release", () => { wakeL = null; }); }).catch(() => {}); if (!on && wakeL) { wakeL.release().catch(() => {}); wakeL = null; } } catch (e) {}
+}
+function beep() {
+  try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); [0, .32].forEach(t0 => { const o = actx.createOscillator(), g = actx.createGain(); o.frequency.value = 880; g.gain.setValueAtTime(.0001, actx.currentTime + t0); g.gain.exponentialRampToValueAtTime(.3, actx.currentTime + t0 + .02); g.gain.exponentialRampToValueAtTime(.0001, actx.currentTime + t0 + .25); o.connect(g).connect(actx.destination); o.start(actx.currentTime + t0); o.stop(actx.currentTime + t0 + .27); }); } catch (e) {}
+}
+function startRest(secs, name) {
+  try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === "suspended") actx.resume(); } catch (e) {} // unlocked by this tap so the end beep can play
+  REST = { end: Date.now() + secs * 1000, name }; keepAwake(true); clearInterval(restT); restT = setInterval(tickRest, 250); tickRest();
+}
+function tickRest() {
+  let el = document.getElementById("rest");
+  if (!REST) { if (el) el.remove(); clearInterval(restT); keepAwake(false); return; }
+  const left = Math.max(0, Math.ceil((REST.end - Date.now()) / 1000));
+  if (!el) { el = document.createElement("div"); el.id = "rest"; el.className = "rest"; el.setAttribute("role", "timer"); document.body.appendChild(el); el.addEventListener("click", e => { const b = e.target.closest("[data-r]"); if (!b || !REST) return; if (b.dataset.r === "skip") REST = null; else REST.end = Math.max(Date.now() + 5000, REST.end + Number(b.dataset.r) * 1000); tickRest(); }); }
+  const txt = Math.floor(left / 60) + ":" + pad(left % 60);
+  if (el.dataset.t !== txt) { el.dataset.t = txt; el.innerHTML = `<span class="rl">Rest</span><b>${txt}</b><button type="button" data-r="-15" aria-label="15 seconds less">−15</button><button type="button" data-r="15" aria-label="15 seconds more">+15</button><button type="button" data-r="skip">Skip</button>`; }
+  if (left <= 0) { beep(); toast("Rest over" + (REST.name ? ". Next set of " + REST.name : "")); REST = null; tickRest(); }
+}
 function lastFor(name, date) {
   let best = null;
   [...Object.values(S.logs), ...taskLogs()].forEach(l => {
@@ -1944,15 +2336,16 @@ function listHtml(it, items, ed, m) {
 }
 function gymHtml(it, items, ed) {
   const ex = items.map(x => {
-    const on = ticked(it, x), sk = skippedX(it, x), u = x.unit || "kg", cd = isCardio(x), last = x.sets || cd ? lastFor(x.name, it.date) : null;
-    const head = `<div class="ex-h">${tickBtn(on, x)}${ed ? `<input type="text" data-f="name" value="${esc(x.name)}" aria-label="Exercise name"><select data-f="group" aria-label="Group">${opt(GROUPS, x.group || "Other")}</select>` : `<div class="ex-t"><b>${esc(x.name)}</b><span class="chip">${esc(sk ? "Skipped" : x.group || "Other")}</span></div>`}
+    const on = ticked(it, x), sk = skippedX(it, x), u = x.unit || "kg", cd = isCardio(x), last = x.sets || cd ? lastFor(x.name, it.date) : null, pr = x.sets && !sk && !ed ? prOf(x, it.date) : 0;
+    const head = `<div class="ex-h">${tickBtn(on, x)}${ed ? `<input type="text" data-f="name" value="${esc(x.name)}" aria-label="Exercise name"><select data-f="group" aria-label="Group">${opt(GROUPS, x.group || "Other")}</select>` : `<div class="ex-t"><b>${esc(x.name)}</b><span class="chip">${esc(sk ? "Skipped" : x.group || "Other")}</span>${pr ? `<span class="chip pr" title="Personal best">PR +${fmtW(pr)} ${u}</span>` : ""}</div>`}
       ${x.sets ? `<button type="button" class="unit" data-s="unit" data-id="${esc(x.id)}" aria-label="Weights in ${u}, switch to ${u === "kg" ? "lb" : "kg"}">${u}</button>` : ""}
       ${ed ? `<button type="button" class="rm" data-s="lrm" data-id="${esc(x.id)}" aria-label="Remove ${esc(x.name)}">${ico("skip")}</button>` : `<button type="button" class="ib${sk ? " on" : ""}" data-s="exskip" data-id="${esc(x.id)}" aria-pressed="${sk}" aria-label="${sk ? "Bring back" : "Skip"} ${esc(x.name)}">${ico("skip")}</button><button type="button" class="ib" data-s="swap" data-id="${esc(x.id)}" aria-label="Swap ${esc(x.name)}">${ico("repeat")}</button>`}</div>`;
     const body = x.sets
-      ? x.sets.map((st, i) => `<div class="set"><span class="sn">${i + 1}</span><input type="number" inputmode="numeric" min="0" data-f="reps" data-i="${i}" value="${esc(st.reps)}" aria-label="Set ${i + 1} reps"><span class="x">reps ×</span><input type="number" inputmode="decimal" min="0" step="0.5" data-f="w" data-i="${i}" value="${esc(fmtW(st.w))}" aria-label="Set ${i + 1} weight in ${u}"><span class="x">${u}</span></div>`).join("")
+      ? x.sets.map((st, i) => `<div class="set"><button type="button" class="sn${(S.sheet.sd || {})[x.id + ":" + i] ? " on" : ""}" data-s="setdone" data-id="${esc(x.id)}" data-i="${i}" aria-pressed="${!!(S.sheet.sd || {})[x.id + ":" + i]}" aria-label="Set ${i + 1} done, start rest">${(S.sheet.sd || {})[x.id + ":" + i] ? ico("check") : i + 1}</button><input type="number" inputmode="numeric" min="0" data-f="reps" data-i="${i}" value="${esc(st.reps)}" aria-label="Set ${i + 1} reps"><span class="x">reps ×</span><input type="number" inputmode="decimal" min="0" step="0.5" data-f="w" data-i="${i}" value="${esc(fmtW(st.w))}" aria-label="Set ${i + 1} weight in ${u}"><span class="x">${u}</span></div>`).join("")
         + `<div class="set-acts"><button type="button" class="btn sm" data-s="setadd" data-id="${esc(x.id)}">${ico("plus")}Set</button>${x.sets.length > 1 ? `<button type="button" class="btn sm" data-s="setrm" data-id="${esc(x.id)}">${ico("skip")}Set</button>` : ""}</div>`
       : cd ? cardioHtml(x) : `<div class="set note"><input type="text" data-f="note" value="${esc(x.note || "")}" placeholder="Details" aria-label="${esc(x.name)} details"></div>`;
-    const lastTxt = last && last.v.s && x.sets ? `<div class="ex-last">Last ${esc(rel(last.date))}: ${last.v.s.map(st => `${st.reps} × ${fmtW(conv(Number(st.w) || 0, last.v.u || "kg", u))}`).join(", ")} ${u}</div>` : last && last.v.c && cd ? `<div class="ex-last">Last ${esc(rel(last.date))}: ${esc(cardioTxt(last.v.c))}</div>` : "";
+    const useBtn = ed ? "" : `<button type="button" class="txtbtn sm" data-s="uselast" data-id="${esc(x.id)}">Use</button>`;
+    const lastTxt = last && last.v.s && x.sets ? `<div class="ex-last"><span>Last ${esc(rel(last.date))}: ${last.v.s.map(st => `${st.reps} × ${fmtW(conv(Number(st.w) || 0, last.v.u || "kg", u))}`).join(", ")} ${u}</span>${useBtn}</div>` : last && last.v.c && cd ? `<div class="ex-last"><span>Last ${esc(rel(last.date))}: ${esc(cardioTxt(last.v.c))}</span>${useBtn}</div>` : "";
     return `<div class="list ex${on ? " on" : ""}${sk && !ed ? " sk" : ""}" data-li="${esc(x.id)}">${head}${body}${lastTxt}${x.sets && !ed ? progressHtml(x.name, u) : ""}</div>`;
   }).join("");
   return `<div class="exs">${ex || `<div class="list"><div class="empty">No exercises yet.</div></div>`}</div><button type="button" class="btn sm" data-s="exadd" style="justify-self:start">${ico("plus")}Add Exercise</button>`;
@@ -2022,6 +2415,14 @@ function listClick(a, b, it) {
     saveItems(it, li); renderSheet(); return true;
   }
   if (a === "swap") { s.pick = { mode: "swap", id }; renderSheet(); return true; }
+  if (a === "setdone") { const k = id + ":" + b.dataset.i, x = itemsOf(it).find(y => y.id === id); s.sd = s.sd || {}; if (s.sd[k]) { delete s.sd[k]; REST = null; tickRest(); } else { s.sd[k] = 1; startRest(90, x ? x.name : ""); } renderSheet(); return true; }
+  if (a === "uselast") {
+    const li = items(), x = li.find(y => y.id === id), l = x ? lastFor(x.name, it.date) : null; if (!l) return true;
+    if (x.sets && l.v.s) x.sets = l.v.s.map(st => ({ reps: Number(st.reps) || 0, w: conv(Number(st.w) || 0, l.v.u || "kg", x.unit || "kg") }));
+    else if (l.v.c) { Object.assign(x, l.v.c); delete x.note; }
+    saveItems(it, li); if (isGym(it) && it.kind === "routine") { const c = checksOf(it); if (c[id]) writeChecks(it, { ...c, [id]: snap(x) }); }
+    toast("Copied from " + rel(l.date).toLowerCase()); renderSheet(); return true;
+  }
   if (a === "exadd") { s.pick = { mode: "add", group: /cardio|walk|run|treadmill|elliptical/i.test(srcOf(it).title || "") ? "Cardio" : undefined }; renderSheet(); return true; }
   if (a === "pkback") { s.pick = null; renderSheet(); return true; }
   if (a === "pkg") { s.pick.group = b.dataset.g; renderSheet(); return true; }
@@ -2098,6 +2499,7 @@ function readTask(f) { const d = new FormData(f), eid = d.has("engagement") ? St
 function readRoutine(f, r) { const d = new FormData(f); return { title: String(d.get("title") || "").trim(), scope: d.get("scope"), area: d.get("area"), block: d.get("block") || "", freq: d.get("freq"), days: d.getAll("days").map(Number), dom: d.has("dom") ? (Number(d.get("dom")) || "") : r.dom, month: d.has("month") ? Number(d.get("month")) : r.month, time: d.get("time") || "", dur: String(d.get("dur") || ""), notes: String(d.get("notes") || "").trim(), alert: d.get("alert") === "on", lead: String(d.get("lead") || ""), _bal: d.has("bal") ? String(d.get("bal") || "").trim() : r._bal }; }
 sheet.addEventListener("change", e => {
   const s = S.sheet; if (!s) return;
+  if (s.type === "plan" && e.target.dataset.pl) { s.un = s.un || {}; s.un[e.target.dataset.pl] = !e.target.checked; renderSheet(); return; }
   if (s.type === "item" && e.target.closest("[data-li]")) { listChange(e.target); return; }
   if (e.target.id === "leadSel" && s.type === "item") { const it = findItem(s.key); if (!it) return; const src = it.kind === "task" ? it.t : it.r, v = e.target.value; if (it.kind === "task") saveTask({ ...src, lead: v }); else saveRoutine({ ...src, lead: v }); renderSheet(); toast("Alert " + leadLabel(v).toLowerCase()); return; }
   if (e.target.id === "alarmSw" && s.type === "item") { const it = findItem(s.key); if (!it) return; const src = it.kind === "task" ? it.t : it.r, v = e.target.checked; if (it.kind === "task") saveTask({ ...src, alert: v }); else saveRoutine({ ...src, alert: v }); renderSheet(); toast(v ? "Alert on" : "Alert off"); return; }
@@ -2125,6 +2527,33 @@ sheet.addEventListener("click", e => {
   const b = e.target.closest("[data-s]"), s = S.sheet; if (!b || !s) return;
   const a = b.dataset.s;
   if (a === "close") { closeSheet(); return; }
+  if (s.type === "plan") {
+    const t = b.dataset.id ? S.tasks.find(x => x.id === b.dataset.id) : null, work = S.mode === "work";
+    if (a === "plt" && t) { moveTasks([t], () => ({ due: today(), time: "" }), "Moved to today"); renderSheet(); return; }
+    if (a === "pll" && t) { const nd = work ? nextWorkday() : add(today(), 1); moveTasks([t], () => ({ due: nd, time: "09:00" }), "Moved to " + rel(nd).toLowerCase() + ", 9:00 AM"); renderSheet(); return; }
+    if (a === "pld" && t) { markSkip(tItem(t)); renderSheet(); return; }
+    if (a === "plsched") { const un = s.un || {}; scheduleList(planFree().list.filter(x => !un[x.id])); renderSheet(); return; }
+    if (a === "plstart") { markPlanned("done"); closeSheet(); toast("Day planned. Have a good one."); return; }
+    if (a === "planskip") { markPlanned("skipped"); closeSheet(); toast("Planning skipped for today"); return; }
+    return;
+  }
+  if (s.type === "resched") {
+    const ts = todayParts().overdue.map(i => i.t);
+    if (a === "rs") { applyResched(b.dataset.k, ts); closeSheet(); return; }
+    if (a === "rspick") { const d = document.getElementById("rsD").value; if (!isDay(d)) { toast("Pick a date."); return; } applyResched("pick", ts, d); closeSheet(); return; }
+    return;
+  }
+  if (s.type === "gap") {
+    if (a === "gplace") { const t = S.tasks.find(x => x.id === b.dataset.id); if (!t) return; const len = durMins(t, today()) || 30; saveTask({ ...t, due: today(), time: hhmm(s.a), status: t.status === "progress" ? "progress" : "due" }); toast(t.title + " at " + fT(hhmm(s.a))); s.a = Math.ceil((s.a + len) / 5) * 5; if (s.b - s.a < 15) closeSheet(); else renderSheet(); return; }
+    if (a === "gnew") { const t = newTask(); t.due = today(); t.time = hhmm(s.a); S.sheet = { type: "editTask", obj: t }; renderSheet(); return; }
+    return;
+  }
+  if (s.type === "settings") {
+    if (a === "notif") { try { Promise.resolve(Notification.requestPermission()).then(r => { if (r === "granted") { lastBadge = -1; updateBadge(); toast("Notifications on"); } renderSheet(); }); } catch (e) { toast("Notifications aren't available here."); } return; }
+    if (a === "cpurl") { copyText(API_URL, "Address"); return; }
+    if (a === "cpkey") { copyText(KEY, "Key"); return; }
+    return;
+  }
   if (s.type === "quick") {
     if (a === "qamore") { const o = qaObj(s.side); o._new = true; S.qa = ""; S.sheet = { type: "editTask", obj: o }; renderSheet(); }
     return;
@@ -2157,6 +2586,7 @@ sheet.addEventListener("click", e => {
     const it = findItem(s.key); if (!it) return;
     if (a === "bdtask" && it.kind === "meet") { const t = newTask(); Object.assign(t, { scope: "personal", area: "Other", title: "Wish " + bdayName(it.title) + " a happy birthday", due: it.date, time: diff(it.date) === 0 ? hhmm(Math.min(Math.ceil((nowMin() + 15) / 15) * 15, 1425)) : "09:00", alert: true }); S.sheet = { type: "editTask", obj: t, from: s.key }; renderSheet(); return; }
     if (listClick(a, b, it)) return;
+    if (a === "park" && it.kind === "task") { const b0 = { ...it.t }; saveTask({ ...it.t, due: "", time: "", status: "due", rolls: 0 }); toast("Parked with no date", () => saveTask(b0)); closeSheet(); return; }
     if (a === "torout") { S.sheet = { type: "editRoutine", obj: routineFromTask(it.t), from: s.key, convert: it.t.id }; renderSheet(); return; }
     if (a === "touch") { if (it.kind !== "task") return; S.sheet = { type: "touch", key: s.key, from: s.key }; renderSheet(); const n = sheet.querySelector("#h-note"); if (n) n.focus({ preventScroll: true }); return; }
     if (a === "end") { s.endc = true; renderSheet(); return; }
@@ -2207,7 +2637,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "2026-10-28.2";
+const APP_VERSION = "2026-10-28.3";
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {});
 let verAt = 0;
 async function checkVersion() {
@@ -2310,11 +2740,27 @@ function applyData(d) {
   if (d.stageMap && typeof d.stageMap === "object") S.stages = d.stageMap;
   else if (Array.isArray(d.stages) && d.stages.length) { const m = {}; d.stages.forEach(r => { if (r.template) m[r.template] = [1, 2, 3, 4, 5, 6].map(i => r["stage" + i]).filter(Boolean); }); S.stages = m; }
   if (Array.isArray(d.contacts)) S.contacts = d.contacts;
-  S.proposals = Array.isArray(d.proposals) ? d.proposals.filter(p => p && p.id && String(p.status || "proposed").toLowerCase() === "proposed") : [];
+  const props = Array.isArray(d.proposals) ? d.proposals.filter(p => p && p.id && String(p.status || "proposed").toLowerCase() === "proposed") : [];
+  S.proposals = props.filter(p => String(p.kind || "").toLowerCase() !== "capture");
+  S.captures = props.filter(p => String(p.kind || "").toLowerCase() === "capture");
   Object.keys(SNAP).forEach(k => delete SNAP[k]); S.tasks.forEach(snapTask);
   const L = {}; d.log.forEach(l => { L[l.id] = l; }); S.logs = L;
   if (!foldBusy) { const f = L[FOLD_ID]; if (f && f.checks && typeof f.checks === "object") { S.fold = { ...f.checks }; persist(); } else if (Object.keys(S.fold).length) saveFold(); }
   S.ready = true;
+}
+/* Siri captures: each line becomes a task (the same task id on both iPhones, so it is never doubled), then leaves the queue. */
+const capSeen = new Set();
+function ingestCaptures() {
+  (S.captures || []).forEach(c => {
+    if (capSeen.has(c.id)) return; capSeen.add(c.id);
+    const id = "t" + c.id;
+    if (!S.tasks.some(t => t.id === id)) {
+      const q = parseQuick(String(c.title || ""), autoMode());
+      if (q.title) { const t = { ...newTask(), ...q, id, source: "siri", status: q.owner !== "Me" ? "waiting" : "due", created: c.at || new Date().toISOString() }; delete t._new; saveTask(t); toast("Added from Siri: " + t.title); }
+    }
+    api("applyProposals", [c.id], "dismiss").catch(() => {});
+  });
+  S.captures = [];
 }
 /* The last copy is kept on the phone so the planner opens instantly; the server copy replaces it a moment later. */
 const CACHE = "pa-cache";
@@ -2332,15 +2778,20 @@ async function loadAll(first) {
       applyData(d);
     }
     autoFinish();
+    ingestCaptures();
     S.syncedAt = Date.now();
     saveCache();
-    if (S.sheet) { renderNav(); if (S.sheet.type === "item" || S.sheet.type === "inbox" || S.sheet.type === "audit") renderSheet(); } else render(true);
+    if (S.sheet) { renderNav(); if (["item", "inbox", "audit", "plan", "resched", "gap", "settings"].includes(S.sheet.type)) renderSheet(); } else render(true);
+    checkHash();
     return true;
   } catch (e) {
     if (first && S.ready) { toast("Offline: showing your last saved copy."); return; }
     if (first && KEY) view.innerHTML = lastHtml = `<div class="card"><div class="empty">${esc((e && e.message) || "Your planner couldn't load. Reload to try again.")}</div></div>`;
   }
 }
+/* A link ending in #plan (from the 8 AM calendar alert or a shortcut) opens Plan Your Day. */
+function checkHash() { if (!S.ready || S.sheet || !/(^#|&)plan\b/.test(location.hash)) return; try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {} openSheet({ type: "plan" }); }
+addEventListener("hashchange", checkHash);
 setMode(readMode());
 renderNav();
 if (!KEY) showSetup(); else { if (readCache()) render(); showOffline(); if (outbox.length) flush(); else loadAll(true); }
