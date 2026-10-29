@@ -233,11 +233,6 @@ html, body { min-height: 100%; }
 .pl-row input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--done); flex: none; margin: 0; }
 .steps { margin: 0; padding: 12px 16px 12px 34px; display: grid; gap: 8px; font-size: .92rem; line-height: 1.4; }
 .steps code { background: var(--fill); padding: 1px 5px; border-radius: 6px; font-size: .85em; }
-/* rest timer */
-.rest { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 72px); z-index: 60; display: flex; align-items: center; gap: 8px; background: var(--label); color: var(--card); border-radius: 28px; padding: 6px 6px 6px 18px; box-shadow: var(--shadow); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.rest .rl { font-size: .8rem; font-weight: 600; opacity: .75; }
-.rest b { font-size: 1.25rem; font-family: var(--font-round); min-width: 3.4ch; }
-.rest button { border: 0; border-radius: 18px; min-height: 40px; min-width: 44px; padding: 0 12px; background: color-mix(in srgb, var(--card) 22%, transparent); color: var(--card); font-weight: 700; }
 .set .sn { border: 0; padding: 0; cursor: pointer; }
 .set .sn.on { background: var(--done); color: #fff; }
 .set .sn svg { width: 13px; height: 13px; }
@@ -2425,27 +2420,6 @@ function prOf(x, date) {
   const best = Math.max(...hist.map(p => p.w)), cur = Math.max(...x.sets.map(st => Number(st.w) || 0));
   return cur > best ? Math.round((cur - best) * 10) / 10 : 0;
 }
-/* Rest timer: starts when a set is marked done, counts from a timestamp so it stays right if the phone sleeps, keeps the screen awake while it runs. */
-let REST = null, restT = 0, wakeL = null, actx = null;
-function keepAwake(on) {
-  try { if (on && !wakeL && navigator.wakeLock) navigator.wakeLock.request("screen").then(l => { wakeL = l; l.addEventListener("release", () => { wakeL = null; }); }).catch(() => {}); if (!on && wakeL) { wakeL.release().catch(() => {}); wakeL = null; } } catch (e) {}
-}
-function beep() {
-  try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); [0, .32].forEach(t0 => { const o = actx.createOscillator(), g = actx.createGain(); o.frequency.value = 880; g.gain.setValueAtTime(.0001, actx.currentTime + t0); g.gain.exponentialRampToValueAtTime(.3, actx.currentTime + t0 + .02); g.gain.exponentialRampToValueAtTime(.0001, actx.currentTime + t0 + .25); o.connect(g).connect(actx.destination); o.start(actx.currentTime + t0); o.stop(actx.currentTime + t0 + .27); }); } catch (e) {}
-}
-function startRest(secs, name) {
-  try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === "suspended") actx.resume(); } catch (e) {} // unlocked by this tap so the end beep can play
-  REST = { end: Date.now() + secs * 1000, name }; keepAwake(true); clearInterval(restT); restT = setInterval(tickRest, 250); tickRest();
-}
-function tickRest() {
-  let el = document.getElementById("rest");
-  if (!REST) { if (el) el.remove(); clearInterval(restT); keepAwake(false); return; }
-  const left = Math.max(0, Math.ceil((REST.end - Date.now()) / 1000));
-  if (!el) { el = document.createElement("div"); el.id = "rest"; el.className = "rest"; el.setAttribute("role", "timer"); document.body.appendChild(el); el.addEventListener("click", e => { const b = e.target.closest("[data-r]"); if (!b || !REST) return; if (b.dataset.r === "skip") REST = null; else REST.end = Math.max(Date.now() + 5000, REST.end + Number(b.dataset.r) * 1000); tickRest(); }); }
-  const txt = Math.floor(left / 60) + ":" + pad(left % 60);
-  if (el.dataset.t !== txt) { el.dataset.t = txt; el.innerHTML = `<span class="rl">Rest</span><b>${txt}</b><button type="button" data-r="-15" aria-label="15 seconds less">−15</button><button type="button" data-r="15" aria-label="15 seconds more">+15</button><button type="button" data-r="skip">Skip</button>`; }
-  if (left <= 0) { beep(); toast("Rest over" + (REST.name ? ". Next set of " + REST.name : "")); REST = null; tickRest(); }
-}
 function lastFor(name, date) {
   let best = null;
   [...Object.values(S.logs), ...taskLogs()].forEach(l => {
@@ -2503,7 +2477,7 @@ function gymHtml(it, items, ed) {
       ${x.sets ? `<button type="button" class="unit" data-s="unit" data-id="${esc(x.id)}" aria-label="Weights in ${u}, switch to ${u === "kg" ? "lb" : "kg"}">${u}</button>` : ""}
       ${ed ? `<button type="button" class="rm" data-s="lrm" data-id="${esc(x.id)}" aria-label="Remove ${esc(x.name)}">${ico("skip")}</button>` : `<button type="button" class="ib${sk ? " on" : ""}" data-s="exskip" data-id="${esc(x.id)}" aria-pressed="${sk}" aria-label="${sk ? "Bring back" : "Skip"} ${esc(x.name)}">${ico("skip")}</button><button type="button" class="ib" data-s="swap" data-id="${esc(x.id)}" aria-label="Swap ${esc(x.name)}">${ico("repeat")}</button>`}</div>`;
     const body = x.sets
-      ? x.sets.map((st, i) => `<div class="set"><button type="button" class="sn${(S.sheet.sd || {})[x.id + ":" + i] ? " on" : ""}" data-s="setdone" data-id="${esc(x.id)}" data-i="${i}" aria-pressed="${!!(S.sheet.sd || {})[x.id + ":" + i]}" aria-label="Set ${i + 1} done, start rest">${(S.sheet.sd || {})[x.id + ":" + i] ? ico("check") : i + 1}</button><input type="number" inputmode="numeric" min="0" data-f="reps" data-i="${i}" value="${esc(st.reps)}" aria-label="Set ${i + 1} reps"><span class="x">reps ×</span><input type="number" inputmode="decimal" min="0" step="0.5" data-f="w" data-i="${i}" value="${esc(fmtW(st.w))}" aria-label="Set ${i + 1} weight in ${u}"><span class="x">${u}</span></div>`).join("")
+      ? x.sets.map((st, i) => { const sdOn = on || !!(S.sheet.sd || {})[x.id + ":" + i]; return `<div class="set"><button type="button" class="sn${sdOn ? " on" : ""}" data-s="setdone" data-id="${esc(x.id)}" data-i="${i}" aria-pressed="${sdOn}" aria-label="Set ${i + 1} done">${sdOn ? ico("check") : i + 1}</button><input type="number" inputmode="numeric" min="0" data-f="reps" data-i="${i}" value="${esc(st.reps)}" aria-label="Set ${i + 1} reps"><span class="x">reps ×</span><input type="number" inputmode="decimal" min="0" step="0.5" data-f="w" data-i="${i}" value="${esc(fmtW(st.w))}" aria-label="Set ${i + 1} weight in ${u}"><span class="x">${u}</span></div>`; }).join("")
         + `<div class="set-acts"><button type="button" class="btn sm" data-s="setadd" data-id="${esc(x.id)}">${ico("plus")}Set</button>${x.sets.length > 1 ? `<button type="button" class="btn sm" data-s="setrm" data-id="${esc(x.id)}">${ico("skip")}Set</button>` : ""}</div>`
       : cd ? cardioHtml(x) : `<div class="set note"><input type="text" data-f="note" value="${esc(x.note || "")}" placeholder="Details" aria-label="${esc(x.name)} details"></div>`;
     const useBtn = ed ? "" : `<button type="button" class="txtbtn sm" data-s="uselast" data-id="${esc(x.id)}">Use</button>`;
@@ -2556,7 +2530,7 @@ function listChange(el) {
 }
 function listClick(a, b, it) {
   const id = b.dataset.id, items = () => clone(itemsOf(it)), s = S.sheet;
-  if (a === "tick") { const x = itemsOf(it).find(y => y.id === id); if (x) { setTick(it, x, !ticked(it, x)); renderSheet(); } return true; }
+  if (a === "tick") { const x = itemsOf(it).find(y => y.id === id); if (x) { const on = !ticked(it, x); if (!on && s.sd) Object.keys(s.sd).forEach(q => { if (q.startsWith(id + ":")) delete s.sd[q]; }); setTick(it, x, on); renderSheet(); } return true; }
   if (a === "exskip") { const x = itemsOf(it).find(y => y.id === id); if (x) { setSkip(it, x, !skippedX(it, x)); renderSheet(); } return true; }
   if (a === "ledit") { s.edit = !s.edit; renderSheet(); return true; }
   if (a === "ladd") {
@@ -2577,7 +2551,16 @@ function listClick(a, b, it) {
     saveItems(it, li); renderSheet(); return true;
   }
   if (a === "swap") { s.pick = { mode: "swap", id }; renderSheet(); return true; }
-  if (a === "setdone") { const k = id + ":" + b.dataset.i, x = itemsOf(it).find(y => y.id === id); s.sd = s.sd || {}; if (s.sd[k]) { delete s.sd[k]; REST = null; tickRest(); } else { s.sd[k] = 1; startRest(90, x ? x.name : ""); } renderSheet(); return true; }
+  /* Sets: ticking the last open set completes the exercise; unticking a set on a completed exercise reopens it. */
+  if (a === "setdone") {
+    const x = itemsOf(it).find(y => y.id === id); if (!x || !x.sets) return true;
+    const sd = s.sd = s.sd || {}, k = j => id + ":" + j, i = Number(b.dataset.i), was = ticked(it, x);
+    if (was) x.sets.forEach((_, j) => { sd[k(j)] = 1; }); // a completed exercise counts every set as done
+    if (sd[k(i)]) delete sd[k(i)]; else sd[k(i)] = 1;
+    const all = x.sets.every((_, j) => sd[k(j)]);
+    if (all && !was) setTick(it, x, true); else if (!all && was) setTick(it, x, false);
+    renderSheet(); return true;
+  }
   if (a === "uselast") {
     const li = items(), x = li.find(y => y.id === id), l = x ? lastFor(x.name, it.date) : null; if (!l) return true;
     if (x.sets && l.v.s) x.sets = l.v.s.map(st => ({ reps: Number(st.reps) || 0, w: conv(Number(st.w) || 0, l.v.u || "kg", x.unit || "kg") }));
@@ -2813,7 +2796,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "1.8"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
+const APP_VERSION = "1.9"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(() => swConfig()).catch(() => {});
 let verAt = 0;
 async function checkVersion() {
