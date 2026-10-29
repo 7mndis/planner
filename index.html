@@ -2038,9 +2038,12 @@ const standalone = () => { try { return matchMedia("(display-mode: standalone)")
 function notifState() { if (!("Notification" in window)) return standalone() ? "unsupported" : "browser"; return Notification.permission; }
 /* The icon badge: tasks of yours whose time has come: overdue, due today with no time, or due today once its alert has gone
    (its time, less the alert lead). A task later today adds nothing until its notification, so moving a time moves the badge too.
-   Work ones only on workdays. The server's push badge counts the same way (pushSummary_). */
+   Plus today's routines that are missed (time and grace passed, still not Done or Skipped); upcoming routines add nothing,
+   and earlier days' routines are left out so old misses never pile up. Work ones only on workdays.
+   The server's push badge counts the same way (pushSummary_). */
 const alertMin = t => { const x = String(t.time || "").match(/^(\d{1,2}):(\d{2})/); return x ? Number(x[1]) * 60 + Number(x[2]) - (t.alert ? Math.min(Math.max(Math.round(Number(t.lead) || 0), 0), 1440) : 0) : -1; };
-function badgeCount() { const d = today(), wk = isWeekend(d), n = nowMin(); return S.tasks.filter(t => tOpen(t) && mine(t) && t.status !== "waiting" && isDay(t.due) && t.due <= d && !(t.scope === "work" && wk && t.due === d) && (t.due < d || alertMin(t) <= n)).length; }
+function badgeCount() { const d = today(), wk = isWeekend(d), n = nowMin(); return S.tasks.filter(t => tOpen(t) && mine(t) && t.status !== "waiting" && isDay(t.due) && t.due <= d && !(t.scope === "work" && wk && t.due === d) && (t.due < d || alertMin(t) <= n)).length + missedRoutines(d, wk); }
+const missedRoutines = (d, wk) => occsOn(d).filter(o => o.status === "missed" && !(o.scope === "work" && wk)).length;
 /* Set every time, never skipped as "unchanged": a push can change the icon badge while the planner sits in the background,
    so the page's last value is not proof of what the icon shows. */
 let lastBadge = -1;
@@ -2098,7 +2101,7 @@ function settingsSheet() {
     : S.pushSub ? `<div class="lbl">Item Alerts Come From</div><div class="seg" role="radiogroup" aria-label="Item alerts come from">${[["push", "Planner"], ["calendar", "Google Calendar"]].map(([k, l]) => `<button type="button" data-s="alsrc" data-v="${k}" aria-pressed="${alertMode() === k}" ${busy ? "disabled" : ""}>${l}</button>`).join("")}</div><p class="foot" style="margin-top:-10px">${busy === "alerts" ? "Switching. This takes up to a minute while the calendar side is updated." : alertMode() === "push" ? "Every item with Alert on notifies each iPhone where planner alerts are on, at its alert time, and opens the item when tapped. Turn alerts on for each iPhone you use." : "Item alerts come from the Planner Alerts calendar. Switch to Planner to get them as notifications that open the item."}</p>
     <div class="list"><div class="cell"><span>Planner Alerts on This Device</span><span class="v">On</span></div><div class="cell"><button type="button" class="btn sm primary" data-s="pushtest" ${busy ? "disabled" : ""}>Send a Test</button><button type="button" class="btn sm" data-s="pushoff" ${busy ? "disabled" : ""}>Turn Off</button></div></div><p class="foot" style="margin-top:-10px">From the planner itself: Plan Your Day at 8 AM, and a nudge once when a timed task is missed. Tapping one opens the right screen.</p>`
     : `<button type="button" class="btn primary" data-s="pushon" ${busy ? "disabled" : ""}>${ico("alert")}Turn On Planner Alerts</button><p class="foot" style="margin-top:-10px${alertMode() === "push" ? ';color:var(--late)' : ""}">${alertMode() === "push" ? "Item alerts come from the planner, and this device isn't receiving them yet. Turn it on here." : "Lets the planner itself notify this device: Plan Your Day at 8 AM and missed items."}</p>`;
-  const notif = st === "granted" ? `<div class="list"><div class="cell"><span>Notifications</span><span class="v">Allowed</span></div></div><p class="foot" style="margin-top:-10px">The app icon shows how many of your tasks are due today or overdue (${badgeCount()} now).</p>${pushRow}`
+  const notif = st === "granted" ? `<div class="list"><div class="cell"><span>Notifications</span><span class="v">Allowed</span></div></div><p class="foot" style="margin-top:-10px">The app icon shows how many of your tasks are due today or overdue, plus routines missed today (${badgeCount()} now).</p>${pushRow}`
     : st === "denied" ? `<div class="list"><div class="cell"><span>Notifications</span><span class="v">Off</span></div></div><p class="foot" style="margin-top:-10px">They were declined for this app. Turn them on in iPhone Settings, Notifications, Personal Assistant.</p>`
     : st === "default" ? `<button type="button" class="btn primary" data-s="notif">${ico("alert")}Allow Notifications</button><p class="foot" style="margin-top:-10px">iPhone asks once. After that the planner can notify you itself, the app icon shows how many tasks are due, and the planner appears in iPhone Settings, Notifications.</p>`
     : st === "browser" ? `<div class="list"><div class="empty">Open the planner from its Home Screen icon, then come back here to allow notifications. Safari tabs can't receive them.</div></div>`
@@ -2810,7 +2813,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "1.7"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
+const APP_VERSION = "1.8"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(() => swConfig()).catch(() => {});
 let verAt = 0;
 async function checkVersion() {
