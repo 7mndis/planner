@@ -1,26 +1,25 @@
-/* Offline copy of the planner page. Same-site GET requests try the network first and fall back to the
-   saved copy after 4 seconds or when offline. Calls to Google (your data) are never touched.
+/* Offline copy of the planner page. The page opens straight from the saved copy (no waiting on GitHub), and the
+   latest copy is fetched in the background and saved for next time; the page then notices a new version and switches.
+   Version checks (?check=) always go to GitHub. Calls to Google (your data) are never touched.
    Push: the planner's server sends an empty push; this worker asks the server what to show, shows it,
    updates the icon badge and opens the planner on the right screen when the notification is tapped. */
-const CACHE = "planner-v5";
+const CACHE = "planner-v6";
 const CFG = "planner-cfg";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icon-180.png", "icon-512.png"];
-self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting())); });
+self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES.map(f => new Request(f, { cache: "reload" })))).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE && k !== CFG).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener("fetch", e => {
   const r = e.request, u = new URL(r.url);
-  if (r.method !== "GET" || u.origin !== location.origin) return;
+  if (r.method !== "GET" || u.origin !== location.origin || u.searchParams.has("check")) return;
   const key = r.mode === "navigate" ? "index.html" : r;
   e.respondWith((async () => {
     const c = await caches.open(CACHE);
-    try {
-      const req = r.mode === "navigate" ? fetch(r.url, { cache: "no-cache", credentials: "same-origin" }) : fetch(r, { cache: "no-cache" }); // always ask GitHub for the latest page
-      const net = await Promise.race([req, new Promise((_, no) => setTimeout(() => no(new Error("slow")), 4000))]);
-      if (net && net.ok && !net.redirected) c.put(key, net.clone());
-      return net;
-    } catch (err) {
-      return (await c.match(key, { ignoreSearch: true })) || (await c.match("index.html")) || Response.error();
-    }
+    const saved = await c.match(key, { ignoreSearch: true });
+    const fresh = fetch(r.mode === "navigate" ? new Request(r.url, { cache: "no-cache", credentials: "same-origin" }) : new Request(r, { cache: "no-cache" }))
+      .then(net => { if (net && net.ok && !net.redirected) c.put(key, net.clone()); return net; })
+      .catch(() => null);
+    if (saved) { e.waitUntil(fresh); return saved; } // instant open; the background copy is ready next time
+    return (await fresh) || (await c.match("index.html")) || Response.error();
   })());
 });
 /* The page hands over the server address and key so a push can be read while the planner is closed. */

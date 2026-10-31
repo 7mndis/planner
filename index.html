@@ -517,6 +517,47 @@ a.btn { text-decoration: none; }
 .cal-key { display: flex; flex-wrap: wrap; gap: 12px; font-size: .76rem; color: var(--label2); padding: 0 4px; }
 .cal-key span { display: inline-flex; align-items: center; gap: 5px; }
 .cal-key i { width: 8px; height: 8px; border-radius: 4px; background: var(--ic); }
+/* Time grid (Week, 3 Days, Day and the day under Month) */
+.cg { background: var(--card); border-radius: var(--r); overflow: hidden; --gut: 40px; }
+.cg-head, .cg-all { display: grid; grid-template-columns: var(--gut) repeat(var(--n), minmax(0, 1fr)); border-bottom: .5px solid var(--sep); }
+.cg-gut { font-size: .62rem; color: var(--label2); align-self: center; text-align: right; padding-right: 6px; line-height: 1.1; }
+.cg-dh { border: 0; background: none; color: var(--label2); font-size: .68rem; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; display: grid; justify-items: center; gap: 2px; padding: 8px 0 6px; min-height: 44px; }
+.cg-dh b { font-size: 1.05rem; font-weight: 600; color: var(--label); width: 30px; height: 30px; line-height: 30px; border-radius: 50%; letter-spacing: 0; font-variant-numeric: tabular-nums; transition: background-color .2s, color .2s; }
+.cg-dh.today, .cg-dh.today b { color: var(--late); }
+.cg-dh.today b { background: var(--late); color: #fff; }
+.cg-dh:active b { background: var(--fill); }
+.cg-ac { display: flex; flex-direction: column; gap: 2px; padding: 4px 2px; min-width: 0; border-left: .5px solid var(--sep); }
+.cg-chip { border: 0; border-radius: 5px; background: color-mix(in srgb, var(--ic) 20%, var(--card)); color: var(--label); font-size: .7rem; text-align: left; padding: 3px 5px; display: flex; gap: 4px; align-items: baseline; min-width: 0; transition: opacity .2s, transform .16s cubic-bezier(.2, .8, .2, 1); }
+.cg-chip b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1; }
+.cg-chip small { color: var(--label2); font-variant-numeric: tabular-nums; }
+.cg-chip.s-done, .cg-ev.s-done { opacity: .5; }
+.cg-chip.s-done b, .cg-ev.s-done b { text-decoration: line-through; }
+.cg-chip.s-missed, .cg-ev.s-missed { box-shadow: inset 0 0 0 1.5px var(--late); }
+.cg-more { border: 0; background: none; color: var(--label2); font-size: .68rem; font-weight: 600; text-align: left; padding: 2px 5px; }
+.cg-body { position: relative; display: grid; grid-template-columns: var(--gut) minmax(0, 1fr); }
+.cg-hours { position: relative; }
+.cg-hours span { position: absolute; right: 6px; transform: translateY(-50%); font-size: .62rem; color: var(--label2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.cg-cols { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); background-image: linear-gradient(to bottom, var(--sep) .5px, transparent .5px); background-size: 100% var(--hp); }
+.cg-col { position: relative; border-left: .5px solid var(--sep); cursor: pointer; }
+.cg-col.off { background: color-mix(in srgb, var(--fill) 45%, transparent); }
+.cg-ev { position: absolute; border: 0; border-radius: 6px; padding: 3px 5px 3px 7px; text-align: left; overflow: hidden; color: var(--label); background: color-mix(in srgb, var(--ic) 22%, var(--card)); display: flex; flex-direction: column; gap: 1px; font-size: .72rem; line-height: 1.2; contain: layout paint; transition: opacity .2s, transform .16s cubic-bezier(.2, .8, .2, 1), top .3s cubic-bezier(.2, .8, .2, 1), height .3s cubic-bezier(.2, .8, .2, 1); }
+.cg-ev::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--ic); }
+.cg-ev b { font-weight: 600; overflow: hidden; display: -webkit-box; -webkit-line-clamp: var(--lc, 2); -webkit-box-orient: vertical; overflow-wrap: break-word; hyphens: auto; flex: none; }
+.cg-ev small { color: var(--label2); font-size: .66rem; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cg-ev.k-meet { background: color-mix(in srgb, var(--ic) 32%, var(--card)); }
+.cg-ev.grp b::after { content: " ›"; color: var(--label2); }
+.cg-ev:active, .cg-chip:active { transform: scale(.97); }
+.cg[style*="--n:7"] .cg-ev { padding: 2px 3px 2px 5px; font-size: .64rem; }
+.cg[style*="--n:7"] .cg-chip { font-size: .62rem; padding: 2px 3px; }
+.cg-now { position: absolute; left: -1px; right: 0; height: 2px; background: var(--late); z-index: 2; pointer-events: none; }
+.cg-now::before { content: ""; position: absolute; left: -4px; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: var(--late); }
+.cg-load { font-size: .8rem; color: var(--label2); padding: 8px 4px 0; }
+.cg-dayh h2 { font-size: 1.05rem; }
+.cg-grp { margin-top: 12px; }
+.cg-grp-h { display: flex; align-items: center; gap: 8px; cursor: default; }
+.cg-grp-h span:first-child { flex: 1; }
+.icon-btn.sm { width: 30px; height: 30px; }
+.icon-btn.sm .i { width: 16px; height: 16px; }
 .row.meet .when-t { font-size: .8rem; color: var(--label2); font-variant-numeric: tabular-nums; white-space: nowrap; }
 /* your day */
 .day { background: var(--card); border-radius: var(--r); overflow: hidden; }
@@ -817,7 +858,7 @@ function api(fn, ...args) {
 addEventListener("online", () => { showOffline(); flush(); });
 addEventListener("offline", showOffline);
 setInterval(() => { if (outbox.length) flush(); }, 30000);
-try { const v = JSON.parse(localStorage.getItem("pa4") || "{}"); if (v.view && VIEWS.some(x => x[0] === v.view)) S.view = v.view; if (v.sub) Object.assign(S.sub, v.sub); if (!WORK_SUBS.some(x => x[0] === S.sub.work)) S.sub.work = "clients"; if (!PERS_SUBS.some(x => x[0] === S.sub.personal)) S.sub.personal = "cats"; if (v.fold && typeof v.fold === "object") S.fold = v.fold; if (typeof v.cf === "string" && CLIENTS.includes(v.cf)) S.cf = v.cf; if (v.calMode === "week") S.calMode = "week"; if (typeof v.pf === "string" && CATS.includes(v.pf)) S.pf = v.pf; } catch (e) {}
+try { const v = JSON.parse(localStorage.getItem("pa4") || "{}"); if (v.view && VIEWS.some(x => x[0] === v.view)) S.view = v.view; if (v.sub) Object.assign(S.sub, v.sub); if (!WORK_SUBS.some(x => x[0] === S.sub.work)) S.sub.work = "clients"; if (!PERS_SUBS.some(x => x[0] === S.sub.personal)) S.sub.personal = "cats"; if (v.fold && typeof v.fold === "object") S.fold = v.fold; if (typeof v.cf === "string" && CLIENTS.includes(v.cf)) S.cf = v.cf; if (["month", "week", "3day", "day"].includes(v.calMode)) S.calMode = v.calMode; if (typeof v.pf === "string" && CATS.includes(v.pf)) S.pf = v.pf; } catch (e) {}
 const persist = () => { try { localStorage.setItem("pa4", JSON.stringify({ view: S.view, sub: S.sub, fold: S.fold, cf: S.cf, pf: S.pf, calMode: S.calMode })); } catch (e) {} };
 
 /* ---------- time, Bahrain ---------- */
@@ -1464,7 +1505,7 @@ function upNext() {
   const upRow = up ? slim(up, `Up Next · <b>in ${dur(tm(up.time) - n)}</b>`, `<span class="tr-s">${fT(up.time)}</span>`, "tr-up") : "";
   return `<section class="next trio" aria-label="Last, now and up next">${lastRow}${nowRow}${upRow}</section>`;
 }
-/* ---------- Calendar tab: Month (Google Calendar and the planner) or Week (the next 7 days) ---------- */
+/* ---------- Calendar data: months of meetings loaded on demand, dots and counts for the month grid ---------- */
 const monthStart = d => d.slice(0, 8) + "01";
 function calRange(m) { const from = add(m, -wd(m)); return { from, to: add(from, 42) }; }
 const monthsLoaded = {};
@@ -1505,35 +1546,115 @@ const inboxBtn = () => { const n = unreadCount() + (S.mode === "work" ? inboxCou
 const searchBtn = () => `<button type="button" class="icon-btn" data-act="search" aria-label="Search" aria-pressed="${S.qOpen || !!S.q}">${ico("search")}</button>`;
 const searchField = () => `<label class="search${S.qOpen || S.q ? "" : " hid"}">${ico("search")}<span class="sr">Search</span><input id="q" type="search" placeholder="Search" value="${esc(S.q)}"></label>`;
 const segHtml = (name, list, cur, act) => `<div class="seg" role="group" aria-label="${esc(name)}">${list.map(([k, l]) => `<button type="button" data-act="${act}" data-sub="${k}" aria-pressed="${cur === k}">${l}</button>`).join("")}</div>`;
+/* ---------- Calendar tab: Month, Week, 3 Days and Day, like Google Calendar ----------
+   Week, 3 Days and Day are time grids: meetings, events, tasks and routines as blocks at their times, with untimed items in an
+   all-day row on top. Month is the grid of the month with the selected day as a time grid underneath.
+   A tap on a block opens it, a tap on an empty slot starts a new task at that hour, a tap on a day heading opens that day. */
+const CAL_MODES = [["month", "Month"], ["week", "Week"], ["3day", "3 Days"], ["day", "Day"]];
+const calStep = { week: 7, "3day": 3, day: 1 };
+function calDays() { const d = S.calDay || today(); return S.calMode === "week" ? Array.from({ length: 7 }, (_, i) => add(weekStart(d), i)) : S.calMode === "3day" ? [d, add(d, 1), add(d, 2)] : [d]; }
+/* Everything on a day in this mode: all-day events and untimed items on top, timed ones as blocks (routines grouped like Morning Routine). */
+function calItems(d) {
+  const off = S.mode === "work" && isWeekend(d);
+  const meets = (S.meetings[d] || []).map(m => mItem(m, d)).filter(inMode);
+  const tasks = off ? [] : S.tasks.filter(t => t.due === d && t.scope === S.mode && mine(t) && t.status !== "waiting" && cfOk(t)).map(tItem);
+  const rts = off ? [] : occsOn(d).filter(o => o.scope === S.mode && cfOk(o.r));
+  const allDay = [...meets.filter(m => !m.time).sort(byEvent), ...tasks.filter(t => !t.time).sort(byPri)];
+  const untimedR = rts.filter(o => !o.time), timed = [], groups = {};
+  [...meets.filter(m => m.time), ...tasks.filter(t => t.time), ...rts.filter(o => o.time)].forEach(it => { const k = rgKey(it); if (k) (groups[k] = groups[k] || []).push(it); else timed.push({ s: tm(it.time), e: spanEnd(it, d), it }); });
+  // a group is one block only while its steps run back to back (30 minutes apart at most); a later step starts a new block
+  Object.keys(groups).forEach(k => { const runs = []; groups[k].sort(byTime).forEach(o => { const r = runs[runs.length - 1]; if (r && tm(o.time) - r.e <= 30) { r.li.push(o); r.e = Math.max(r.e, spanEnd(o, d)); } else runs.push({ li: [o], e: spanEnd(o, d) }); });
+    runs.forEach((r, i) => { if (r.li.length === 1) timed.push({ s: tm(r.li[0].time), e: r.e, it: r.li[0] }); else timed.push({ s: tm(r.li[0].time), e: r.e, g: { key: k + (i ? "#" + i : ""), label: rgLabel(k), li: r.li, d } }); }); });
+  rgGroup(untimedR).forEach(x => allDay.push(x.g ? { g: { ...x.g, d } } : x));
+  return { allDay, timed: timed.sort((a, b) => a.s - b.s || b.e - a.e) };
+}
+/* Side by side when blocks overlap: each cluster of overlapping blocks shares the column width. */
+function calLayout(ents, minM) {
+  let cl = [], colEnd = [], clEnd = -1;
+  const close = () => { cl.forEach(x => { x.n = colEnd.length; }); cl = []; colEnd = []; };
+  ents.forEach(x => {
+    x.ve = Math.max(x.e, x.s + minM);
+    if (x.s >= clEnd) { close(); clEnd = -1; }
+    let c = colEnd.findIndex(e => e <= x.s); if (c < 0) { c = colEnd.length; colEnd.push(0); }
+    colEnd[c] = x.ve; x.c = c; cl.push(x); clEnd = Math.max(clEnd, x.ve);
+  });
+  close();
+  return ents;
+}
+const calCls = it => it.kind === "meet" ? "k-meet" : "s-" + it.status;
+const grpDone = g => g.li.filter(o => !isOpen(o)).length;
+function calChip(x, d) {
+  if (x.g) { const g = x.g, ic = rgIcon(g); return `<button type="button" class="cg-chip${grpDone(g) === g.li.length ? " s-done" : ""}" data-act="calgrp" data-g="${esc(g.key)}" data-d="${d}" style="--ic:var(${ic.c})"><b>${esc(g.label)}</b><small>${grpDone(g)}/${g.li.length}</small></button>`; }
+  const ic = itemIcon(x);
+  return `<button type="button" class="cg-chip ${calCls(x)}" data-act="dayopen" data-k="${esc(key(x))}" style="--ic:var(${ic.c})"><b>${esc(x.title)}</b></button>`;
+}
+/* The time grid for one or more days. */
+function calGrid(days, opt) {
+  opt = opt || {};
+  const n = days.length, hp = n >= 7 ? 44 : 52, minM = Math.ceil(22 / hp * 60), t0 = today(), now = nowMin();
+  const data = days.map(d => ({ d, ...calItems(d) }));
+  let h0 = Math.floor(dayStartOf(S.mode) / 60), h1 = Math.ceil(DAY_END[S.mode] / 60);
+  data.forEach(x => x.timed.forEach(e => { h0 = Math.min(h0, Math.floor(e.s / 60)); h1 = Math.max(h1, Math.ceil(Math.min(e.e, 1440) / 60)); }));
+  if (days.includes(t0)) { h0 = Math.min(h0, Math.floor(now / 60)); h1 = Math.max(h1, Math.ceil((now + 1) / 60)); }
+  h0 = Math.max(0, h0); h1 = Math.min(24, Math.max(h1, h0 + 1));
+  const top = m => (m - h0 * 60) / 60 * hp, H = (h1 - h0) * hp;
+  const maxChips = n >= 7 ? 2 : n === 3 ? 3 : 6;
+  const head = opt.noHead ? "" : `<div class="cg-head"><span class="cg-gut"></span>${data.map(({ d }) => `<button type="button" class="cg-dh${d === t0 ? " today" : ""}${isWeekend(d) ? " we" : ""}" data-act="calgo" data-d="${d}" aria-label="${esc(fDL(d))}">${esc(DAYS[wd(d)])}<b>${Number(d.slice(8))}</b></button>`).join("")}</div>`;
+  const anyAll = data.some(x => x.allDay.length);
+  const allRow = anyAll ? `<div class="cg-all"><span class="cg-gut">All day</span>${data.map(({ d, allDay }) => `<div class="cg-ac">${allDay.slice(0, maxChips).map(x => calChip(x, d)).join("")}${allDay.length > maxChips ? `<button type="button" class="cg-more" data-act="calgo" data-d="${d}">+${allDay.length - maxChips} more</button>` : ""}</div>`).join("")}</div>` : "";
+  let hours = ""; for (let h = h0 + 1; h < h1; h++) hours += `<span style="top:${h * hp - h0 * hp}px">${(h % 12) || 12} ${h >= 12 ? "PM" : "AM"}</span>`;
+  const cols = data.map(({ d, timed }) => {
+    const blocks = calLayout(timed, minM).map(x => {
+      // side by side while each block keeps about 44px; narrower than that they cascade, each one stepped in and on top, like Google Calendar's week
+      const ht = Math.max(top(x.ve) - top(x.s), 18) - 2, cascade = x.n > 1 && 330 / n / x.n < 44;
+      const pos = `top:${top(x.s) + 1}px;height:${ht}px;` + (cascade ? `left:${1 + x.c * 9}px;width:calc(100% - ${3 + x.c * 9}px);z-index:${1 + x.c}` : `left:calc(${(x.c / x.n * 100).toFixed(3)}% + 1px);width:calc(${(100 / x.n).toFixed(3)}% - 3px)`) + (cascade && x.c ? ";box-shadow:0 0 0 1px var(--card)" : "");
+      const lines = Math.max(1, Math.floor((ht - 6) / (n >= 7 ? 12 : 14))), showTime = ht >= 40 && n < 7, lc = `;--lc:${showTime ? Math.max(1, lines - 1) : lines}`;
+      if (x.g) { const g = x.g, ic = rgIcon(g), dn = grpDone(g); return `<button type="button" class="cg-ev grp${dn === g.li.length ? " s-done" : g.li.some(o => o.status === "missed") ? " s-missed" : ""}" data-act="calgrp" data-g="${esc(g.key)}" data-d="${d}" style="${pos}${lc};--ic:var(${ic.c})" aria-label="${esc(g.label)}, ${dn} of ${g.li.length} done"><b>${esc(g.label)}</b>${ht >= 40 ? `<small>${dn}/${g.li.length}${showTime ? " · " + esc(fT(hhmm(x.s))) : ""}</small>` : ""}</button>`; }
+      const it = x.it, ic = itemIcon(it);
+      return `<button type="button" class="cg-ev ${calCls(it)}" data-act="dayopen" data-k="${esc(key(it))}" style="${pos}${lc};--ic:var(${ic.c})" aria-label="${esc(it.title)}, ${esc(fT(it.time))}"><b>${esc(it.title)}</b>${showTime ? `<small>${esc(fT(it.time))}${it.kind === "meet" && it.end ? " to " + esc(fT(it.end)) : ""}</small>` : ""}</button>`;
+    }).join("");
+    const nl = d === t0 && now >= h0 * 60 && now <= h1 * 60 ? `<i class="cg-now" style="top:${top(now)}px" aria-hidden="true"></i>` : "";
+    return `<div class="cg-col${d === t0 ? " today" : ""}${S.mode === "work" && isWeekend(d) ? " off" : ""}" data-act="calslot" data-d="${d}" data-h0="${h0}" data-hp="${hp}">${blocks}${nl}</div>`;
+  }).join("");
+  return `<div class="cg" style="--n:${n};--hp:${hp}px">${head}${allRow}<div class="cg-body" style="height:${H}px"><div class="cg-hours">${hours}</div><div class="cg-cols">${cols}</div></div></div>`;
+}
+/* A routine group opened from the grid: its steps as normal rows (tick, swipe, open) under the grid. */
+function calGroupCard() {
+  const o = S.calGrp; if (!o) return "";
+  const d = o.d, g = calItems(d);
+  const found = [...g.timed.filter(x => x.g).map(x => x.g), ...g.allDay.filter(x => x.g).map(x => x.g)].find(x => x.key === o.key);
+  if (!found) { S.calGrp = null; return ""; }
+  RO = { planner: true, ctx: true }; const rows = found.li.map(rowHtml).join(""); RO = {};
+  return `<div class="card cg-grp"><div class="ch cg-grp-h"><span>${esc(found.label)} · ${esc(rel(d))}</span><span class="cnt">${grpDone(found)}/${found.li.length}</span><button type="button" class="icon-btn sm" data-act="calgrpx" aria-label="Close ${esc(found.label)}">${ico("skip")}</button></div>${rows}</div>`;
+}
+const navBtn = (n, lbl) => `<button type="button" class="icon-btn" data-act="calnav" data-n="${n}" aria-label="${lbl}"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${n < 0 ? "M15 5l-7 7 7 7" : "M9 5l7 7-7 7"}"/></svg></button>`;
 function viewCal() {
-  const week = S.calMode === "week";
-  const head = `<header class="navbar"><div><h1>Calendar</h1><div class="sub">${week ? esc(fD(add(today(), 1))) + " to " + esc(fD(add(today(), 7))) : S.mode === "work" ? "Outlook meetings and work tasks" : "Events, birthdays and personal tasks"}</div></div><div class="acts">${rfBtn()}<button type="button" class="icon-btn" data-act="${week ? "new" : "newday"}" aria-label="New task${week ? "" : " on this day"}">${ico("plus")}</button></div></header>
-  ${segHtml("Show", [["month", "Month"], ["week", "Next 7 Days"]], S.calMode, "calmode")}${filterChips()}`;
-  if (week) { const p = planner("week"); return head + loadStrip() + `<div class="cols two"><div class="col">${p.meetSec}${p.workSec}${p.persSec}</div><div class="col">${p.routineSec}</div></div>`; }
-  const sel = S.calDay || today(), m = S.calMonth || monthStart(sel), { from } = calRange(m);
-  if (!monthsLoaded[m]) loadMonth(m);
-  const title = D(m).toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
+  if (!CAL_MODES.some(x => x[0] === S.calMode)) S.calMode = "month";
+  const mode = S.calMode, sel = S.calDay || today(), days = mode === "month" ? [sel] : calDays();
+  const m = mode === "month" ? (S.calMonth || monthStart(sel)) : monthStart(days[0]);
+  [m, monthStart(days[days.length - 1])].forEach(x => { if (!monthsLoaded[x]) loadMonth(x); });
+  const fm = (d, o) => D(d).toLocaleDateString("en-GB", { ...o, timeZone: "UTC" });
+  const title = mode === "month" ? fm(m, { month: "long", year: "numeric" })
+    : mode === "day" ? fm(sel, { weekday: "long", day: "numeric", month: "long" })
+    : days[0].slice(0, 7) === days[days.length - 1].slice(0, 7) ? fm(days[0], { month: "long", year: "numeric" }) : fm(days[0], { month: "short" }) + " to " + fm(days[days.length - 1], { month: "short", year: "numeric" });
+  const onToday = mode === "month" ? m === monthStart(today()) && sel === today() : days.includes(today()) && (mode !== "3day" || sel === today());
+  const head = `<header class="navbar"><div><h1>Calendar</h1><div class="sub">${S.mode === "work" ? "Outlook meetings, work tasks and routines" : "Events, birthdays, personal tasks and routines"}</div></div><div class="acts">${rfBtn()}<button type="button" class="icon-btn" data-act="newday" aria-label="New task on ${esc(fD(sel))}">${ico("plus")}</button></div></header>
+  ${segHtml("Calendar view", CAL_MODES, mode, "calmode")}${filterChips()}`;
+  const unit = mode === "month" ? "month" : mode === "week" ? "week" : mode === "3day" ? "3 days" : "day";
+  const nav = `<div class="cal-head">${navBtn(-1, "Previous " + unit)}<h2>${esc(title)}</h2>${onToday ? "" : `<button type="button" class="btn sm" data-act="caltoday">Today</button>`}${navBtn(1, "Next " + unit)}</div>`;
+  const loading = monthsLoaded[m] === "busy" ? `<div class="cg-load">Loading your calendar.</div>` : "";
+  if (mode !== "month") return head + `<section class="section">${nav}${calGrid(days)}${loading}</section>${calGroupCard()}`;
+  const { from } = calRange(m);
   let grid = DAYS.map((x, i) => `<div class="wd${i >= 5 ? " we" : ""}">${x.slice(0, 1)}</div>`).join("");
   for (let i = 0; i < 42; i++) {
     const d = add(from, i), cls = ["cd", d.slice(0, 7) !== m.slice(0, 7) ? "out" : "", isWeekend(d) ? "we" : "", d === today() ? "today" : "", d === sel ? "sel" : ""].filter(Boolean).join(" ");
     grid += `<button type="button" class="${cls}" data-act="calday" data-d="${d}" aria-label="${esc(fDL(d))}"${d === sel ? ' aria-pressed="true"' : ""}><b>${Number(d.slice(8))}</b>${dayCount(d) ? `<small class="cn">${dayCount(d)}</small>` : ""}<span class="dots">${dayDots(d).map(c => `<i style="--ic:var(${c})"></i>`).join("")}</span></button>`;
   }
-  const meets = (S.meetings[sel] || []).map(x => mItem(x, sel)).filter(inMode).sort(byEvent);
-  const evL = S.mode === "work" ? "Meetings" : "Events";
-  const tasks = S.tasks.filter(t => t.due === sel && t.scope === S.mode && cfOk(t) && (tOpen(t) || diff(sel) >= 0)).map(tItem).sort(byTime);
-  const routines = occsOn(sel).filter(o => o.scope === S.mode && cfOk(o.r) && !(o.scope === "work" && isWeekend(sel))).sort(byTime);
-  RO = { planner: true, ctx: true };
-  const meetRows = meets.map(rowHtml).join("");
-  const loading = monthsLoaded[m] === "busy" && !meets.length;
-  const agenda = sectionHtml(rel(sel) === fD(sel) ? fDL(sel) : rel(sel) + " · " + fD(sel), "cal",
-    (meets.length ? cardHtml(meetRows, chHead(evL, S.mode === "work" ? "--i-meet" : "--i-event", meets.length)) : cardHtml(`<div class="empty">${loading ? "Loading your calendar." : "No " + evL.toLowerCase() + "."}</div>`, chHead(evL, S.mode === "work" ? "--i-meet" : "--i-event")))
-    + (tasks.length ? cardHtml(tasks.map(rowHtml).join(""), chHead("Tasks", null, tasks.length)) : "")
-    + (routines.length ? cardHtml(rgRows(routines, "cal"), chHead("Routines", null, `${routines.filter(o => !isOpen(o)).length}/${routines.length}`)) : ""));
-  RO = {};
-  return head + `<div class="cols two"><div class="col"><section class="section"><div class="cal-head"><button type="button" class="icon-btn" data-act="calnav" data-n="-1" aria-label="Previous month"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><h2>${esc(title)}</h2>${m !== monthStart(today()) || sel !== today() ? `<button type="button" class="btn sm" data-act="caltoday">Today</button>` : ""}<button type="button" class="icon-btn" data-act="calnav" data-n="1" aria-label="Next month"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button></div>
+  const dayTitle = rel(sel) === fD(sel) ? fDL(sel) : rel(sel) + " · " + fD(sel);
+  return head + `<div class="cols two"><div class="col"><section class="section">${nav}
   <div class="cal" role="grid" aria-label="${esc(title)}">${grid}</div>
-  <div class="cal-key">${S.mode === "work" ? `<span><i style="--ic:var(--i-meet)"></i>Meetings</span>` : `<span><i style="--ic:var(--i-event)"></i>Events</span><span><i style="--ic:var(--i-bday)"></i>Birthdays</span>`}${S.mode === "work" ? `<span><i style="--ic:var(--i-work)"></i>Work tasks</span>` : `<span><i style="--ic:var(--i-personal)"></i>Personal tasks</span>`}</div></section></div>
-  <div class="col">${agenda}</div></div>`;
+  <div class="cal-key">${S.mode === "work" ? `<span><i style="--ic:var(--i-meet)"></i>Meetings</span><span><i style="--ic:var(--i-work)"></i>Work tasks</span>` : `<span><i style="--ic:var(--i-event)"></i>Events</span><span><i style="--ic:var(--i-bday)"></i>Birthdays</span><span><i style="--ic:var(--i-personal)"></i>Personal tasks</span>`}</div></section></div>
+  <div class="col"><section class="section"><div class="cal-head cg-dayh"><h2>${esc(dayTitle)}</h2><button type="button" class="btn sm" data-act="calgo" data-d="${sel}">Open Day</button></div>${calGrid([sel], { noHead: true })}${loading}</section>${calGroupCard()}</div></div>`;
 }
 /* Today's load: what is still planned against the time left until the end of the mode's day. */
 function capacityHtml(p) {
@@ -1607,7 +1728,9 @@ function timelineHtml(p) {
   const d = p.d, n = nowMin(), isToday = d === today(), end = DAY_END[S.mode], ents = [], groups = {};
   p.timed.forEach(it => { const k = rgKey(it); if (k) (groups[k] = groups[k] || []).push(it); else ents.push({ s: tm(it.time), e: spanEnd(it, d), it }); });
   // a group sits at its first step; its later steps stay busy time (ghosts) so the free gaps remain true
-  Object.keys(groups).forEach(k => { const li = groups[k].sort(byTime), st = tm(li[0].time), e = Math.max(...li.map(o => spanEnd(o, d))); ents.push({ s: st, e: spanEnd(li[0], d), g: { key: k, label: rgLabel(k), li, start: st, end: e } }); li.slice(1).forEach(o => ents.push({ s: tm(o.time), e: spanEnd(o, d), ghost: true })); });
+  // a group holds steps that run back to back (30 minutes apart at most); a later step of the same kind starts its own row
+  Object.keys(groups).forEach(k => { const runs = []; groups[k].sort(byTime).forEach(o => { const r = runs[runs.length - 1]; if (r && tm(o.time) - r.e <= 30) { r.li.push(o); r.e = Math.max(r.e, spanEnd(o, d)); } else runs.push({ li: [o], e: spanEnd(o, d) }); });
+    runs.forEach((r, i) => { const li = r.li, st = tm(li[0].time); if (li.length === 1) { ents.push({ s: st, e: r.e, it: li[0] }); return; } ents.push({ s: st, e: spanEnd(li[0], d), g: { key: k + (i ? "#" + i : ""), label: rgLabel(k), li, start: st, end: r.e } }); li.slice(1).forEach(o => ents.push({ s: tm(o.time), e: spanEnd(o, d), ghost: true })); }); });
   propsNow().forEach(x => { const t = S.tasks.find(y => y.id === x.id); ents.push({ s: tm(x.time), e: tm(x.time) + x.len, prop: { ...x, title: t.title } }); });
   ents.sort((a, b) => a.s - b.s || (a.it && a.it.kind === "meet" ? -1 : b.it && b.it.kind === "meet" ? 1 : 0));
   const nowLine = () => `<div class="tl-now" role="separator" aria-label="Now, ${esc(fT(hhmm(n)))}"><div class="tl-g"><b>${fTh(n)}</b></div><i></i></div>`;
@@ -1762,6 +1885,45 @@ async function loadMeetings() {
 }
 
 /* ---------- render ---------- */
+/* Smooth updates: the new screen is compared with the one showing and only what changed is touched, so nothing flashes,
+   scroll positions inside lists stay put and progress bars, folds and ticks animate instead of jumping.
+   Rows with a data-key (and elements with an id) are matched by that key, so a row added at the top doesn't rewrite every row below it. */
+const kOf = n => n.nodeType === 1 ? (n.getAttribute("data-key") || n.id || "") : "";
+function morph(el, html) { const t = document.createElement("template"); t.innerHTML = html; patchKids(el, t.content); }
+function patchKids(a, b) {
+  const want = Array.from(b.childNodes), have = Array.from(a.childNodes), keyed = {};
+  have.forEach(n => { const k = kOf(n); if (k) keyed[k] = n; });
+  const wantK = new Set(want.map(kOf).filter(Boolean));
+  let cur = a.firstChild;
+  for (const y of want) {
+    while (cur && kOf(cur) && !wantK.has(kOf(cur))) { const nx = cur.nextSibling; a.removeChild(cur); cur = nx; } // a row that is gone
+    const k = kOf(y);
+    let x = k ? keyed[k] : cur;
+    if (k && x) delete keyed[k];
+    if (x && !k && kOf(x)) x = null; // never patch an unkeyed node into a keyed one
+    if (x && x.nodeType === y.nodeType && x.nodeName === y.nodeName) {
+      if (x !== cur) a.insertBefore(x, cur);
+      patchNode(x, y);
+      cur = x.nextSibling;
+    } else {
+      a.insertBefore(y, cur);
+    }
+  }
+  while (cur) { const nx = cur.nextSibling; a.removeChild(cur); cur = nx; }
+}
+function patchNode(x, y) {
+  if (x.nodeType === 3 || x.nodeType === 8) { if (x.nodeValue !== y.nodeValue) x.nodeValue = y.nodeValue; return; }
+  if (x.nodeType !== 1) return;
+  const ya = y.attributes, xa = x.attributes;
+  for (let i = xa.length - 1; i >= 0; i--) { const n = xa[i].name; if (!y.hasAttribute(n)) x.removeAttribute(n); }
+  for (let i = 0; i < ya.length; i++) { const { name, value } = ya[i]; if (x.getAttribute(name) !== value) x.setAttribute(name, value); }
+  const tag = x.nodeName, focused = x === document.activeElement;
+  if (tag === "TEXTAREA") { if (!focused && x.value !== y.value) x.value = y.value; return; }
+  if (tag === "INPUT") { if (!focused) { if (x.type === "checkbox" || x.type === "radio") x.checked = y.hasAttribute("checked"); else if (x.value !== (y.getAttribute("value") || "")) x.value = y.getAttribute("value") || ""; } return; }
+  if (tag === "SVG" || tag === "svg") { if (x.innerHTML !== y.innerHTML) x.innerHTML = y.innerHTML; return; }
+  patchKids(x, y);
+  if (tag === "SELECT" && !focused) { const o = y.querySelector("option[selected]"); const v = o ? o.getAttribute("value") ?? o.textContent : (x.options[0] && x.options[0].value); if (v != null && x.value !== v) x.value = v; }
+}
 const view = document.getElementById("view");
 let shownView = null, lastHtml = "", navHtml = "";
 function renderMain(keep) {
@@ -1770,8 +1932,9 @@ function renderMain(keep) {
   if (html === lastHtml) return;
   const y = window.scrollY, ae = document.activeElement, fid = ae && view.contains(ae) && ae.id, sel = fid && ae.selectionStart;
   const cf0 = view.querySelector(".cfrow"), cfx = cf0 ? cf0.scrollLeft : 0;
-  view.innerHTML = lastHtml = html;
-  const cf1 = view.querySelector(".cfrow"); if (cf1 && cfx) cf1.scrollLeft = cfx;
+  if (shownView !== S.view || !view.firstChild) view.innerHTML = html; else morph(view, html); // a new tab enters fresh; the same tab is patched in place
+  lastHtml = html;
+  const cf1 = view.querySelector(".cfrow"); if (cf1 && cfx && cf1.scrollLeft !== cfx) cf1.scrollLeft = cfx;
   if (fid) { const el = document.getElementById(fid); if (el) { el.focus({ preventScroll: true }); try { el.setSelectionRange(sel, sel); } catch (e) {} } }
   if (shownView !== S.view) { shownView = S.view; const c = S.dir ? (S.dir > 0 ? "enter-l" : "enter-r") : "enter"; S.dir = 0; view.classList.remove("enter", "enter-l", "enter-r"); void view.offsetWidth; view.classList.add(c); }
   else if (keep) window.scrollTo(0, y);
@@ -1896,10 +2059,14 @@ view.addEventListener("click", e => {
   if (a === "resched") { openSheet({ type: "resched" }); return; }
   if (a === "settings") { S.pushSub = undefined; openSheet({ type: "settings" }); refreshPush(); refreshAlertMode(); return; }
   if (a === "loadday") { S.calMode = "month"; S.calDay = b.dataset.d; S.calMonth = monthStart(b.dataset.d); persist(); renderMain(); return; }
-  if (a === "calmode") { S.calMode = b.dataset.sub === "week" ? "week" : "month"; S.swipe = null; persist(); renderMain(); return; }
-  if (a === "calday") { S.calDay = b.dataset.d; if (S.calDay.slice(0, 7) !== (S.calMonth || "").slice(0, 7)) S.calMonth = monthStart(S.calDay); renderMain(true); return; }
-  if (a === "calnav") { const m = S.calMonth || monthStart(S.calDay || today()), dt = D(m); dt.setUTCMonth(dt.getUTCMonth() + Number(b.dataset.n)); S.calMonth = iso(dt); S.calDay = S.calMonth.slice(0, 7) === today().slice(0, 7) ? today() : S.calMonth; renderMain(true); return; }
-  if (a === "caltoday") { S.calDay = today(); S.calMonth = monthStart(today()); renderMain(true); return; }
+  if (a === "calmode") { const md = b.dataset.sub; if (!CAL_MODES.some(x => x[0] === md) || md === S.calMode) return; S.calMode = md; S.calGrp = null; S.swipe = null; if (md === "month") S.calMonth = monthStart(S.calDay || today()); persist(); renderMain(true); return; }
+  if (a === "calday") { S.calDay = b.dataset.d; S.calGrp = null; if (S.calDay.slice(0, 7) !== (S.calMonth || "").slice(0, 7)) S.calMonth = monthStart(S.calDay); renderMain(true); return; }
+  if (a === "calgo") { S.calMode = "day"; S.calDay = b.dataset.d; S.calMonth = monthStart(S.calDay); S.calGrp = null; persist(); renderMain(); window.scrollTo(0, 0); return; }
+  if (a === "calgrp") { const same = S.calGrp && S.calGrp.key === b.dataset.g && S.calGrp.d === b.dataset.d; S.calGrp = same ? null : { key: b.dataset.g, d: b.dataset.d }; renderMain(true); if (!same) requestAnimationFrame(() => { const c = view.querySelector(".cg-grp"); if (c) c.scrollIntoView({ behavior: "smooth", block: "nearest" }); }); return; }
+  if (a === "calgrpx") { S.calGrp = null; renderMain(true); return; }
+  if (a === "calslot") { const r = b.getBoundingClientRect(), hp = Number(b.dataset.hp) || 52, mins = Number(b.dataset.h0) * 60 + Math.floor(((e.clientY - r.top) / hp * 60) / 30) * 30; const t = newTask(); t.due = b.dataset.d; t.time = hhmm(Math.max(0, Math.min(1410, mins))); if (t.scope === "work" && isWeekend(t.due)) { toast("Work stays on Sunday to Thursday."); return; } openSheet({ type: "editTask", obj: t }); return; }
+  if (a === "calnav") { const n = Number(b.dataset.n); S.calGrp = null; if (S.calMode === "month") { const m = S.calMonth || monthStart(S.calDay || today()), dt = D(m); dt.setUTCMonth(dt.getUTCMonth() + n); S.calMonth = iso(dt); S.calDay = S.calMonth.slice(0, 7) === today().slice(0, 7) ? today() : S.calMonth; } else { S.calDay = add(S.calDay || today(), n * calStep[S.calMode]); S.calMonth = monthStart(S.calDay); } renderMain(true); return; }
+  if (a === "caltoday") { S.calDay = today(); S.calMonth = monthStart(today()); S.calGrp = null; renderMain(true); return; }
   if (a === "newday") { const t = newTask(); t.due = S.calDay || today(); openSheet({ type: "editTask", obj: t }); return; }
   if (a === "newr") { openSheet({ type: "editRoutine", obj: newRoutine() }); return; }
   if (a === "fold") { S.fold[b.dataset.f] = b.dataset.o === "1" ? 1 : 0; S.swipe = null; saveFold(); renderMain(true); return; }
@@ -1952,10 +2119,10 @@ view.addEventListener("pointerup", endDrag); view.addEventListener("pointercance
 /* ---------- sheet ---------- */
 const sheet = document.getElementById("sheet"), scrim = document.getElementById("scrim");
 let lastFocus = null;
-function newTask() { const side = S.mode; return { id: uid("t"), title: "", scope: side, area: side === "work" ? "Internal" : "Other", sub: "", owner: "Me", status: "due", due: S.view === "cal" && S.calMode === "week" ? add(today(), 1) : today(), time: "", dur: "", next: "", notes: "", priority: "", alert: false, items: [], requestedBy: "", requestedOn: "", contact: "", clientDeadline: "", nextChase: "", fileLink: "", link: "", source: "manual", created: new Date().toISOString(), _new: true }; }
+function newTask() { const side = S.mode; return { id: uid("t"), title: "", scope: side, area: side === "work" ? "Internal" : "Other", sub: "", owner: "Me", status: "due", due: S.view === "cal" && isDay(S.calDay) ? S.calDay : today(), time: "", dur: "", next: "", notes: "", priority: "", alert: false, items: [], requestedBy: "", requestedOn: "", contact: "", clientDeadline: "", nextChase: "", fileLink: "", link: "", source: "manual", created: new Date().toISOString(), _new: true }; }
 function newRoutine() { const side = S.mode; return { id: uid("r"), title: "", scope: side, area: side === "work" ? "Internal" : "Other", freq: "daily", days: [], dom: "", month: 1, time: "", dur: "", block: "", notes: "", alert: false, start: today(), startTime: hhmm(nowMin()), active: true, items: [], _new: true }; }
 function openSheet(s) { S.sheet = s; lastFocus = document.activeElement; document.documentElement.classList.add("lock"); scrim.hidden = false; sheet.hidden = false; renderSheet(); requestAnimationFrame(() => { scrim.classList.add("on"); sheet.classList.add("on"); const f = sheet.querySelector("[autofocus]") || sheet.querySelector(".sh-bar button"); if (f) f.focus({ preventScroll: true }); }); }
-function closeSheet() { S.sheet = null; document.documentElement.classList.remove("lock"); scrim.classList.remove("on"); sheet.classList.remove("on"); sheet.style.transform = ""; scrim.style.opacity = ""; setTimeout(() => { if (!S.sheet) { scrim.hidden = true; sheet.hidden = true; sheet.innerHTML = ""; } }, 420); renderMain(true); if (lastFocus && document.contains(lastFocus)) lastFocus.focus({ preventScroll: true }); }
+function closeSheet() { S.sheet = null; document.documentElement.classList.remove("lock"); scrim.classList.remove("on"); sheet.classList.remove("on"); sheet.style.transform = ""; scrim.style.opacity = ""; setTimeout(() => { if (!S.sheet) { scrim.hidden = true; sheet.hidden = true; sheet.innerHTML = ""; sheet._sig = ""; } }, 420); renderMain(true); if (lastFocus && document.contains(lastFocus)) lastFocus.focus({ preventScroll: true }); }
 scrim.addEventListener("click", closeSheet);
 document.addEventListener("keydown", e => {
   if (!S.sheet) return;
@@ -2121,15 +2288,17 @@ function settingsSheet() {
   </div>`;
 }
 async function copyText(t, what) { try { await navigator.clipboard.writeText(t); toast(what + " copied"); } catch (e) { toast("Couldn't copy. Long-press to copy instead."); } }
+/* A sheet showing the same thing as before is patched in place (a tick, a synced change), so it doesn't flash or lose its place; a different sheet is drawn fresh. */
+function putSheet(html) { const sig = S.sheet ? S.sheet.type + "|" + (S.sheet.key || S.sheet.id || "") + "|" + (S.sheet.pick ? 1 : 0) + "|" + (S.sheet.tab || "") : ""; if (sheet._sig === sig && sheet.firstChild) morph(sheet, html); else sheet.innerHTML = html; sheet._sig = sig; }
 function renderSheet() {
   const s = S.sheet; if (!s) return;
-  if (s.type === "item") { const it = findItem(s.key); if (!it) { closeSheet(); return; } const b0 = sheet.querySelector(".sh-body"), y = b0 ? b0.scrollTop : 0; sheet.innerHTML = it.kind === "meet" ? meetSheet(it) : s.pick ? pickSheet(it) : itemSheet(it); const b1 = sheet.querySelector(".sh-body"); if (b1 && !s.pick) b1.scrollTop = y; return; }
-  if (s.type === "inbox") { const b0 = sheet.querySelector(".sh-body"), y = b0 ? b0.scrollTop : 0; sheet.innerHTML = inboxSheet(); const b1 = sheet.querySelector(".sh-body"); if (b1) b1.scrollTop = y; return; }
+  if (s.type === "item") { const it = findItem(s.key); if (!it) { closeSheet(); return; } const b0 = sheet.querySelector(".sh-body"), y = b0 ? b0.scrollTop : 0; putSheet(it.kind === "meet" ? meetSheet(it) : s.pick ? pickSheet(it) : itemSheet(it)); const b1 = sheet.querySelector(".sh-body"); if (b1 && !s.pick) b1.scrollTop = y; return; }
+  if (s.type === "inbox") { const b0 = sheet.querySelector(".sh-body"), y = b0 ? b0.scrollTop : 0; putSheet(inboxSheet()); const b1 = sheet.querySelector(".sh-body"); if (b1) b1.scrollTop = y; return; }
   if (s.type === "pay") { const it = findItem(s.key); if (!it) { closeSheet(); return; } sheet.innerHTML = paySheet(it); return; }
   if (s.type === "touch") { const it = findItem(s.key); if (!it || it.kind !== "task") { closeSheet(); return; } sheet.innerHTML = touchSheet(it); return; }
   if (s.type === "quick") { sheet.innerHTML = quickSheet(); return; }
-  if (s.type === "plan" || s.type === "resched" || s.type === "gap" || s.type === "settings") { const b0 = sheet.querySelector(".sh-body"), y = b0 ? b0.scrollTop : 0; sheet.innerHTML = s.type === "plan" ? planSheet() : s.type === "resched" ? reschedSheet() : s.type === "gap" ? gapSheet() : settingsSheet(); const b1 = sheet.querySelector(".sh-body"); if (b1) b1.scrollTop = y; return; }
-  if (s.type === "audit") { const a = S.audits.find(x => x.id === s.id); if (!a) { closeSheet(); return; } const b0 = sheet.querySelector(".sh-body"), y = b0 ? b0.scrollTop : 0; sheet.innerHTML = auditSheet(a); const b1 = sheet.querySelector(".sh-body"); if (b1) b1.scrollTop = y; return; }
+  if (s.type === "plan" || s.type === "resched" || s.type === "gap" || s.type === "settings") { const b0 = sheet.querySelector(".sh-body"), y = b0 ? b0.scrollTop : 0; putSheet(s.type === "plan" ? planSheet() : s.type === "resched" ? reschedSheet() : s.type === "gap" ? gapSheet() : settingsSheet()); const b1 = sheet.querySelector(".sh-body"); if (b1) b1.scrollTop = y; return; }
+  if (s.type === "audit") { const a = S.audits.find(x => x.id === s.id); if (!a) { closeSheet(); return; } const b0 = sheet.querySelector(".sh-body"), y = b0 ? b0.scrollTop : 0; putSheet(auditSheet(a)); const b1 = sheet.querySelector(".sh-body"); if (b1) b1.scrollTop = y; return; }
   if (s.type === "editAudit") { sheet.innerHTML = auditForm(s.obj); return; }
   if (s.type === "editTask") sheet.innerHTML = taskForm(s.obj);
   if (s.type === "editRoutine") sheet.innerHTML = routineForm(s.obj);
@@ -2796,19 +2965,34 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "1.9"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
+const APP_VERSION = "1.10"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(() => swConfig()).catch(() => {});
-let verAt = 0;
+/* The page opens from the saved copy at once. The check below asks GitHub for the live version (a fresh URL each time, so
+   GitHub's own 10-minute cache can't hide it), saves the new page and switches straight away if you haven't touched anything yet;
+   otherwise it switches the next time you come back to the planner, with a banner meanwhile. */
+const SW_CACHE = "planner-v6";
+let verAt = 0, updReady = false, touchedAt = 0;
+["pointerdown", "keydown"].forEach(ev => addEventListener(ev, () => { touchedAt = Date.now(); }, { passive: true, capture: true }));
 async function checkVersion() {
-  if (Date.now() - verAt < 120000) return; verAt = Date.now();
-  try { const h = await fetch("index.html", { cache: "no-store" }).then(r => r.ok ? r.text() : ""); const m = h.match(/const APP_VERSION = "([^"]+)"/); if (m && m[1] !== APP_VERSION) showUpdate(); } catch (e) {}
+  if (Date.now() - verAt < 60000) return; verAt = Date.now();
+  try {
+    const r = await fetch("index.html?check=" + Date.now(), { cache: "no-store" }); if (!r.ok) return;
+    const h = await r.text(), m = h.match(/const APP_VERSION = "([^"]+)"/);
+    if (!m || m[1] === APP_VERSION) return;
+    try { const c = await caches.open(SW_CACHE); await c.put("index.html", new Response(h, { headers: { "Content-Type": "text/html; charset=utf-8" } })); } catch (e) {}
+    updReady = m[1];
+    let tried = ""; try { tried = sessionStorage.getItem("pa-upd") || ""; } catch (e) {}
+    if (!touchedAt && !S.sheet && !outbox.length && tried !== m[1]) { applyUpdate(); return; } // once per version, so a stale copy can never loop
+    showUpdate();
+  } catch (e) {}
 }
+function applyUpdate() { try { if (updReady) sessionStorage.setItem("pa-upd", updReady); } catch (e) {} try { navigator.serviceWorker && navigator.serviceWorker.getRegistration().then(g => g && g.update()).catch(() => {}); } catch (e) {} location.reload(); }
 function showUpdate() {
   if (document.getElementById("upd")) return;
   const b = document.createElement("button"); b.type = "button"; b.id = "upd"; b.className = "offline upd"; b.textContent = "New version ready · Tap to update";
-  b.addEventListener("click", () => location.reload()); document.body.appendChild(b);
+  b.addEventListener("click", applyUpdate); document.body.appendChild(b);
 }
-setTimeout(checkVersion, 8000);
+setTimeout(checkVersion, 600);
 
 /* ---------- refresh ---------- */
 /* Manual refresh sends anything waiting, then reloads tasks, routines and meetings from the server. Automatic sync keeps running as before. */
@@ -2993,6 +3177,7 @@ function wake() {
 schedulePoll();
 setInterval(() => { if (Date.now() - activeAt < IDLE_SLOW) poll(true); }, 300000); // the full reload safety net runs only while the planner is in use
 document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && updReady && !S.sheet && (() => { try { return sessionStorage.getItem("pa-upd") !== updReady; } catch (e) { return true; } })() && !outbox.length && !pending) { applyUpdate(); return; } // coming back to the planner picks up a waiting version
   if (document.visibilityState !== "visible" || !S.ready) return;
   activeAt = Date.now(); schedulePoll();
   updateBadge(); // correct a badge a push left behind, before the reload finishes
