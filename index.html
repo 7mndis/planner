@@ -2965,7 +2965,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "1.10"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
+const APP_VERSION = "2.0"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(() => swConfig()).catch(() => {});
 /* The page opens from the saved copy at once. The check below asks GitHub for the live version (a fresh URL each time, so
    GitHub's own 10-minute cache can't hide it), saves the new page and switches straight away if you haven't touched anything yet;
@@ -3112,13 +3112,13 @@ const CACHE = "pa-cache";
 let cacheT = 0;
 function saveCache() { clearTimeout(cacheT); cacheT = setTimeout(() => { try { localStorage.setItem(CACHE, JSON.stringify({ tasks: S.tasks, routines: S.routines, log: Object.values(S.logs), touches: S.touches, engagements: S.engOk ? S.audits : undefined, audits: S.audits, stageMap: S.stages, contacts: S.contacts, proposals: S.proposals, notes: S.notesOk ? S.notes : undefined, meetings: S.meetings })); } catch (e) {} }, 400); }
 function readCache() { try { const c = JSON.parse(localStorage.getItem(CACHE) || "null"); if (!c || !Array.isArray(c.tasks)) return false; applyData(c); S.meetings = c.meetings || {}; return true; } catch (e) { return false; } }
-async function loadAll(first) {
+async function loadAll(first, pre) {
   try {
     if (first) {
       const r = await api("getAll");
       applyData(r.data); applyMeetings(r.meetings, r.from, r.to);
     } else {
-      const w0 = writes, d = await api("getData");
+      const w0 = pre ? pre.w0 : writes, d = pre ? pre.data : await api("getData");
       if (pending || writes !== w0 || outbox.length || drag || typing()) return false; // a save is on its way, landed while this copy was read, or you are typing; the next check picks it up
       applyData(d);
     }
@@ -3158,20 +3158,22 @@ async function poll(force) {
   if (polling || document.visibilityState !== "visible" || !S.ready || pending || outbox.length) return;
   polling = true; polledAt = Date.now();
   try {
-    const st = String(await call("getStamp"));
-    if (force || st !== stamp) { if (await loadAll(false)) stamp = st; } // the first check also reloads, so nothing saved meanwhile is missed
+    // one round trip: the server answers with its stamp, and with the data only when something changed since ours
+    const w0 = writes, r = await call("getSync", force || !stamp ? "" : stamp);
+    if (r && r.data) { if (await loadAll(false, { data: r.data, w0 })) stamp = String(r.stamp); }
+    else if (r && r.stamp) stamp = String(r.stamp);
   } catch (e) {} finally { polling = false; }
 }
-/* The check runs every 6 seconds while the planner is in use, slows to 20 seconds after 10 minutes without a touch and stops after 30 minutes.
-   Any touch, click, key, scroll or return to the tab brings it back to 6 seconds and checks straight away. */
+/* The check runs every 4 seconds while the planner is in use, slows to 20 seconds after 10 minutes without a touch and stops after 30 minutes.
+   Any touch, click, key, scroll or return to the tab brings it back to 4 seconds and checks straight away. */
 const IDLE_SLOW = 600000, IDLE_STOP = 1800000;
 let activeAt = Date.now(), pollT = 0;
-const pollDelay = () => { const idle = Date.now() - activeAt; return idle >= IDLE_STOP ? 0 : idle >= IDLE_SLOW ? 20000 : 6000; };
+const pollDelay = () => { const idle = Date.now() - activeAt; return idle >= IDLE_STOP ? 0 : idle >= IDLE_SLOW ? 20000 : 4000; };
 function schedulePoll() { clearTimeout(pollT); const d = pollDelay(); if (!d) return; pollT = setTimeout(() => { poll(false); schedulePoll(); }, d); }
 function wake() {
   const was = pollDelay(); activeAt = Date.now();
-  if (was !== 6000 || Date.now() - polledAt >= 6000) poll(false); // straight away when the cadence had slowed or a check is due
-  if (was !== 6000 || !pollT) schedulePoll();
+  if (was !== 4000 || Date.now() - polledAt >= 4000) poll(false); // straight away when the cadence had slowed or a check is due
+  if (was !== 4000 || !pollT) schedulePoll();
 }
 ["touchstart", "click", "keydown", "scroll"].forEach(ev => addEventListener(ev, wake, { passive: true }));
 schedulePoll();
