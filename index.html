@@ -112,6 +112,10 @@ html, body { min-height: 100%; }
 .dayh { display: flex; align-items: center; gap: 8px; width: 100%; border-left: 0; border-right: 0; border-bottom: 0; background: none; font-family: inherit; text-align: left; cursor: pointer; padding: 10px 16px 4px 100px; font-size: .78rem; font-weight: 600; color: var(--label2); border-top: .5px solid var(--sep); }
 .card > .dayh:first-child, .ch + .dayh, .card > .dg:first-child > .dayh, .fb > .dg:first-child > .dayh { border-top: 0; }
 .dayh .chev { margin-left: auto; }
+.dayh .ld { margin-left: auto; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--label2); }
+.dayh .ld.late { color: var(--late); font-weight: 600; }
+.dayh .ld ~ .cnt, .dayh .ld ~ .chev { margin-left: 8px; }
+.dayh.static { cursor: default; padding-bottom: 8px; }
 .dayh .cnt { margin-left: auto; font-variant-numeric: tabular-nums; }
 .dayh .cnt + .chev { margin-left: 2px; }
 .dg.folded > .dayh { padding-bottom: 10px; }
@@ -722,12 +726,14 @@ const OWNERS = ["Me", "Client", "Aysha", "Noor", "Bhavish", "Shaikha", "Osama", 
 const FREQ = [["daily", "Every Day"], ["weekly", "Weekly"], ["monthly", "Monthly"], ["lastworkday", "Last Workday of Month"], ["yearly", "Yearly"]];
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 /* Two modes, one app: Work shows only work, Personal only personal. Each mode has its own tabs. */
-const VIEWS_BY = { work: [["today", "Today"], ["work", "Clients"], ["cal", "Calendar"]], personal: [["today", "Today"], ["personal", "Personal"], ["cal", "Calendar"]] };
-let VIEWS = [["today", "Today"], ["work", "Clients"], ["personal", "Personal"], ["cal", "Calendar"]];
+const VIEWS_BY = { work: [["today", "Today"], ["work", "Work"], ["cal", "Calendar"]], personal: [["today", "Today"], ["personal", "Personal"], ["cal", "Calendar"]] };
+let VIEWS = [["today", "Today"], ["work", "Work"], ["personal", "Personal"], ["cal", "Calendar"]];
 /* Engagement components (audits, policies, proposals) live in the Audits tab of the Sheet; a task links to one through its client and audit fields. */
 const PHASES = ["Not started", "Planning", "Fieldwork", "Reporting", "Follow-up", "On hold", "Closed"];
 const PH_CLS = { "Not started": "ph-0", Planning: "ph-1", Fieldwork: "ph-2", Reporting: "ph-3", "Follow-up": "ph-4", "On hold": "ph-5", Closed: "ph-6" };
-const WORK_SUBS = [["clients", "Clients"], ["mine", "Actions"], ["waiting", "Waiting"], ["done", "Done"]];
+const WORK_SUBS = [["mine", "My Tasks"], ["chase", "Chasing"], ["eng", "Engagements"], ["done", "Done"]];
+/* The people who can lead an engagement. An engagement led by anyone but Me sits in the Team list and never reaches Today, Chasing or the digests. */
+const TEAM = ["Me", "Osama", "Aysha", "Noor", "Shaikha", "Abdulrahman", "Bhavish"];
 /* Engagements: one per audit, follow-up, policy job, presentation or quality assessment. Stage names come from the Stages tab; these are the fallback. */
 const ENG_STATUS = ["Active", "Not started", "On hold", "Closed"];
 const DEFAULT_STAGES = {
@@ -784,7 +790,7 @@ const P = {
 const ico = k => `<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[k] || P.Other}</svg>`;
 
 /* ---------- state ---------- */
-const S = { tasks: [], routines: [], logs: {}, touches: [], audits: [], stages: { ...DEFAULT_STAGES }, contacts: [], proposals: [], notes: [], notesOk: false, engOk: true, mode: "work", ready: false, view: "today", sub: { work: "clients", personal: "cats" }, q: "", qOpen: false, meetings: {}, meetNote: "", loadedAt: 0, sheet: null, swipe: null, just: null, fold: {}, cf: "", pf: "", calMode: "month" };
+const S = { tasks: [], routines: [], logs: {}, touches: [], audits: [], stages: { ...DEFAULT_STAGES }, contacts: [], proposals: [], notes: [], notesOk: false, engOk: true, mode: "work", ready: false, view: "today", sub: { work: "mine", personal: "cats" }, q: "", qOpen: false, meetings: {}, meetNote: "", loadedAt: 0, sheet: null, swipe: null, just: null, fold: {}, cf: "", pf: "", calMode: "month" };
 
 /* Calls go to Apps Script as plain-text POSTs (no CORS preflight). Writes run one at a time, in order,
    so a quick tick and untick can never arrive at the server in the wrong order. */
@@ -858,7 +864,7 @@ function api(fn, ...args) {
 addEventListener("online", () => { showOffline(); flush(); });
 addEventListener("offline", showOffline);
 setInterval(() => { if (outbox.length) flush(); }, 30000);
-try { const v = JSON.parse(localStorage.getItem("pa4") || "{}"); if (v.view && VIEWS.some(x => x[0] === v.view)) S.view = v.view; if (v.sub) Object.assign(S.sub, v.sub); if (!WORK_SUBS.some(x => x[0] === S.sub.work)) S.sub.work = "clients"; if (!PERS_SUBS.some(x => x[0] === S.sub.personal)) S.sub.personal = "cats"; if (v.fold && typeof v.fold === "object") S.fold = v.fold; if (typeof v.cf === "string" && CLIENTS.includes(v.cf)) S.cf = v.cf; if (["month", "week", "3day", "day"].includes(v.calMode)) S.calMode = v.calMode; if (typeof v.pf === "string" && CATS.includes(v.pf)) S.pf = v.pf; } catch (e) {}
+try { const v = JSON.parse(localStorage.getItem("pa4") || "{}"); if (v.view && VIEWS.some(x => x[0] === v.view)) S.view = v.view; if (v.sub) Object.assign(S.sub, v.sub); if (!WORK_SUBS.some(x => x[0] === S.sub.work)) S.sub.work = "mine"; if (!PERS_SUBS.some(x => x[0] === S.sub.personal)) S.sub.personal = "cats"; if (v.fold && typeof v.fold === "object") S.fold = v.fold; if (typeof v.cf === "string" && CLIENTS.includes(v.cf)) S.cf = v.cf; if (["month", "week", "3day", "day"].includes(v.calMode)) S.calMode = v.calMode; if (typeof v.pf === "string" && CATS.includes(v.pf)) S.pf = v.pf; } catch (e) {}
 const persist = () => { try { localStorage.setItem("pa4", JSON.stringify({ view: S.view, sub: S.sub, fold: S.fold, cf: S.cf, pf: S.pf, calMode: S.calMode })); } catch (e) {} };
 
 /* ---------- time, Bahrain ---------- */
@@ -1013,7 +1019,7 @@ const isWaiting = t => tOpen(t) && (t.status === "waiting" || !mine(t));
 const chaseDate = t => (isDay(t.nextChase) ? t.nextChase : "") || (isDay(t.due) ? t.due : "");
 const chaseItem = t => ({ ...tItem(t), date: chaseDate(t) });
 /* Waiting items whose chase date is today or has passed: the second badge on the Today tab. */
-const chaseCount = () => S.tasks.filter(t => t.scope === "work" && isWaiting(t) && chaseDate(t) && diff(chaseDate(t)) <= 0).length;
+const chaseCount = () => S.tasks.filter(t => isChase(t) && chaseDate(t) && diff(chaseDate(t)) <= 0).length;
 const touchesOf = id => (S.touches || []).filter(x => x.taskId === id).sort((a, b) => String(b.date).localeCompare(String(a.date)) || String(b.at || "").localeCompare(String(a.at || "")));
 /* Client filter: applies to work items only. */
 /* The chip filter: a client in Work, a category in Personal. It applies on Today, Calendar and Next 7 Days as well as the list tabs. */
@@ -1116,6 +1122,7 @@ function metaHtml(it) {
     else if (!RO.planner && !RO.noDate) parts.push(esc(rowDate(t.due, t.time)));
     else if (t.time) parts.push(esc(fT(t.time)));
   }
+  if (tOpen(t) && t.scope === "work" && isDay(t.clientDeadline)) { const dd = diff(t.clientDeadline); parts.push(`<span${dd <= 2 ? ' class="late"' : ""}>Client deadline ${esc(dd < 0 ? relShort(t.clientDeadline) : rel(t.clientDeadline))}</span>`); }
   if (RO.ctx) { const a = t.scope === "work" ? engOf(t) : null; if (t.scope === "work") parts.push(esc(t.area) + (a ? " · " + esc(a.engagement) : t.sub ? " · " + esc(t.sub) : "")); else if (t.area && t.area !== "Other") parts.push(esc(t.area)); }
   if (tOpen(t) && Number(t.rolls) >= 2) parts.push(`<span${Number(t.rolls) >= 3 ? ' class="late"' : ""}>Moved ${Number(t.rolls)}×</span>`);
   if (it.more) parts.push(`+${it.more} more`);
@@ -1149,7 +1156,8 @@ const chHead = (label, dot, cnt, fid, auto) => { const k = fk("c", fid || label)
 const subGroup = (label, rows, scope) => { const k = fk("g", scope, label), f = folded(k); return `<div class="sg${f ? " folded" : ""}"><button type="button" class="subh" data-act="fold" data-f="${esc(k)}" data-o="${f ? 0 : 1}" aria-expanded="${!f}">${esc(label)}${chev}</button><div class="fb">${rows}</div></div>`; };
 function rowsByDay(items, scope) {
   const days = []; items.forEach(it => { const g = days[days.length - 1]; if (g && g.d === it.date) g.li.push(it); else days.push({ d: it.date, li: [it] }); });
-  return days.map(({ d, li }) => { const k = fk("d", scope || "", "d:" + d), f = folded(k); return `<div class="sg dg${f ? " folded" : ""}"><button type="button" class="dayh" data-act="fold" data-f="${esc(k)}" data-o="${f ? 0 : 1}" aria-expanded="${!f}"><span>${esc(rel(d))}</span>${f ? `<span class="cnt">${li.length}</span>` : ""}${chev}</button><div class="fb">${li.map(rowHtml).join("")}</div></div>`; }).join("");
+  const ld = RO.load;
+  return days.map(({ d, li }) => { const k = fk("d", scope || "", "d:" + d), f = folded(k); return `<div class="sg dg${f ? " folded" : ""}"><button type="button" class="dayh" data-act="fold" data-f="${esc(k)}" data-o="${f ? 0 : 1}" aria-expanded="${!f}"><span>${esc(rel(d))}</span>${ld && isDay(d) ? loadTag(d) : ""}${f ? `<span class="cnt">${li.length}</span>` : ""}${chev}</button><div class="fb">${li.map(rowHtml).join("")}</div></div>`; }).join("");
 }
 /* Tasks in five time buckets. Items are already sorted by date. */
 function dateGroups(items) {
@@ -1158,7 +1166,15 @@ function dateGroups(items) {
   return Object.entries(g).filter(x => x[1].length);
 }
 /* Overdue and No Date are flat; Today repeats only the time; This Week and Later sit under day headers. */
-const dateCards = (items, prefix, ctx) => dateGroups(items).map(([l, li]) => { const byDay = l === "This Week" || l === "Later"; RO = { ctx, planner: byDay || l === "Today" }; const h = cardHtml(byDay ? rowsByDay(li, prefix + l) : li.map(rowHtml).join(""), chHead(l, null, li.length, prefix + ":" + l)); RO = {}; return h; });
+const dateCards = (items, prefix, ctx, load) => dateGroups(items).map(([l, li]) => { const byDay = l === "This Week" || l === "Later"; RO = { ctx, planner: byDay || l === "Today", load }; const h = cardHtml((load && l === "Today" ? `<div class="dayh static"><span>Load</span>${loadTag(today())}</div>` : "") + (byDay ? rowsByDay(li, prefix + l) : li.map(rowHtml).join("")), chHead(l, null, li.length, prefix + ":" + l)); RO = {}; return h; });
+/* A workday's load: your task time against the time left after meetings and lunch (8 AM to 5 PM). Tasks with no duration count as 1 hour. */
+function workLoad(d) {
+  const meet = (S.meetings[d] || []).filter(m => m.cal === "Outlook" && m.time && !/^all day/i.test(m.status || "") && m.status !== "free").reduce((n, m) => n + Math.max(0, Math.min(tm(m.end || m.time), 1020) - Math.max(tm(m.time), 480)), 0);
+  const free = Math.max(0, 540 - 60 - meet);
+  const plan = S.tasks.filter(t => t.scope === "work" && tOpen(t) && mine(t) && t.status !== "waiting" && t.due === d).reduce((n, t) => n + (durMins(t, d) || 60), 0);
+  return { free, plan, meet };
+}
+const loadTag = d => { if (isWeekend(d)) return ""; const l = workLoad(d), over = l.plan > l.free; return `<span class="ld${over ? " late" : ""}">${esc(dur(l.plan) || "0m")} of ${esc(dur(l.free) || "0m")} free${over ? " · over" : ""}</span>`; };
 
 /* ---------- quick add: "pick up lunch at 12pm", "Tamkeen send IIR tomorrow 10am with reminder" ---------- */
 const CAT_WORDS = [
@@ -1341,7 +1357,7 @@ function planner(range) {
   const work = S.mode !== "work" || (isWeekend(d0) && range === "today") ? [] : oneEach([...overdue, ...tasks].filter(t => t.scope === "work" && cfOk(t)).map(tItem).sort(sortP));
   const pers = [...overdue, ...tasks].filter(t => t.scope === "personal" && cfOk(t)).map(tItem).sort(sortP);
   // waiting items to chase: by their chase date (nextChase, else due); on Today anything already past is included
-  const chase = S.mode !== "work" ? [] : S.tasks.filter(t => t.scope === "work" && isWaiting(t) && cfOk(t) && chaseDate(t) && (inRange(chaseDate(t)) || (range === "today" && diff(chaseDate(t)) < 0))).map(chaseItem).sort(byDayPri);
+  const chase = S.mode !== "work" ? [] : S.tasks.filter(t => isChase(t) && cfOk(t) && chaseDate(t) && (inRange(chaseDate(t)) || (range === "today" && diff(chaseDate(t)) < 0))).map(chaseItem).sort(byDayPri);
   const list = (items, sc) => multi ? rowsByDay(items, sc) : items.map(rowHtml).join("");
   const allDone = li => li.length > 0 && li.every(o => o.status === "done" || o.status === "skipped");
 
@@ -1671,10 +1687,26 @@ function capacityHtml(p) {
   const note = left && planned > left ? `<div class="cap-n late">Over by ${dur(planned - left)}. Move something to another day.</div>` : noEst ? `<div class="cap-n">${noEst} task${noEst > 1 ? "s" : ""} without a duration, counted as 30m</div>` : "";
   return `<section class="cap" aria-label="Today's progress"><div class="cap-h"><b>${esc(head)}${own.length ? `<span class="cap-p">${pct}%</span>` : ""}</b><span>${esc(right)}</span></div>${own.length ? `<div class="cap-bar" role="progressbar" aria-label="Done today" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><i style="width:${pct}%"></i></div>` : ""}${note}</section>`;
 }
+/* Focus: your top 3 work tasks for today, from today's and overdue tasks. High priority first, then the nearest client deadline,
+   then the oldest due date, then time. The Outlook sync blocks the same three on your Outlook calendar. */
+const dlDays = t => isDay(t.clientDeadline) ? diff(t.clientDeadline) : 999;
+const focusRank = (a, b) => priRank(a.t) - priRank(b.t) || dlDays(a.t) - dlDays(b.t) || String(a.t.due || "9999").localeCompare(String(b.t.due || "9999")) || tm(a.t.time || "23:59") - tm(b.t.time || "23:59") || String(a.title).localeCompare(String(b.title));
+function focusList(p) {
+  if (!p.work || p.off) return [];
+  const seen = new Set();
+  return [...p.overdue, ...p.timed.filter(i => i.kind === "task"), ...p.anytime.filter(i => i.kind === "task")].filter(i => i.t.scope === "work" && isOpen(i) && !seen.has(i.id) && seen.add(i.id)).sort(focusRank).slice(0, 3);
+}
+const focusIds = p => new Set(focusList(p).map(i => i.id));
+function focusHtml(p) {
+  const li = focusList(p); if (!li.length) return "";
+  RO = { ctx: true }; const rows = li.map(rowHtml).join(""); RO = {};
+  return cardHtml(rows, chHead("Focus · Top 3", "--late", li.length, "t:focus"));
+}
 function overdueHtml(p) {
-  if (!p.overdue.length) return "";
-  RO = { ctx: true }; const rows = p.overdue.map(rowHtml).join(""); RO = {};
-  return cardHtml(rows + `<div class="card-acts"><button type="button" class="btn sm primary" data-act="resched">${ico("clock")}Reschedule All (${p.overdue.length})</button></div>`, chHead("Overdue", "--late", p.overdue.length, "t:overdue"));
+  const fx = focusIds(p), od = p.overdue.filter(i => !fx.has(i.id));
+  if (!od.length) return "";
+  RO = { ctx: true }; const rows = od.map(rowHtml).join(""); RO = {};
+  return cardHtml(rows + `<div class="card-acts"><button type="button" class="btn sm primary" data-act="resched">${ico("clock")}Reschedule All (${od.length})</button></div>`, chHead("Overdue", "--late", od.length, "t:overdue"));
 }
 /* One row on the timeline: the time in the gutter with a rail in the item's colour, then the usual row. */
 function tlRowHtml(it, d, cls) {
@@ -1751,7 +1783,7 @@ function timelineHtml(p) {
 function anytimeHtml(p) {
   const shown = new Set(propsNow().map(x => x.id));
   let li = p.anytime.filter(it => !(it.kind === "task" && shown.has(it.id)));
-  if (p.work) li = [...oneEach(li.filter(i => i.kind === "task")), ...li.filter(i => i.kind !== "task")];
+  if (p.work) { const fx = focusIds(p); li = li.filter(i => !(i.kind === "task" && fx.has(i.id))); }
   if (!li.length) return "";
   const open = li.filter(isOpen).length, canPlan = !p.off && li.some(i => i.kind === "task" && isOpen(i));
   RO = { ctx: true, planner: true }; const rows = rgRows(li, "any"); RO = {};
@@ -1767,7 +1799,7 @@ function viewToday() {
   const tlOpen = p.timed.filter(isOpen).length;
   const tl = p.off ? cardHtml(`<div class="empty">Weekend. Work returns on Sunday.</div>`, chHead("Schedule", null)) : (() => { const k = fk("c", "t:tl"), f = folded(k); return `<div class="card tlc${f ? " folded" : ""}"><button type="button" class="ch" data-act="fold" data-f="${esc(k)}" data-o="${f ? 0 : 1}" aria-expanded="${!f}">Schedule<span class="cnt">${p.timed.length - tlOpen}/${p.timed.length}</span>${chev}</button><div class="fb">${propBar}${p.timed.length || props.length ? `<div class="tl">${timelineHtml(p)}</div>` : `<div class="empty">Nothing scheduled today.</div>`}</div></div>`; })();
   let chase = "";
-  if (p.work && !p.off) { const li = S.tasks.filter(t => t.scope === "work" && isWaiting(t) && cfOk(t) && chaseDate(t) && diff(chaseDate(t)) <= 0).map(chaseItem).sort(byDayPri); if (li.length) { RO = { ctx: true }; chase = cardHtml(li.map(rowHtml).join(""), chHead("To Chase", "--i-meet", li.length, "chase")); RO = {}; } }
+  if (p.work && !p.off) { const li = S.tasks.filter(t => isChase(t) && cfOk(t) && chaseDate(t) && diff(chaseDate(t)) <= 0).map(chaseItem).sort(byDayPri); if (li.length) { RO = { ctx: true }; chase = cardHtml(li.map(rowHtml).join(""), chHead("To Chase", "--i-meet", li.length, "chase")); RO = {}; } }
   let soon = "";
   if (!p.work) { const li = Array.from({ length: 7 }, (_, i) => add(d, i + 1)).flatMap(x => (S.meetings[x] || []).map(m => mItem(m, x))).filter(it => it.etype === "birthday" || it.etype === "holiday").sort(byEvent); if (li.length) { RO = { planner: true, evDate: true }; soon = cardHtml(li.map(rowHtml).join(""), chHead("Coming Up", "--i-bday", li.length, "ev:soon")); RO = {}; } }
   const note = !p.off && S.meetNote ? `<p class="foot">${esc(S.meetNote)}</p>` : "";
@@ -1776,7 +1808,7 @@ function viewToday() {
   ${upNext()}
   ${planBanner()}
   ${capacityHtml(p)}
-  ${(() => { const c1 = overdueHtml(p) + allDay + anytimeHtml(p) + chase, c2 = tl + note + soon; return c1 ? `<div class="cols two"><div class="col">${c1}</div><div class="col">${c2}</div></div>` : `<div class="col">${c2}</div>`; })()}
+  ${(() => { const c1 = focusHtml(p) + overdueHtml(p) + allDay + anytimeHtml(p) + chase, c2 = tl + note + soon; return c1 ? `<div class="cols two"><div class="col">${c1}</div><div class="col">${c2}</div></div>` : `<div class="col">${c2}</div>`; })()}
   <p class="foot" style="text-align:center"><button type="button" class="txtbtn sm" data-act="settings">Settings</button> · Version ${esc(APP_VERSION)}</p>`;
 }
 
@@ -1793,50 +1825,69 @@ const engOpen = a => a.active !== false && a.status !== "Closed";
 const engOf = t => { if (!t || t.scope !== "work") return null; if (t.engagement) { const a = S.audits.find(x => x.id === t.engagement); if (a) return a; } return t.sub ? S.audits.find(x => x.client === t.area && x.engagement === t.sub) || null : null; };
 const engTasks = a => S.tasks.filter(t => t.scope === "work" && (t.engagement ? t.engagement === a.id : t.area === a.client && (t.sub || "") === a.engagement));
 const auditTasks = a => engTasks(a).filter(tOpen);
-const engLate = a => engOpen(a) && ((isDay(a.next_date) && diff(a.next_date) < 0) || (isDay(a.target) && diff(a.target) < 0));
+const engLate = a => { if (!engOpen(a)) return false; const n = engNext(a); return (!!n && isDay(n.d) && diff(n.d) < 0) || (isDay(a.target) && diff(a.target) < 0); };
 const ownerLabel = o => !o || o === "Me" ? "On you" : "With " + o;
+/* The engagement's owner column holds its Lead. Next and last action are worked out from its tasks, so nothing goes stale. */
+const leadOf = a => (a && a.owner) || "Me";
+const myEng = a => leadOf(a) === "Me";
+const teamTask = t => { const a = engOf(t); return !!a && !myEng(a) && !mine(t); };
+const isChase = t => t.scope === "work" && isWaiting(t) && !teamTask(t);
+function engNext(a) { const li = auditTasks(a).map(t => ({ t, d: isWaiting(t) ? chaseDate(t) : (t.due || "") })).sort((p, q) => (mine(q.t) && !isWaiting(q.t)) - (mine(p.t) && !isWaiting(p.t)) || (p.d || "9999").localeCompare(q.d || "9999") || priRank(p.t) - priRank(q.t)); return li[0] || null; }
+function engLast(a) { const li = engTasks(a).filter(t => t.status === "done").map(t => ({ t, at: String(t.doneAt || t.updated || "") })).sort((p, q) => q.at.localeCompare(p.at)); return li[0] ? { title: li[0].t.title, d: isoDay(li[0].at) } : a.last_action ? { title: a.last_action, d: a.last_date } : null; }
+const ballOf = n => !n ? "" : mine(n.t) && !isWaiting(n.t) ? "Me" : n.t.owner === "Client" ? (n.t.contact || "Client") : n.t.owner;
 const STATUS_RANK = { Active: 0, "Not started": 1, "On hold": 2, Closed: 3 };
-const engSort = (a, b) => (STATUS_RANK[a.status] ?? 0) - (STATUS_RANK[b.status] ?? 0) || (a.next_date || "9999").localeCompare(b.next_date || "9999") || a.engagement.localeCompare(b.engagement);
+const engSort = (a, b) => { const na = engNext(a), nb = engNext(b); return (STATUS_RANK[a.status] ?? 0) - (STATUS_RANK[b.status] ?? 0) || ((na && na.d) || "9999").localeCompare((nb && nb.d) || "9999") || a.engagement.localeCompare(b.engagement); };
 /* One line per engagement: name, then stage, who has it and when the next action is due. Everything else is inside. */
 function auditRow(a) {
-  const parts = [stageChip(a)];
-  if (engOpen(a)) parts.push(esc(ownerLabel(a.owner)));
-  if (engOpen(a) && isDay(a.next_date)) { const late = diff(a.next_date) < 0; parts.push(`<span${late ? ' class="late"' : ""}>${late ? esc(relShort(a.next_date)) : esc(rel(a.next_date))}</span>`); }
+  const parts = [stageChip(a)], n = engOpen(a) ? engNext(a) : null;
+  if (!myEng(a)) parts.push("Lead " + esc(leadOf(a)));
+  if (n) parts.push(esc(ownerLabel(ballOf(n))));
+  if (n && isDay(n.d)) { const late = diff(n.d) < 0; parts.push(`<span${late ? ' class="late"' : ""}>${late ? esc(relShort(n.d)) : esc(rel(n.d))}</span>`); }
+  else if (engOpen(a) && !n && myEng(a)) parts.push('<span class="late">No next step</span>');
   return `<button type="button" class="arow" data-act="audit" data-id="${esc(a.id)}"><span class="itile" style="--ic:var(${CLIENT_VAR[a.client] || "--i-work"})">${ico("doc")}</span><span class="ttl"><span class="tt">${esc(a.engagement)}${engLate(a) ? '<span class="odot" title="Overdue"></span><span class="sr">Overdue</span>' : ""}</span><span class="meta">${parts.join('<span class="sep">·</span>')}</span></span>${chevR}</button>`;
 }
 const engClients = () => { const extra = [...new Set(S.audits.map(a => a.client))].filter(c => c && !CLIENTS.includes(c)); return [...CLIENTS, ...extra]; };
 function workBody(s) {
   if (s === "mine") {
-    const li = S.tasks.filter(t => t.scope === "work" && tOpen(t) && !isWaiting(t) && cfOk(t) && match(t)).map(tItem).sort(byDayPri);
-    const cards = dateCards(li, "a", true);
+    // every open task that is yours to do, whatever engagement it sits in, by day with the day's load
+    const li = S.tasks.filter(t => t.scope === "work" && tOpen(t) && !isWaiting(t) && cfOk(t) && match(t)).map(tItem).sort((a, b) => String(a.date || "9999").localeCompare(String(b.date || "9999")) || focusRank(a, b));
+    const cards = dateCards(li, "a", true, true);
     const rts = S.routines.filter(r => r.scope === "work" && r.active !== false && cfOk(r) && match(r)).map(r => nextOcc(r) || occ(r, today())).sort(byDate);
     if (rts.length) { RO = { ctx: true }; cards.push(cardHtml(rts.map(rowHtml).join(""), chHead("Routines", null, rts.length, "a:routines"))); RO = {}; }
     return cards;
   }
-  if (s === "waiting") {
-    const li = S.tasks.filter(t => t.scope === "work" && isWaiting(t) && cfOk(t) && match(t)).map(chaseItem).sort(byDate);
-    const by = {}; li.forEach(it => { const k = mine(it.t) ? "Client" : it.t.owner; (by[k] = by[k] || []).push(it); });
+  if (s === "chase") {
+    // waiting on others, on engagements you lead, grouped by the person who owes the next step
+    const li = S.tasks.filter(t => isChase(t) && cfOk(t) && match(t)).map(chaseItem).sort(byDate);
+    const by = {}; li.forEach(it => { const k = mine(it.t) ? (it.t.contact || "Client") : it.t.owner; (by[k] = by[k] || []).push(it); });
     RO = { ctx: true, noWho: true };
-    const cards = Object.keys(by).sort((a, b) => (b === "Client") - (a === "Client") || a.localeCompare(b)).map(k => cardHtml(by[k].map(rowHtml).join(""), chHead("With " + k, null, by[k].length, "w:" + k)));
+    const cards = Object.keys(by).sort((a, b) => { const da = by[a][0].date || "9999", db = by[b][0].date || "9999"; return da.localeCompare(db) || a.localeCompare(b); }).map(k => cardHtml(by[k].map(rowHtml).join(""), chHead("With " + k, null, by[k].length, "w:" + k)));
     RO = {}; return cards;
   }
-  if (s === "clients") {
+  if (s === "eng") {
     const live = S.audits.filter(a => engOpen(a) && (!S.cf || a.client === S.cf) && match(a)).sort(engSort);
-    return engClients().map(c => [c, live.filter(a => a.client === c)]).filter(x => x[1].length).map(([c, li]) => { const late = li.filter(engLate).length; return cardHtml(li.map(auditRow).join(""), chHead(c, CLIENT_VAR[c] || "--i-work", late ? `${li.length} · ${late} overdue` : li.length, "en:" + c)); });
+    const mineE = live.filter(myEng), team = live.filter(a => !myEng(a));
+    const cards = engClients().map(c => [c, mineE.filter(a => a.client === c)]).filter(x => x[1].length).map(([c, li]) => { const late = li.filter(engLate).length; return cardHtml(li.map(auditRow).join(""), chHead(c, CLIENT_VAR[c] || "--i-work", late ? `${li.length} · ${late} overdue` : li.length, "en:" + c)); });
+    if (team.length) {
+      const by = {}; team.forEach(a => (by[leadOf(a)] = by[leadOf(a)] || []).push(a));
+      const inner = Object.keys(by).sort().map(k => subGroup(`Led by ${k} · ${by[k].length}`, by[k].map(auditRow).join(""), "team")).join("") + `<p class="foot" style="margin:8px 16px 12px">Engagements led by colleagues. Their steps stay here with no dates or reminders for you and never reach Today or Chasing.</p>`;
+      cards.push(cardHtml(inner, chHead("Team", null, team.length, "en:team", true)));
+    }
+    return cards;
   }
-  // done: finished tasks, closed audits and ended routines, by client
+  // done: finished tasks, closed engagements and ended routines, by client
   RO = { ctx: false };
-  const done = [...S.routines.filter(r => r.scope === "work" && r.active === false && cfOk(r) && match(r)).map(r => ({ ...occ(r, today()), status: "ended" })), ...S.tasks.filter(t => t.scope === "work" && !tOpen(t) && cfOk(t) && match(t)).sort((a, b) => String(b.updated || "").localeCompare(String(a.updated || ""))).map(tItem)];
+  const done = [...S.routines.filter(r => r.scope === "work" && r.active === false && cfOk(r) && match(r)).map(r => ({ ...occ(r, today()), status: "ended" })), ...S.tasks.filter(t => t.scope === "work" && !tOpen(t) && cfOk(t) && match(t)).sort((a, b) => String(b.doneAt || b.updated || "").localeCompare(String(a.doneAt || a.updated || ""))).map(tItem)];
   const closed = S.audits.filter(a => !engOpen(a) && (!S.cf || a.client === S.cf) && match(a));
   const cards = engClients().map(c => [c, done.filter(i => i.area === c), closed.filter(a => a.client === c)]).filter(x => x[1].length || x[2].length).map(([c, li, au]) => cardHtml(au.map(auditRow).join("") + li.map(rowHtml).join(""), chHead(c, CLIENT_VAR[c], li.length + au.length, "done:" + c)));
   RO = {}; return cards;
 }
 function viewWork() {
   const s = S.sub.work;
-  const head = `<header class="navbar"><div><h1>Clients</h1>${S.engOk ? "" : `<div class="sub late">Update the back end to save engagements.</div>`}</div><div class="acts">${inboxBtn()}${searchBtn()}${rfBtn()}<button type="button" class="icon-btn" data-act="${s === "clients" ? "newaudit" : "new"}" aria-label="New ${s === "clients" ? "engagement" : "task"}">${ico("plus")}</button></div></header>
+  const head = `<header class="navbar"><div><h1>Work</h1>${S.engOk ? "" : `<div class="sub late">Update the back end to save engagements.</div>`}</div><div class="acts">${inboxBtn()}${searchBtn()}${rfBtn()}<button type="button" class="icon-btn" data-act="${s === "eng" ? "newaudit" : "new"}" aria-label="New ${s === "eng" ? "engagement" : "task"}">${ico("plus")}</button></div></header>
   <div class="tools">${segHtml("Show", WORK_SUBS, s, "sub")}${chipRow()}${searchField()}</div>`;
   const cards = workBody(s);
-  const empty = S.q ? "Nothing matches your search." : S.cf ? `Nothing here for ${esc(S.cf)}.` : s === "mine" ? "Nothing on you. Tap + to add a task." : s === "waiting" ? "Nothing waiting on anyone." : s === "clients" ? "No engagements yet. Tap + to add one." : "Finished tasks, closed engagements and ended routines appear here.";
+  const empty = S.q ? "Nothing matches your search." : S.cf ? `Nothing here for ${esc(S.cf)}.` : s === "mine" ? "Nothing on you. Tap + to add a task." : s === "chase" ? "Nothing to chase on your engagements." : s === "eng" ? "No engagements yet. Tap + to add one." : "Finished tasks, closed engagements and ended routines appear here.";
   return head + (cards.length ? twoCols(cards) : cardHtml(`<div class="empty">${empty}</div>`));
 }
 /* ---------- Personal: Tasks (by date), Routines (by how they repeat), Done ---------- */
@@ -2174,7 +2225,7 @@ function planSheet() {
   </div>`;
 }
 function reschedSheet() {
-  const p = todayParts(), ts = p.overdue.map(i => i.t), opts = reschedOpts(p.work);
+  const p = todayParts(), fx = focusIds(p), ts = p.overdue.filter(i => !fx.has(i.id)).map(i => i.t), opts = reschedOpts(p.work);
   return bar("Reschedule " + ts.length, `<button type="button" class="txtbtn" data-s="close">Cancel</button>`, "") + `<div class="sh-body">
     <p class="foot">${ts.length ? ts.slice(0, 3).map(t => esc(t.title)).join(", ") + (ts.length > 3 ? ` and ${ts.length - 3} more` : "") : "Nothing overdue."}</p>
     <div class="list">${opts.map(([k, l, sub]) => `<button type="button" class="cell pk" data-s="rs" data-k="${k}" ${ts.length ? "" : "disabled"}><span>${esc(l)}<small style="display:block;color:var(--label2);font-size:.78rem">${esc(sub)}</small></span>${chevR}</button>`).join("")}
@@ -2311,14 +2362,10 @@ function ownersFor(client, cur) {
   const li = ["Me", ...S.contacts.filter(c => c.name && c.name !== "Me" && (c.client === "All" || c.client === client)).map(c => c.name)];
   const u = [...new Set(li)]; if (cur && !u.includes(cur)) u.push(cur); return u;
 }
-/* After a linked task is done: it becomes the last action, and the next open task becomes the next action with its owner. */
+/* After a linked task is done it is recorded as the engagement's last action (kept for the weekly wrap-up). The next action and who has it are worked out from the tasks. */
 function engAfterDone(t) {
   const a = engOf(t); if (!a) return;
-  const rest = auditTasks(a).filter(x => x.id !== t.id).map(x => ({ x, d: isWaiting(x) ? (chaseDate(x) || x.due || "") : (x.due || "") })).sort((p, q) => (p.d || "9999").localeCompare(q.d || "9999") || priRank(p.x) - priRank(q.x));
-  const o = { ...a, last_action: t.title, last_date: today() };
-  if (rest.length) { const n = rest[0].x; o.next_action = n.title; o.next_date = rest[0].d; o.owner = mine(n) ? "Me" : n.owner === "Client" ? (n.contact || (a.owner !== "Me" ? a.owner : "Client")) : n.owner; }
-  else if (a.next_action === t.title) { o.next_action = ""; o.next_date = ""; }
-  saveAudit(o);
+  saveAudit({ ...a, last_action: t.title, last_date: today() });
 }
 function auditSheet(a) {
   const all = engTasks(a), open = all.filter(tOpen), mineLi = open.filter(t => !isWaiting(t)).map(tItem).sort(byDayPri), waitLi = open.filter(isWaiting).map(chaseItem).sort(byDate);
@@ -2329,16 +2376,18 @@ function auditSheet(a) {
   const doneRows = doneLi.map(it => row(it, (it.status === "skipped" ? "Skipped" : "Done") + (isDay(isoDay(it.t.updated)) ? " " + esc(fD(isoDay(it.t.updated))) : ""))).join("");
   const st = stagesOf(a), cur = st.indexOf(a.stage), closed = !engOpen(a);
   const strip = st.length ? `<div class="stg" role="group" aria-label="Stages">${st.map((x, i) => { const c = closed || i < cur ? "done" : i === cur ? "cur" : ""; return `<button type="button" class="stg-i ${c}" data-s="stage" data-v="${esc(x)}" aria-pressed="${i === cur}"><span class="stg-d">${c === "done" ? ico("check") : i + 1}</span><span class="stg-n">${esc(x)}</span>${i === cur && !closed ? '<span class="stg-now">Current</span>' : ""}</button>`; }).join("")}</div>` : "";
-  const nLate = engOpen(a) && isDay(a.next_date) && diff(a.next_date) < 0, tLate = engOpen(a) && isDay(a.target) && diff(a.target) < 0;
+  const nx = engOpen(a) ? engNext(a) : null, ls = engLast(a);
+  const nLate = !!nx && isDay(nx.d) && diff(nx.d) < 0, tLate = engOpen(a) && isDay(a.target) && diff(a.target) < 0;
   const cell = (k, v, sub, late) => `<div class="cell top"><span>${k}</span><span class="v${late ? " late" : ""}">${v ? esc(v) : '<span class="muted">Not set</span>'}${sub ? `<small>${esc(sub)}</small>` : ""}</span></div>`;
   const doneOpen = !!S.sheet.showDone;
   return bar("Engagement", `<button type="button" class="txtbtn" data-s="edit">Edit</button>`, `<button type="button" class="txtbtn strong" data-s="close">Done</button>`) + `<div class="sh-body">
     <div class="hero"><span class="big" style="--ic:var(${CLIENT_VAR[a.client] || "--i-work"})">${ico("doc")}</span><h3>${esc(a.engagement)}</h3><span class="when">${esc(a.client)} · ${esc(a.template)}${a.status !== "Active" ? " · " + esc(a.status) : ""}</span></div>
-    ${nLate || tLate ? `<div class="banner">${ico("alert")}${nLate ? "Next action overdue since " + esc(fD(a.next_date)) + "." : "Target date passed: " + esc(fD(a.target)) + "."}</div>` : ""}
+    ${nLate || tLate ? `<div class="banner">${ico("alert")}${nLate ? "Next action overdue since " + esc(fD(nx.d)) + "." : "Target date passed: " + esc(fD(a.target)) + "."}</div>` : ""}
     <div class="list">
-      ${cell("Next Action", a.next_action, isDay(a.next_date) ? rel(a.next_date) : "", nLate)}
-      ${cell("Current Owner", a.owner === "Me" ? "Me" : a.owner)}
-      ${cell("Last Action", a.last_action, isDay(a.last_date) ? fD(a.last_date) : "")}
+      ${cell("Lead", leadOf(a))}
+      ${cell("Next Action", nx ? nx.t.title : (engOpen(a) ? "Add a task to set it" : ""), nx && isDay(nx.d) ? rel(nx.d) : "", nLate)}
+      ${nx ? cell("Ball With", ballOf(nx)) : ""}
+      ${cell("Last Action", ls ? ls.title : "", ls && isDay(ls.d) ? fD(ls.d) : "")}
       ${isDay(a.target) ? cell("Target", fD(a.target), "", tLate) : ""}
     </div>
     ${strip ? `<div class="lbl">Stages</div><div class="list">${strip}</div>` : ""}
@@ -2362,16 +2411,13 @@ function auditForm(a) {
       <div class="cell"><label for="a-status">Status</label><select id="a-status" name="status">${opt(ENG_STATUS, a.status || "Active")}</select></div>
       <div class="cell"><label for="a-target">Target Date</label><input id="a-target" name="target" type="date" value="${esc(a.target || "")}"></div></div>
     <div class="list">
-      <div class="cell"><label for="a-owner">Current Owner</label><select id="a-owner" name="owner">${opt(ownersFor(a.client, a.owner), a.owner || "Me")}</select></div>
-      <div class="cell"><label for="a-na">Next Action</label><input id="a-na" name="next_action" class="r" placeholder="Optional" value="${esc(a.next_action)}"></div>
-      <div class="cell"><label for="a-nd">Next Action Date</label><input id="a-nd" name="next_date" type="date" value="${esc(a.next_date || "")}"></div>
-      <div class="cell"><label for="a-la">Last Action</label><input id="a-la" name="last_action" class="r" placeholder="Optional" value="${esc(a.last_action)}"></div>
-      <div class="cell"><label for="a-ld">Last Action Date</label><input id="a-ld" name="last_date" type="date" value="${esc(a.last_date || "")}"></div></div>
+      <div class="cell"><label for="a-owner">Lead</label><select id="a-owner" name="owner">${opt(TEAM.includes(leadOf(a)) ? TEAM : [...TEAM, leadOf(a)], leadOf(a))}</select></div></div>
+    <p class="foot" style="margin-top:-10px">Next action and who has it come from the engagement's tasks. Engagements led by a colleague go to the Team list.</p>
     <div class="list"><div class="cell stack"><label for="a-notes">Notes</label><textarea id="a-notes" name="notes">${esc(a.notes || "")}</textarea></div></div>
     ${a._new ? "" : S.sheet.confirm ? `<div class="chips"><button type="button" class="btn danger grow" data-s="delyes">Delete Engagement</button><button type="button" class="btn grow" data-s="delno">Keep</button></div><p class="foot" style="margin-top:-10px">Its tasks are kept; they lose the link to this engagement.</p>` : `<button type="button" class="btn danger" data-s="del">Delete Engagement</button>`}
   </div></form>`;
 }
-function readAudit(f) { const d = new FormData(f), g = k => String(d.get(k) || "").trim(); return { engagement: g("engagement"), client: d.get("client"), template: d.get("template"), stage: g("stage"), status: d.get("status") || "Active", target: g("target"), owner: d.get("owner") || "Me", next_action: g("next_action"), next_date: g("next_date"), last_action: g("last_action"), last_date: g("last_date"), notes: g("notes") }; }
+function readAudit(f) { const d = new FormData(f), g = k => String(d.get(k) || "").trim(); return { engagement: g("engagement"), client: d.get("client"), template: d.get("template"), stage: g("stage"), status: d.get("status") || "Active", target: g("target"), owner: d.get("owner") || "Me", notes: g("notes") }; }
 function meetSheet(it) {
   const ic = itemIcon(it), link = String(it.link || ""), teams = /teams\.microsoft\.com/i.test(link), http = /^https?:\/\//i.test(link);
   const st = String(it.mstatus || "").toLowerCase(), stLabel = /tentative/.test(st) ? "Tentative" : /oof/.test(st) ? "Out of office" : "";
@@ -2765,7 +2811,8 @@ function taskForm(t) {
       <div class="cell"><label for="f-owner">With</label><select id="f-owner" name="owner">${opt(owners, t.owner || "Me")}</select></div>
       <div class="cell"><label for="f-next">Next Step</label><input id="f-next" name="next" class="r" placeholder="Optional" value="${esc(t.next)}"></div></div>
     <div class="list">
-      <div class="cell"><label for="f-due">Date</label><input id="f-due" name="due" type="date" value="${esc(t.due)}"></div>
+      <div class="cell"><label for="f-due">${t.scope === "work" ? "Do Date" : "Date"}</label><input id="f-due" name="due" type="date" value="${esc(t.due)}"></div>
+      ${t.scope === "work" ? `<div class="cell"><label for="f-cd">Client Deadline</label><input id="f-cd" name="clientDeadline" type="date" value="${esc(t.clientDeadline || "")}"></div>` : ""}
       <div class="cell"><label for="f-time">Time</label><input id="f-time" name="time" type="time" value="${esc(t.time)}"></div>
       <div class="cell"><label for="f-dur">Duration</label><select id="f-dur" name="dur">${opt(durOpts(t.dur), String(t.dur || ""))}</select></div>
       <div class="cell"><span id="f-pri-l">Priority</span><div class="seg" role="radiogroup" aria-labelledby="f-pri-l">${PRI.map(([v, l]) => `<label><input type="radio" name="priority" value="${v}" ${priOut(t.priority) === v ? "checked" : ""}><span>${l}</span></label>`).join("")}</div></div>
@@ -2802,14 +2849,14 @@ function routineForm(r) {
   </div></form>`;
 }
 /* Work details: who asked for it and when, the contact, the client's own deadline, the next chase date and links. Folded unless something is filled in. */
-const WD_FIELDS = [["requestedBy", "Requested By", "text", "Name"], ["requestedOn", "Requested On", "date"], ["contact", "Contact", "text", "Email or phone"], ["clientDeadline", "Client Deadline", "date"], ["nextChase", "Next Chase", "date"], ["fileLink", "File Link", "url", "https://"], ["link", "Email Link", "url", "https://"]];
+const WD_FIELDS = [["requestedBy", "Requested By", "text", "Name"], ["requestedOn", "Requested On", "date"], ["contact", "Contact", "text", "Email or phone"], ["nextChase", "Next Chase", "date"], ["fileLink", "File Link", "url", "https://"], ["link", "Email Link", "url", "https://"]];
 function workDetails(t) {
   const open = S.sheet.wd !== undefined ? S.sheet.wd : WD_FIELDS.some(([k]) => t[k]);
   return `<div class="card${open ? "" : " folded"}"><button type="button" class="ch" data-s="wd" aria-expanded="${open}">Work Details${chev}</button><div class="fb">
     ${WD_FIELDS.map(([n, l, ty, ph]) => `<div class="cell"><label for="f-${n}">${l}</label><input id="f-${n}" name="${n}" type="${ty}" ${ty === "url" ? 'inputmode="url" autocapitalize="off" spellcheck="false"' : ""} class="r" placeholder="${ph || ""}" value="${esc(t[n] || "")}"></div>`).join("")}
   </div></div>`;
 }
-function readTask(f) { const d = new FormData(f), eid = d.has("engagement") ? String(d.get("engagement") || "") : null, ea = eid ? S.audits.find(a => a.id === eid) : null; const o = { title: String(d.get("title") || "").trim(), scope: d.get("scope"), area: d.get("area"), sub: eid !== null ? (ea ? ea.engagement : "") : String(d.get("sub") || "").trim(), owner: d.get("owner"), due: d.get("due") || "", time: d.get("time") || "", dur: String(d.get("dur") || ""), next: String(d.get("next") || "").trim(), notes: String(d.get("notes") || "").trim(), priority: priOut(d.get("priority")), alert: d.get("alert") === "on", lead: String(d.get("lead") || "") }; WD_FIELDS.forEach(([k]) => { if (d.has(k)) o[k] = String(d.get(k) || "").trim(); }); if (eid !== null) o.engagement = eid; return o; }
+function readTask(f) { const d = new FormData(f), eid = d.has("engagement") ? String(d.get("engagement") || "") : null, ea = eid ? S.audits.find(a => a.id === eid) : null; const o = { title: String(d.get("title") || "").trim(), scope: d.get("scope"), area: d.get("area"), sub: eid !== null ? (ea ? ea.engagement : "") : String(d.get("sub") || "").trim(), owner: d.get("owner"), due: d.get("due") || "", time: d.get("time") || "", dur: String(d.get("dur") || ""), next: String(d.get("next") || "").trim(), notes: String(d.get("notes") || "").trim(), priority: priOut(d.get("priority")), alert: d.get("alert") === "on", lead: String(d.get("lead") || "") }; WD_FIELDS.forEach(([k]) => { if (d.has(k)) o[k] = String(d.get(k) || "").trim(); }); if (d.has("clientDeadline")) o.clientDeadline = String(d.get("clientDeadline") || "").trim(); if (eid !== null) o.engagement = eid; return o; }
 function readRoutine(f, r) { const d = new FormData(f); return { title: String(d.get("title") || "").trim(), scope: d.get("scope"), area: d.get("area"), block: d.get("block") || "", freq: d.get("freq"), days: d.getAll("days").map(Number), dom: d.has("dom") ? (Number(d.get("dom")) || "") : r.dom, month: d.has("month") ? Number(d.get("month")) : r.month, time: d.get("time") || "", dur: String(d.get("dur") || ""), notes: String(d.get("notes") || "").trim(), alert: d.get("alert") === "on", lead: String(d.get("lead") || ""), _bal: d.has("bal") ? String(d.get("bal") || "").trim() : r._bal }; }
 sheet.addEventListener("change", e => {
   const s = S.sheet; if (!s) return;
@@ -2965,7 +3012,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "2.3"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
+const APP_VERSION = "3.0"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(() => swConfig()).catch(() => {});
 /* The page opens from the saved copy at once. The check below asks GitHub for the live version (a fresh URL each time, so
    GitHub's own 10-minute cache can't hide it), saves the new page and switches straight away if you haven't touched anything yet;
