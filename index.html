@@ -1843,7 +1843,7 @@ function auditRow(a) {
   if (!myEng(a)) parts.push("Lead " + esc(leadOf(a)));
   if (n) parts.push(esc(ownerLabel(ballOf(n))));
   if (n && isDay(n.d)) { const late = diff(n.d) < 0; parts.push(`<span${late ? ' class="late"' : ""}>${late ? esc(relShort(n.d)) : esc(rel(n.d))}</span>`); }
-  else if (engOpen(a) && !n && myEng(a)) parts.push('<span class="late">No next step</span>');
+  else if (a.status === "Active" && !n && myEng(a)) parts.push('<span class="late">No next step</span>');
   return `<button type="button" class="arow" data-act="audit" data-id="${esc(a.id)}"><span class="itile" style="--ic:var(${CLIENT_VAR[a.client] || "--i-work"})">${ico("doc")}</span><span class="ttl"><span class="tt">${esc(a.engagement)}${engLate(a) ? '<span class="odot" title="Overdue"></span><span class="sr">Overdue</span>' : ""}</span><span class="meta">${parts.join('<span class="sep">·</span>')}</span></span>${chevR}</button>`;
 }
 const engClients = () => { const extra = [...new Set(S.audits.map(a => a.client))].filter(c => c && !CLIENTS.includes(c)); return [...CLIENTS, ...extra]; };
@@ -3012,7 +3012,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "3.0"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
+const APP_VERSION = "3.1"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(() => swConfig()).catch(() => {});
 /* The page opens from the saved copy at once. The check below asks GitHub for the live version (a fresh URL each time, so
    GitHub's own 10-minute cache can't hide it), saves the new page and switches straight away if you haven't touched anything yet;
