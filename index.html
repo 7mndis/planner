@@ -501,6 +501,7 @@ a.btn { text-decoration: none; }
 .arow .go { width: 14px; height: 14px; color: var(--label2); opacity: .6; }
 .ph { display: inline-block; font-size: .7rem; font-weight: 700; letter-spacing: .02em; border-radius: 8px; padding: 1px 7px; background: var(--fill); color: var(--label2); vertical-align: 1px; }
 /* Engagement health: a small pill in the Portfolio and on the engagement sheet. */
+.ch .meta { font-size: .78rem; color: var(--label2); text-transform: none; letter-spacing: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
 .hb { display: inline-block; font-size: .68rem; font-weight: 700; letter-spacing: .02em; border-radius: 8px; padding: 1px 7px; vertical-align: 1px; white-space: nowrap; }
 .hb-ok { color: var(--done); background: rgba(30, 122, 83, .13); } .hb-risk { color: #B5540A; background: rgba(201, 98, 27, .16); } .hb-late { color: var(--late); background: color-mix(in srgb, var(--late) 16%, transparent); } .hb-stall { color: #6A3FB8; background: rgba(122, 76, 194, .13); } .hb-off { color: var(--label2); background: var(--fill); }
 /* Gym page */
@@ -1812,28 +1813,52 @@ function gymTodayHtml(p) {
   const done = li.filter(it => !isOpen(it)).length;
   return cardHtml(rows, chHead("Gym", "--k-gym", `${done}/${li.length}`, "t:gym", done === li.length));
 }
-/* Home: the glance card, the morning plan, the load, then Focus, leftovers, all-day items, untimed items, chases, what was prepared and the day's schedule. */
+/* Today card: everything untimed today in one card, grouped by category (All Day, Work, Gym, Personal), each group collapsible. Focus items are left out of Work. */
+function todayCard(p) {
+  const shown = new Set(propsNow().map(x => x.id)), fx = p.work ? focusIds(p) : new Set();
+  const li = p.anytime.filter(it => !(it.kind === "task" && shown.has(it.id)) && !(isTaskish(it) && fx.has(it.id)));
+  const groups = [];
+  if (p.allDay.length) groups.push(["All Day", p.allDay, "allday"]);
+  const work = li.filter(it => catOf(it) === "work"), gym = li.filter(it => catOf(it) === "gym"), pers = li.filter(it => catOf(it) === "personal");
+  if (work.length) groups.push(["Work", work, "work"]);
+  if (gym.length) groups.push(["Gym", gym, "gym"]);
+  if (pers.length) groups.push(["Personal", pers, "personal"]);
+  if (!groups.length) return "";
+  const all = groups.reduce((n, g) => n + g[1].length, 0), open = groups.reduce((n, g) => n + g[1].filter(isOpen).length, 0);
+  RO = { ctx: true, planner: true };
+  const inner = groups.length === 1 ? rgRows(groups[0][1], "td:" + groups[0][2]) : groups.map(([l, items, k]) => { const o = items.filter(isOpen).length; const fkey = fk("g", "td", k), f = folded(fkey, o === 0); return `<div class="sg${f ? " folded" : ""}"><button type="button" class="subh" data-act="fold" data-f="${esc(fkey)}" data-o="${f ? 0 : 1}" aria-expanded="${!f}">${esc(l)}<span class="cnt" style="margin-left:auto">${items.length - o}/${items.length}</span>${chev}</button><div class="fb">${rgRows(items, "td:" + k)}</div></div>`; }).join("");
+  RO = {};
+  const canPlan = li.some(i => i.kind === "task" && isOpen(i));
+  return cardHtml(inner + (canPlan ? `<div class="card-acts"><button type="button" class="btn sm" data-act="planfree">${ico("timer")}Plan My Free Time</button></div>` : ""), chHead("Today", null, `${all - open}/${all}`, "t:today", open === 0));
+}
+/* To Chase on Home: one line with the count and the people, opening Work, Chasing. The rows live there. */
+function chaseLine() {
+  const li = S.tasks.filter(t => isChase(t) && cfOk(t) && chaseDate(t) && diff(chaseDate(t)) <= 0).map(chaseItem).sort(byDayPri); if (!li.length) return "";
+  const who = [...new Set(li.map(it => mine(it.t) ? (it.t.contact || "Client") : it.t.owner))], late = li.filter(it => diff(it.date) < 0).length;
+  const txt = who.slice(0, 3).join(", ") + (who.length > 3 ? ` and ${who.length - 3} more` : "");
+  return `<div class="card"><button type="button" class="arow" data-act="gochase"><span class="itile" style="--ic:var(--i-meet)">${ico("people")}</span><span class="ttl"><span class="tt">To Chase</span><span class="meta">${li.length} due today${late ? `<span class="sep">·</span><span class="late">${late} overdue</span>` : ""}<span class="sep">·</span>${esc(txt)}</span></span>${chevR}</button></div>`;
+}
+/* Home: the glance card, the morning plan, what was prepared, the load, then Focus, leftovers, today's untimed items by category, the chase line and the day's schedule, folded until you open it. */
 function viewHome() {
   const p = todayParts(), d = p.d;
   const head = `<header class="navbar"><div><h1>Home</h1><div class="sub">${esc(fDL(d))}</div></div><div class="acts">${inboxBtn()}${rfBtn()}<button type="button" class="icon-btn" data-act="new" aria-label="New task">${ico("plus")}</button></div></header>`;
-  RO = { planner: true }; const allDay = p.allDay.length ? cardHtml(p.allDay.map(rowHtml).join(""), chHead("All Day", null, p.allDay.length, "t:allday")) : ""; RO = {};
   const props = propsNow();
   const propBar = props.length ? `<div class="propbar"><span>${props.length} proposed</span><button type="button" class="btn sm primary" data-act="paccall">Accept All</button><button type="button" class="btn sm" data-act="pclear">Clear</button></div>` : "";
   const tlOpen = p.timed.filter(isOpen).length;
-  const tl = (() => { const k = fk("c", "t:tl"), f = folded(k); return `<div class="card tlc${f ? " folded" : ""}"><button type="button" class="ch" data-act="fold" data-f="${esc(k)}" data-o="${f ? 0 : 1}" aria-expanded="${!f}">Schedule<span class="cnt">${p.timed.length - tlOpen}/${p.timed.length}</span>${chev}</button><div class="fb">${propBar}${p.timed.length || props.length ? `<div class="tl">${timelineHtml(p)}</div>` : `<div class="empty">Nothing scheduled today.</div>`}</div></div>`; })();
-  let chase = "";
-  if (p.work && !p.wk) { const li = S.tasks.filter(t => isChase(t) && cfOk(t) && chaseDate(t) && diff(chaseDate(t)) <= 0).map(chaseItem).sort(byDayPri); if (li.length) { RO = { ctx: true }; chase = cardHtml(li.map(rowHtml).join(""), chHead("To Chase", "--i-meet", li.length, "chase", !workHours())); RO = {}; } }
+  const nxt = p.timed.filter(it => isOpen(it) && tm(it.time) > nowMin()).sort(byTime)[0];
+  const tl = (() => { const k = fk("c", "t:tl"), f = folded(k, !props.length); return `<div class="card tlc${f ? " folded" : ""}"><button type="button" class="ch" data-act="fold" data-f="${esc(k)}" data-o="${f ? 0 : 1}" aria-expanded="${!f}">Schedule${f && nxt ? `<span class="meta" style="margin-left:8px;font-weight:500">Next ${esc(fT(nxt.time))} · ${esc(nxt.title)}</span>` : ""}<span class="cnt">${p.timed.length - tlOpen}/${p.timed.length}</span>${chev}</button><div class="fb">${propBar}${p.timed.length || props.length ? `<div class="tl">${timelineHtml(p)}</div>` : `<div class="empty">Nothing scheduled today.</div>`}</div></div>`; })();
+  const chase = p.work && !p.wk && workHours() ? chaseLine() : "";
   let soon = "";
   if (!S.hf || S.hf === "personal") { const li = Array.from({ length: 7 }, (_, i) => add(d, i + 1)).flatMap(x => (S.meetings[x] || []).map(m => mItem(m, x))).filter(it => it.etype === "birthday" || it.etype === "holiday").sort(byEvent); if (li.length) { RO = { planner: true, evDate: true }; soon = cardHtml(li.map(rowHtml).join(""), chHead("Coming Up", "--i-bday", li.length, "ev:soon")); RO = {}; } }
   const note = S.meetNote ? `<p class="foot">${esc(S.meetNote)}</p>` : "";
-  const prepared = p.work && !p.wk ? preparedHtml() : "";
+  const prepared = p.work && !p.wk && workHours() ? preparedHtml() : ""; // like Focus: work hours only
   return `${head}
   ${homeChips()}
   ${upNext()}
   ${planBanner()}
   ${prepared}
   ${capacityHtml(p)}
-  ${(() => { const c1 = focusHtml(p) + overdueHtml(p) + allDay + gymTodayHtml(p) + anytimeHtml(p) + chase, c2 = tl + note + soon; return c1 ? `<div class="cols two"><div class="col">${c1}</div><div class="col">${c2}</div></div>` : `<div class="col">${c2}</div>`; })()}
+  ${(() => { const c1 = focusHtml(p) + overdueHtml(p) + todayCard(p) + chase, c2 = tl + note + soon; return c1 ? `<div class="cols two"><div class="col">${c1}</div><div class="col">${c2}</div></div>` : `<div class="col">${c2}</div>`; })()}
   <p class="foot" style="text-align:center"><button type="button" class="txtbtn sm" data-act="settings">Settings</button> · Version ${esc(APP_VERSION)}</p>`;
 }
 
@@ -2223,6 +2248,7 @@ view.addEventListener("click", e => {
   if (a === "hf") { S.hf = CATF.some(x => x[0] === b.dataset.cf) ? b.dataset.cf : ""; S.swipe = null; persist(); renderMain(true); return; }
   if (a === "gymday") { S.gymDay = b.dataset.d; renderMain(true); return; }
   if (a === "reports") { S.sub.work = "reports"; persist(); go("work"); return; }
+  if (a === "gochase") { S.sub.work = "chase"; persist(); go("work"); return; }
   if (a === "report") { openReport(b.dataset.id); return; }
   if (a === "search") { S.qOpen = !(S.qOpen || S.q); if (!S.qOpen) S.q = ""; renderMain(true); if (S.qOpen) { const q = document.getElementById("q"); if (q) q.focus({ preventScroll: true }); } return; }
   if (a === "refresh") { refreshNow(); return; }
@@ -3201,7 +3227,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "4.0"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
+const APP_VERSION = "4.1"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(() => swConfig()).catch(() => {});
 /* The page opens from the saved copy at once. The check below asks GitHub for the live version (a fresh URL each time, so
    GitHub's own 10-minute cache can't hide it), saves the new page and switches straight away if you haven't touched anything yet;
