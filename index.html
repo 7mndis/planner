@@ -24,7 +24,7 @@
 })();
 </script>
 <style>
-/* Layout: iOS-style planner. Five tabs (Home, Work, Gym, Personal, Calendar) in a floating tab bar on phones and a sidebar on wide screens. Every screen is one level of grouped lists; detail lives in sheets. Home: Last/Now/Next, Focus, Overdue, Any Time, To Chase, Prepared, the day's schedule. Work: My Week, Chasing, Portfolio, Reports, Done. Gym: today's session, the week, progress, library. Personal: categories, tasks, routines, done. Calendar: Month, Week, 3 Days, Day across every category. Neutral surfaces in both themes; colour is kept to small icons and chips. */
+/* Layout: a planner in five tabs (Home, Work, Gym, Personal, Calendar) in a floating tab bar on phones and a sidebar on wide screens. Every screen is one level of grouped lists; detail lives in sheets. Home (Today): Last, Now and Up Next, the morning plan, Ready to Review, progress, Overdue, Unplanned pills, the Day rail with the Top 3 numbered and meetings carrying Join, Brief and Done, Waiting On, Also Today and Next. Work: This Week (load bars from Outlook gaps, then each workday), Clients, Waiting On (Nudge opens the drafted chaser), Review, Done. Gym: today's session, the week, progress, library. Personal: categories, tasks, routines, done. Calendar: Month, Week, 3 Days, Day across every category. True neutral surfaces in both themes; colour is kept to small icons, chips and the Top 3 numbers. */
 :root {
   --bg: #F2F2F7;
   --card: #FFFFFF;
@@ -46,13 +46,13 @@
   --r: 12px;
 }
 :root[data-theme="dark"] {
-  --bg: #000000; --card: #1C1C1E; --fill: #2C2C2E; --fill2: #232325; --label: #F5F5F7; --label2: #A1A1A6; --sep: rgba(84, 84, 88, .55);
+  --bg: #0B0B0C; --card: #141416; --fill: #232326; --fill2: #1B1B1E; --label: #F2F2F2; --label2: #9A9AA0; --sep: rgba(84, 84, 88, .5);
   --late: #FF6961; --done: #4CD38A;
   --accent: #F5F5F7;
   --i-work: #8DA4E7; --i-personal: #C994B4; --i-meet: #A2A6B0; --i-event: #73B5CB; --i-bday: #F2B55E; --i-hol: #86CBA0;
   --c-tamkeen: #B297DC; --c-ashraq: #E0A47B; --c-arcapita: #83ABE4; --c-tayseer: #71B8B8; --c-ram: #86CBA0; --c-dwe: #E395AC; --c-internal: #ABA9B5;
   --k-gym: #DA83B2; --k-supp: #ABBC76; --k-faith: #9096CD; --k-home: #73B5CB; --k-laundry: #A2B5CD; --k-shop: #CD9983; --k-errand: #C4AE6B; --k-car: #B2A99E; --k-money: #8DB283; --k-self: #EA98C2; --k-other: #B3B6BB;
-  --glass: rgba(28, 28, 30, .94); --shadow: 0 10px 30px rgba(0, 0, 0, .6);
+  --glass: rgba(11, 11, 12, .94); --shadow: 0 10px 30px rgba(0, 0, 0, .6);
   color-scheme: dark;
 }
 html { font-size: 17px; background: var(--bg); -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
@@ -140,6 +140,7 @@ html, body { min-height: 100%; }
 .row.s-skipped .check i { border-style: solid; opacity: .45; }
 .row.s-skipped .check i::after { content: ""; width: 11px; height: 2.5px; background: var(--label2); border-radius: 2px; }
 .row.meet .check { visibility: hidden; }
+.row.meet.mk .check { visibility: visible; }
 .itile { width: 38px; height: 38px; border-radius: 10px; background: var(--fill2); display: grid; place-items: center; color: var(--ic, var(--label2)); }
 .itile svg { width: 20px; height: 20px; }
 .ttl { border: 0; background: none; text-align: left; padding: 8px 0; min-width: 0; font-size: 1rem; overflow-wrap: anywhere; cursor: pointer; display: grid; gap: 1px; }
@@ -500,7 +501,7 @@ a.btn { text-decoration: none; }
 .arow .ttl .tt { font-weight: 500; }
 .arow .go { width: 14px; height: 14px; color: var(--label2); opacity: .6; }
 .ph { display: inline-block; font-size: .7rem; font-weight: 700; letter-spacing: .02em; border-radius: 8px; padding: 1px 7px; background: var(--fill); color: var(--label2); vertical-align: 1px; }
-/* Engagement health: a small pill in the Portfolio and on the engagement sheet. */
+/* Engagement health: a small pill under Clients and on the engagement sheet. */
 .ch .meta { font-size: .78rem; color: var(--label2); text-transform: none; letter-spacing: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
 .hb { display: inline-block; font-size: .68rem; font-weight: 700; letter-spacing: .02em; border-radius: 8px; padding: 1px 7px; vertical-align: 1px; white-space: nowrap; }
 .hb-ok { color: var(--done); background: rgba(30, 122, 83, .13); } .hb-risk { color: #B5540A; background: rgba(201, 98, 27, .16); } .hb-late { color: var(--late); background: color-mix(in srgb, var(--late) 16%, transparent); } .hb-stall { color: #6A3FB8; background: rgba(122, 76, 194, .13); } .hb-off { color: var(--label2); background: var(--fill); }
@@ -725,6 +726,42 @@ html[data-mode="personal"] .mode button[aria-pressed="true"] { color: var(--i-pe
 .cfrow { margin-left: -16px; margin-right: -16px; padding-left: 16px; padding-right: 20px; scroll-padding-inline: 16px; }
 .search.hid { display: none; }
 @media (min-width: 900px) { .cfrow { margin-left: 0; margin-right: 0; padding-left: 4px; padding-right: 4px; -webkit-mask-image: none; mask-image: none; } }
+/* 5.0: the Day rail, Top 3 numbers, unplanned pills, meeting actions on the rail and the week's load bars */
+.ch.static { cursor: default; padding-bottom: 8px; }
+.n3 { background: var(--i-work); color: #fff; font-family: var(--font-round); font-weight: 700; font-size: .95rem; display: grid; place-items: center; }
+.n3.sm { width: 20px; height: 20px; border-radius: 10px; font-size: .74rem; flex: none; }
+.row.s-done .n3, .row.s-skipped .n3 { opacity: .4; }
+.tl .row.top3 { grid-template-columns: 44px 28px minmax(0, 1fr) auto; }
+.tl .row.top3 .itile.n3 { display: grid; width: 28px; height: 28px; border-radius: 8px; font-size: .84rem; }
+.tl-b { min-width: 0; display: grid; }
+.tl-acts { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 12px 10px 44px; }
+.tl-acts .btn.sm { min-height: 32px; padding: 0 12px; font-size: .82rem; }
+.tl-it.meetb > .tl-b { margin: 4px 10px 4px 0; border: 1px solid var(--sep); border-radius: 12px; overflow: hidden; }
+.tl-it.gymb > .tl-b { margin: 4px 10px 4px 0; border-radius: 12px; overflow: hidden; }
+.tl-it.meetb .row { background: transparent; }
+.tl-it.gymb .row { background: color-mix(in srgb, var(--k-gym) 12%, var(--card)); }
+.ndot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--i-work); margin-left: 6px; vertical-align: middle; }
+.tl-it.meetb .sw + .sw .row::before, .tl-it.gymb .sw + .sw .row::before { display: none; }
+.pills { display: flex; flex-wrap: wrap; gap: 8px; padding: 4px 16px 12px; }
+.pill { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px 0 10px; border-radius: 12px; border: 1.5px dashed color-mix(in srgb, var(--label2) 55%, transparent); background: none; color: var(--label); font: inherit; font-size: .9rem; font-weight: 500; text-align: left; max-width: 100%; cursor: pointer; }
+.pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ic, var(--label2)); flex: none; }
+.pill .pt { overflow-wrap: anywhere; }
+.pill small { color: var(--label2); font-size: .76rem; white-space: nowrap; }
+.pill:active { background: var(--fill); }
+.pill.off { opacity: .5; text-decoration: line-through; border-style: solid; }
+.btn.sm.nudge { min-height: 32px; padding: 0 12px; font-size: .82rem; margin-right: 6px; }
+.loadc .lbars { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; padding: 4px 16px 6px; }
+.ldc { display: grid; justify-items: center; gap: 4px; font-size: .78rem; }
+.ldc b { font-weight: 600; }
+.ldc small { color: var(--label2); font-size: .7rem; font-variant-numeric: tabular-nums; text-align: center; }
+.ldc.over small { color: var(--late); font-weight: 600; }
+.ldc.today b { color: var(--i-work); }
+.lbar { position: relative; width: 100%; height: 72px; border-radius: 8px; background: var(--fill2); overflow: hidden; }
+.lbar i { position: absolute; left: 0; right: 0; bottom: 0; display: block; border-radius: 8px 8px 0 0; }
+.lbar .free { background: color-mix(in srgb, var(--label2) 28%, transparent); }
+.lbar .plan { background: var(--i-work); opacity: .9; }
+.ldc.over .lbar .plan { background: var(--late); }
+.loadc .cap-n { padding: 0 16px 12px; }
 </style>
 </head>
 <body>
@@ -782,11 +819,11 @@ const workHours = () => !isWeekend(today()) && nowMin() >= 480 && nowMin() < 108
 /* Engagement components (audits, policies, proposals) live in the Audits tab of the Sheet; a task links to one through its client and audit fields. */
 const PHASES = ["Not started", "Planning", "Fieldwork", "Reporting", "Follow-up", "On hold", "Closed"];
 const PH_CLS = { "Not started": "ph-0", Planning: "ph-1", Fieldwork: "ph-2", Reporting: "ph-3", "Follow-up": "ph-4", "On hold": "ph-5", Closed: "ph-6" };
-const WORK_SUBS = [["week", "Week"], ["chase", "Chasing"], ["eng", "Portfolio"], ["reports", "Reports"], ["done", "Done"]];
+const WORK_SUBS = [["week", "This Week"], ["eng", "Clients"], ["chase", "Waiting On"], ["reports", "Review"], ["done", "Done"]];
 /* What the scheduled jobs prepare for you, shown under Work, Reports. */
 const RKIND = { chaser: ["Chaser Drafts", "mail"], brief: ["Meeting Briefs", "people"], status: ["Status Notes", "doc"], timesheet: ["Timesheet", "clock"], deck: ["Ashraq Deck", "chart"] };
 const PERS_CATS = CATS.filter(c => c !== "Gym");
-/* The people who can lead an engagement. An engagement led by anyone but Me sits in the Team list and never reaches Today, Chasing or the digests. */
+/* The people who can lead an engagement. An engagement led by anyone but Me sits in the Team list and never reaches Today, Waiting On or the digests. */
 const TEAM = ["Me", "Osama", "Aysha", "Noor", "Shaikha", "Abdulrahman", "Bhavish"];
 /* Engagements: one per audit, follow-up, policy job, presentation or quality assessment. Stage names come from the Stages tab; these are the fallback. */
 const ENG_STATUS = ["Active", "Not started", "On hold", "Closed"];
@@ -1077,7 +1114,23 @@ const tItem = t => ({ kind: "task", t, id: t.id, date: t.due, time: t.time || ""
 const etypeOf = m => m.cal === "Outlook" ? "meeting" : /birthday|عيد ميلاد/i.test(m.subject || "") ? "birthday" : /holiday/i.test(m.cal || "") ? "holiday" : "event";
 const ETYPE = { meeting: { l: "Meeting", ic: "meet", c: "--i-meet" }, birthday: { l: "Birthday", ic: "cake", c: "--i-bday" }, holiday: { l: "Holiday", ic: "flag", c: "--i-hol" }, event: { l: "Event", ic: "meet", c: "--i-event" } };
 const bdayName = t => String(t || "").replace(/[’']s birthday$/i, "").replace(/\s*birthday$/i, "").trim();
-const mItem = (m, d) => ({ kind: "meet", id: m.id, date: d, title: m.subject, time: m.time, end: m.end, loc: m.loc, cal: m.cal || "Google", link: m.link || "", organizer: m.organizer || "", attendees: m.attendees || "", mstatus: m.status || "", status: "meet", scope: "meet", etype: etypeOf(m) });
+/* Meeting status (Done, Did not attend) lives in one Log row ("ui_meet"), like the fold state, so the back end needs no change and both iPhones agree. Entries older than 45 days drop off. */
+const MEET_ID = "ui_meet", MEET_ROW = { id: MEET_ID, routineId: "_ui", date: "9999-12-31", status: "", to: "" };
+const meetStates = () => { const l = S.logs[MEET_ID]; return l && l.checks && typeof l.checks === "object" ? l.checks : {}; };
+const meetState = id => { const x = meetStates()[id]; return x && (x.s === "done" || x.s === "skipped") ? x.s : ""; };
+let meetT = 0;
+function setMeetState(it, s) {
+  const c = { ...meetStates() }, cut = add(today(), -45);
+  Object.keys(c).forEach(k => { if (!c[k] || String(c[k].d || "") < cut) delete c[k]; });
+  if (s) c[it.id] = { s, d: it.date }; else delete c[it.id];
+  S.logs[MEET_ID] = { ...MEET_ROW, checks: c }; S.just = key(it); render(true);
+  clearTimeout(meetT); meetT = setTimeout(() => api("setChecks", { ...MEET_ROW, checks: c }).catch(fail), 300);
+}
+/* Done closes the meeting and moves Now forward; Did not attend greys it. Both can be undone. */
+function markMeet(it, s) { const was = meetState(it.id); setMeetState(it, s); toast(s === "done" ? "Meeting done" : s === "skipped" ? "Marked not attended" : "Meeting reopened", () => setMeetState(it, was)); }
+/* The brief a job prepared for a meeting: same day, title carrying the subject. */
+const briefFor = it => { if (it.kind !== "meet" || it.cal !== "Outlook") return null; const norm = x => String(x || "").toLowerCase().replace(/^(meeting )?brief[:\s-]*/, "").replace(/[^a-z0-9\u0600-\u06ff]+/g, " ").trim(); const sub = norm(it.title); if (!sub) return null; return (S.reports || []).find(r => r.kind === "brief" && isoDay(r.date) === it.date && (norm(r.title).includes(sub) || sub.includes(norm(r.title)))) || null; };
+const mItem = (m, d) => ({ kind: "meet", id: m.id, date: d, title: m.subject, time: m.time, end: m.end, loc: m.loc, cal: m.cal || "Google", link: m.link || "", organizer: m.organizer || "", attendees: m.attendees || "", mstatus: m.status || "", status: (m.cal === "Outlook" && meetState(m.id)) || "meet", scope: "meet", etype: etypeOf(m) });
 /* All-day birthdays and holidays first, then by time. */
 const byEvent = (a, b) => String(a.date).localeCompare(String(b.date)) || (a.time ? 1 : 0) - (b.time ? 1 : 0) || byTime(a, b);
 const byTime = (a, b) => tm(a.time) - tm(b.time) || String(a.title).localeCompare(String(b.title));
@@ -1174,7 +1227,7 @@ function metaHtml(it) {
     const cd = chaseDate(t);
     if (isDay(cd)) { const late = diff(cd) < 0; parts.push(`<span${late ? ' class="late"' : ""}>Chase ${esc(late ? relShort(cd) : rel(cd))}</span>`); }
     if (!RO.noWho) parts.push("With " + esc(mine(t) ? (t.contact || "Client") : t.owner));
-    if (chaserFor(t)) parts.push('<span class="chip">Draft ready</span>');
+    if (chaserFor(t) && !RO.nudge) parts.push('<span class="chip">Draft ready</span>');
   }
   else if (hasSess(t) && !RO.planner) { const nx = sessOf(t).find(x => x.date >= today()); parts.push(nx ? "Next session " + esc(rel(nx.date)) + (nx.time ? ", " + esc(fT(nx.time)) : "") : "Sessions over"); if (isDay(t.due)) parts.push(`<span${diff(t.due) < 0 ? ' class="late"' : ""}>Due ${esc(diff(t.due) < 0 ? relShort(t.due) : rel(t.due))}</span>`); }
   else if (isDay(t.due)) {
@@ -1195,14 +1248,19 @@ function rowHtml(it) {
   const k = key(it), ic = itemIcon(it), sw = S.swipe === k;
   const canSwipe = it.kind !== "meet" && it.status !== "done" && it.status !== "skipped" && it.status !== "ended";
   const hi = it.kind === "task" && tOpen(it.t) ? priMark(priOf(it.t)) : "";
-  const flag = it.kind === "meet" && RO.tl ? "" : it.kind === "meet" ? `<span class="when-t">${it.time ? fT(it.time) : it.etype === "birthday" ? "Birthday" : it.etype === "holiday" ? "Holiday" : "All day"}</span>` : it.status === "missed" ? `<span class="flag late" title="Missed">${ico("alert")}<span class="sr">Missed</span></span>` : it.status === "delayed" ? `<span class="flag" title="Delayed">${ico("clock")}<span class="sr">Delayed</span></span>` : it.status === "waiting" && !RO.noWho ? `<span class="flag" title="Waiting on others">${ico("people")}<span class="sr">Waiting</span></span>` : it.status === "progress" ? `<span class="prog-t">In-progress</span>` : "";
+  const mk = it.kind === "meet" && it.cal === "Outlook" && !!it.time; // Outlook meetings can be marked done or not attended
+  const mst = mk && it.status === "done" ? "Done" : mk && it.status === "skipped" ? "Not attended" : "";
+  const top3 = RO.top3 && isTaskish(it) && isOpen(it) ? RO.top3.get(it.id) || 0 : 0; // the numbered Top 3 badge replaces the icon tile
+  const nudgeR = RO.nudge && it.kind === "task" && it.status === "waiting" ? chaserFor(it.t) : null;
+  const nudge = nudgeR ? `<button type="button" class="btn sm nudge" data-act="nudge" data-rid="${esc(nudgeR.id)}" aria-label="Open the prepared chaser for ${esc(it.title)}">Nudge</button>` : "";
+  const flag = it.kind === "meet" && RO.tl ? "" : it.kind === "meet" ? `<span class="when-t">${mst ? mst : it.time ? fT(it.time) : it.etype === "birthday" ? "Birthday" : it.etype === "holiday" ? "Holiday" : "All day"}</span>` : it.status === "missed" ? `<span class="flag late" title="Missed">${ico("alert")}<span class="sr">Missed</span></span>` : it.status === "delayed" ? `<span class="flag" title="Delayed">${ico("clock")}<span class="sr">Delayed</span></span>` : it.status === "waiting" && !RO.noWho ? `<span class="flag" title="Waiting on others">${ico("people")}<span class="sr">Waiting</span></span>` : it.status === "progress" ? `<span class="prog-t">In-progress</span>` : "";
   return `<div class="sw" data-key="${esc(k)}">
     ${canSwipe ? `<div class="sw-under" aria-hidden="${!sw}"><div><button type="button" class="u-done" data-act="done" tabindex="${sw ? 0 : -1}">${ico("check")}Done</button></div><div><button type="button" class="u-delay" data-act="open" tabindex="${sw ? 0 : -1}">${ico("clock")}Delay</button><button type="button" class="u-skip" data-act="skip" tabindex="${sw ? 0 : -1}">${ico("skip")}Skip</button></div></div>` : ""}
-    <div class="row ${it.kind} s-${it.status}${S.just === k ? " just" : ""}" ${sw ? 'style="transform:translate3d(-152px, 0, 0)"' : ""}>
-      <button type="button" class="check" data-act="${it.kind === "meet" ? "" : it.status === "ended" ? "open" : "toggle"}" ${it.kind === "meet" ? 'tabindex="-1" aria-hidden="true"' : `aria-label="${it.status === "ended" ? "Ended" : it.status === "done" ? "Mark not done" : "Mark done"}: ${esc(it.title)}"`}><i></i></button>
-      <span class="itile" style="--ic:var(${ic.c})">${ico(ic.k)}</span>
+    <div class="row ${it.kind}${mk ? " mk" : ""} s-${it.status}${S.just === k ? " just" : ""}${top3 ? " top3" : ""}" ${sw ? 'style="transform:translate3d(-152px, 0, 0)"' : ""}>
+      <button type="button" class="check" data-act="${it.kind === "meet" && !mk ? "" : it.status === "ended" ? "open" : "toggle"}" ${it.kind === "meet" && !mk ? 'tabindex="-1" aria-hidden="true"' : `aria-label="${it.status === "ended" ? "Ended" : it.status === "done" ? "Mark not done" : "Mark done"}: ${esc(it.title)}"`}><i></i></button>
+      ${top3 ? `<span class="itile n3" role="img" aria-label="Top 3, number ${top3}">${top3}</span>` : `<span class="itile" style="--ic:var(${ic.c})">${ico(ic.k)}</span>`}
       <button type="button" class="ttl" data-act="open"><span class="tt">${esc(it.title)}${hi}</span>${metaHtml(it)}</button>
-      ${flag}
+      ${nudge || flag}
     </div>
   </div>`;
 }
@@ -1464,7 +1522,7 @@ function moveTasks(ts, fn, msg) {
 }
 function reschedOpts(work) {
   const d0 = today(), n = nowMin(), wk = isWeekend(d0), nd = work ? nextWorkday() : add(d0, 1), o = [];
-  if (!(work && wk)) { if (freeSlot(15, "", null, work ? "work" : "")) o.push(["fit", "Fit Into Today's Free Time", "Each goes into the next free slot; the rest stay on today"]); if (n < (work ? DAY_END.work : dayEnd())) o.push(["today", "Today, Any Time", fD(d0)]); }
+  if (!(work && wk)) { if (freeSlot(15, "", null, work ? "work" : "")) o.push(["fit", "Fit Into Today's Free Time", "Each goes into the next free slot; the rest stay on today"]); if (n < (work ? DAY_END.work : dayEnd())) o.push(["today", "Today, Unplanned", fD(d0)]); }
   if (!work && n < 1200) o.push(["tonight", "Tonight", fD(d0) + ", 8:00 PM"]);
   o.push(["next", work ? "Next Workday Morning" : "Tomorrow Morning", fD(nd) + ", 9:00 AM"]);
   return o;
@@ -1513,7 +1571,7 @@ function upNext() {
   const last = all.filter(it => it !== nowIt && !live.includes(it) && tm(it.time) <= n).sort((a, b) => tm(b.time) - tm(a.time) || String(a.title).localeCompare(String(b.title)))[0] || null;
   if (!nowIt && !up && !last) { S.nowKey = null; return ""; }
   S.nowKey = nowIt ? key(nowIt) : null;
-  const stateOf = it => it.kind === "meet" ? "Ended" : ({ done: "Done", skipped: "Skipped", missed: "Missed", ended: "Ended" })[it.status] || LABEL[it.status] || "";
+  const stateOf = it => it.kind === "meet" ? (it.status === "done" ? "Done" : it.status === "skipped" ? "Not attended" : "Ended") : ({ done: "Done", skipped: "Skipped", missed: "Missed", ended: "Ended" })[it.status] || LABEL[it.status] || "";
   const slim = (it, lbl, sub, cls) => { const ic = itemIcon(it); return `<button type="button" class="tr-row ${cls}" data-act="dayopen" data-k="${esc(key(it))}"><span class="itile" style="--ic:var(${ic.c})">${ico(ic.k)}</span><span class="tr-t"><span class="ey">${lbl}</span><b>${esc(it.title)}</b></span>${sub}${chevR}</button>`; };
   let lastRow = "";
   if (last) {
@@ -1524,7 +1582,8 @@ function upNext() {
   let nowRow;
   if (nowIt) {
     const ic = itemIcon(nowIt), left = span(nowIt) - n;
-    const teams = nowIt.kind === "meet" && /teams\.microsoft\.com/i.test(String(nowIt.link || "")) ? `<div class="acts"><a class="btn primary grow" href="${esc(nowIt.link)}" target="_blank" rel="noopener">${ico("people")}Join Teams</a></div>` : "";
+    const mb = nowIt.kind === "meet" ? [/teams\.microsoft\.com/i.test(String(nowIt.link || "")) ? `<a class="btn primary grow" href="${esc(nowIt.link)}" target="_blank" rel="noopener">${ico("people")}Join</a>` : "", briefFor(nowIt) ? `<button type="button" class="btn grow" data-now="brief">${ico("doc")}Brief</button>` : "", nowIt.cal === "Outlook" ? `<button type="button" class="btn grow" data-now="done">${ico("check")}Done</button>` : ""].join("") : "";
+    const teams = mb ? `<div class="acts">${mb}</div>` : "";
     nowRow = `<div class="tr-now"><span class="big" style="--ic:var(${ic.c})">${ico(ic.k)}</span><span class="ey">Now${left > 0 && nowIt.kind === "meet" ? ` · <b>${dur(left)}</b> left` : nowIt.status === "progress" ? " · In-progress" : ""}</span><h2>${esc(nowIt.title)}</h2>${nowIt.kind === "meet" ? teams : `<div class="acts"><button type="button" class="btn primary grow" data-now="done">Done</button><button type="button" class="btn grow" data-now="open">Delay</button>${nowIt.kind === "routine" ? `<button type="button" class="btn grow" data-now="skip">Skip</button>` : ""}</div>`}</div>`;
   } else {
     const free = up ? `Free until ${fT(up.time)}` : "Free for the rest of the day";
@@ -1712,15 +1771,21 @@ function focusHtml(p) {
   return cardHtml(rows, chHead("Focus · Top 3", "--late", li.length, "t:focus", !workHours()));
 }
 function overdueHtml(p) {
-  const fx = focusIds(p), od = p.overdue.filter(i => !fx.has(i.id));
+  const od = p.overdue;
   if (!od.length) return "";
-  RO = { ctx: true }; const rows = od.map(rowHtml).join(""); RO = {};
+  RO = { ctx: true, top3: top3Map(p) }; const rows = od.map(rowHtml).join(""); RO = {};
   return cardHtml(rows + `<div class="card-acts"><button type="button" class="btn sm primary" data-act="resched">${ico("clock")}Reschedule All (${od.length})</button></div>`, chHead("Overdue", "--late", od.length, "t:overdue"));
 }
 /* One row on the timeline: the time in the gutter with a rail in the item's colour, then the usual row. */
 function tlRowHtml(it, d, cls) {
   const s0 = tm(it.time), e = spanEnd(it, d), ic = itemIcon(it), past = d === today() && e <= nowMin();
-  return `<div class="tl-it${cls ? " " + cls : ""}${past ? " past" : ""}" style="--ic:var(${ic.c})"><div class="tl-g"><b>${fTh(s0)}</b><small>${ampm(s0)}</small></div>${rowHtml(it)}</div>`;
+  const kind = it.kind === "meet" ? " meetb" : catOf(it) === "gym" ? " gymb" : "";
+  let acts = "";
+  if (it.kind === "meet" && it.cal === "Outlook" && d === today() && isOpen(it)) {
+    const br = briefFor(it), k = esc(key(it)), teams = /teams\.microsoft\.com/i.test(String(it.link || ""));
+    acts = `<div class="tl-acts">${teams && !past ? `<a class="btn sm primary" href="${esc(it.link)}" target="_blank" rel="noopener">Join</a>` : ""}${br ? `<button type="button" class="btn sm" data-act="brief" data-rid="${esc(br.id)}">Brief${br.status === "new" ? '<i class="ndot" aria-label="new"></i>' : ""}</button>` : ""}<button type="button" class="btn sm" data-act="mdone" data-k="${k}">Done</button>${past ? `<button type="button" class="btn sm" data-act="mskip" data-k="${k}">Not attended</button>` : ""}</div>`;
+  }
+  return `<div class="tl-it${cls ? " " + cls : ""}${past ? " past" : ""}${kind}" style="--ic:var(${ic.c})"><div class="tl-g"><b>${fTh(s0)}</b><small>${ampm(s0)}</small></div><div class="tl-b">${rowHtml(it)}${acts}</div></div>`;
 }
 /* Routines group like the Morning Routine everywhere: Morning and Night by block, every other routine by its category.
    Routines in "Other" (such as Plan Your Day) stay single rows. Each group is one row that opens to its steps. */
@@ -1747,7 +1812,7 @@ function grpHtml(g, d) {
   const f = folded(k, done === all || (!live && !miss)), ic = rgIcon(g);
   return `<div class="tl-grp${f ? " folded" : ""}"><div class="tl-it${d === today() && g.end <= n ? " past" : ""}" style="--ic:var(${ic.c})"><div class="tl-g"><b>${fTh(g.start)}</b><small>${ampm(g.start)}</small></div>${rgHead(g, f, k, true)}</div><div class="fb">${g.li.map(o => tlRowHtml(o, d, "sub")).join("")}</div></div>`;
 }
-/* A group in a list (Any Time, Next 7 Days, Calendar): one row with progress that opens to the usual rows. */
+/* A group in a list (Also Today, Next 7 Days, Calendar): one row with progress that opens to the usual rows. */
 function lgrpHtml(g, sc) {
   const k = fk("lg", sc || "", rgFold(g), g.li[0].date || ""), miss = g.li.some(o => o.status === "missed"), done = g.li.every(o => !isOpen(o));
   const f = folded(k, done || !miss);
@@ -1777,7 +1842,7 @@ function timelineHtml(p) {
   const nowLine = () => `<div class="tl-now" role="separator" aria-label="Now, ${esc(fT(hhmm(n)))}"><div class="tl-g"><b>${fTh(n)}</b></div><i></i></div>`;
   const gap = (a, b) => { a = Math.ceil(a / 5) * 5; return b - a >= 15 ? `<button type="button" class="tl-gap" data-act="gap" data-a="${a}" data-b="${b}"><span class="tl-g"></span><span class="gp">${esc(dur(b - a))} free${b >= end ? " until " + esc(fT(hhmm(end))) : ""}</span>${chevR}</button>` : ""; };
   let html = "", last = dayStart(), nowDone = !isToday || n >= 1440;
-  RO = { tl: true, ctx: true };
+  RO = { tl: true, ctx: true, top3: isToday ? top3Map(p) : null };
   ents.forEach(x => {
     if (!nowDone && x.s > n) { html += nowLine(); nowDone = true; }
     if (isToday && x.s > n) html += gap(Math.max(last, n), x.s);
@@ -1789,34 +1854,27 @@ function timelineHtml(p) {
   RO = {};
   return html;
 }
-function anytimeHtml(p) {
+/* Top 3 as numbers: a Map of task id to 1, 2 or 3, carried on RO so a row shows the number in place of its icon wherever it sits (the Day, Unplanned, Overdue, This week). */
+const top3Map = p => new Map(focusList(p).map((it, i) => [it.id, i + 1]));
+/* Ready to review: what the jobs prepared and you have not opened yet. Four rows, then a line to the rest under Work, Review. */
+function reviewHtml() {
+  const li = (S.reports || []).filter(r => r.status === "new").sort((a, b) => String(b.at).localeCompare(String(a.at))); if (!li.length) return "";
+  const rows = li.slice(0, 4).map(reportRow).join("") + (li.length > 4 ? `<button type="button" class="arow" data-act="gowork" data-sub="reports"><span class="itile" style="--ic:var(--i-work)">${ico("doc")}</span><span class="ttl"><span class="tt">${li.length - 4} more to review</span></span>${chevR}</button>` : "");
+  return cardHtml(rows, chHead("Ready to Review", "--i-work", li.length, "t:review"));
+}
+/* Unplanned: today's tasks with no time, as pills. Tap one to place it in a free gap. Routines without a time sit under Also Today. */
+function unplannedHtml(p) {
   const shown = new Set(propsNow().map(x => x.id));
-  let li = p.anytime.filter(it => !(it.kind === "task" && shown.has(it.id)) && !(it.kind === "routine" && gymArea(it.r)));
-  if (p.work) { const fx = focusIds(p); li = li.filter(i => !(isTaskish(i) && fx.has(i.id))); }
+  const li = p.anytime.filter(it => it.kind === "task" && !shown.has(it.id)).sort(byPri), open = li.filter(isOpen);
   if (!li.length) return "";
-  const open = li.filter(isOpen).length, canPlan = li.some(i => i.kind === "task" && isOpen(i));
-  RO = { ctx: true, planner: true }; const rows = rgRows(li, "any"); RO = {};
-  return cardHtml(rows + (canPlan ? `<div class="card-acts"><button type="button" class="btn sm" data-act="planfree">${ico("timer")}Plan My Free Time</button></div>` : ""), chHead("Any Time", null, `${li.length - open}/${li.length}`, "t:any", open === 0));
+  const t3 = top3Map(p);
+  const pill = it => { const ic = itemIcon(it), n = isOpen(it) ? t3.get(it.id) : 0, m = durMins(it.t, p.d); return `<button type="button" class="pill${isOpen(it) ? "" : " off"}" data-act="${isOpen(it) ? "place" : "dayopen"}" data-k="${esc(key(it))}" style="--ic:var(${ic.c})" aria-label="${isOpen(it) ? "Place " : ""}${esc(it.title)}">${n ? `<span class="n3 sm">${n}</span>` : '<span class="dot"></span>'}<span class="pt">${esc(it.title)}</span>${m ? `<small>${esc(dur(m))}</small>` : ""}</button>`; };
+  const acts = open.length > 1 ? `<div class="card-acts"><button type="button" class="btn sm" data-act="planfree">${ico("timer")}Fill the Gaps</button></div>` : "";
+  return cardHtml(`<div class="pills">${li.map(pill).join("")}</div>${acts}`, chHead("Unplanned", null, open.length ? `${open.length} to place` : "All placed", "t:unplanned", !open.length));
 }
-/* Prepared for you: new items from the jobs (chaser drafts, briefs, status notes), one line that opens Work, Reports. */
-function preparedHtml() {
-  const li = (S.reports || []).filter(r => r.status === "new"); if (!li.length) return "";
-  const by = {}; li.forEach(r => { by[r.kind] = (by[r.kind] || 0) + 1; });
-  const txt = Object.keys(by).map(k => by[k] + " " + (RKIND[k] ? RKIND[k][0].toLowerCase().replace(/s$/, by[k] === 1 ? "" : "s") : k)).join(", ");
-  return `<button type="button" class="planb" data-act="reports" style="box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--i-work) 55%, transparent)"><span class="big" style="color:var(--i-work)">${ico("doc")}</span><span class="tr-t"><span class="ey">Prepared for You</span><b>${esc(txt)}</b><small>Drafts and briefs the planner prepared. Review, then send or use them.</small></span>${chevR}</button>`;
-}
-/* Gym today: the session as one line that opens it. */
-function gymTodayHtml(p) {
-  if (S.hf && S.hf !== "gym") return "";
-  const li = [...p.timed, ...p.anytime].filter(it => catOf(it) === "gym" && it.kind === "routine" && gymArea(it.r)); if (!li.length) return "";
-  RO = { planner: true }; const rows = li.map(rowHtml).join(""); RO = {};
-  const done = li.filter(it => !isOpen(it)).length;
-  return cardHtml(rows, chHead("Gym", "--k-gym", `${done}/${li.length}`, "t:gym", done === li.length));
-}
-/* Today card: everything untimed today in one card, grouped by category (All Day, Work, Gym, Personal), each group collapsible. Focus items are left out of Work. */
-function todayCard(p) {
-  const shown = new Set(propsNow().map(x => x.id)), fx = p.work ? focusIds(p) : new Set();
-  const li = p.anytime.filter(it => !(it.kind === "task" && shown.has(it.id)) && !(isTaskish(it) && fx.has(it.id)));
+/* Also today: all-day items and routines without a time (the Morning block, supplements, gym on a rest day), grouped the usual way. Tasks live in Unplanned. */
+function alsoTodayHtml(p) {
+  const li = p.anytime.filter(it => it.kind !== "task");
   const groups = [];
   if (p.allDay.length) groups.push(["All Day", p.allDay, "allday"]);
   const work = li.filter(it => catOf(it) === "work"), gym = li.filter(it => catOf(it) === "gym"), pers = li.filter(it => catOf(it) === "personal");
@@ -1828,41 +1886,45 @@ function todayCard(p) {
   RO = { ctx: true, planner: true };
   const inner = groups.length === 1 ? rgRows(groups[0][1], "td:" + groups[0][2]) : groups.map(([l, items, k]) => { const o = items.filter(isOpen).length; const fkey = fk("g", "td", k), f = folded(fkey, o === 0); return `<div class="sg${f ? " folded" : ""}"><button type="button" class="subh" data-act="fold" data-f="${esc(fkey)}" data-o="${f ? 0 : 1}" aria-expanded="${!f}">${esc(l)}<span class="cnt" style="margin-left:auto">${items.length - o}/${items.length}</span>${chev}</button><div class="fb">${rgRows(items, "td:" + k)}</div></div>`; }).join("");
   RO = {};
-  const canPlan = li.some(i => i.kind === "task" && isOpen(i));
-  return cardHtml(inner + (canPlan ? `<div class="card-acts"><button type="button" class="btn sm" data-act="planfree">${ico("timer")}Plan My Free Time</button></div>` : ""), chHead("Today", null, `${all - open}/${all}`, "t:today", open === 0));
+  return cardHtml(inner, chHead("Also Today", null, `${all - open}/${all}`, "t:today", open === 0));
 }
-/* To Chase on Home: one line with the count and the people, opening Work, Chasing. The rows live there. */
-function chaseLine() {
+/* Waiting on: items others owe you that are due today or overdue, one row per item under the person, each with Nudge when a chaser draft is ready. The full list is under Work, Waiting on. */
+function waitingHtml() {
   const li = S.tasks.filter(t => isChase(t) && cfOk(t) && chaseDate(t) && diff(chaseDate(t)) <= 0).map(chaseItem).sort(byDayPri); if (!li.length) return "";
-  const who = [...new Set(li.map(it => mine(it.t) ? (it.t.contact || "Client") : it.t.owner))], late = li.filter(it => diff(it.date) < 0).length;
-  const txt = who.slice(0, 3).join(", ") + (who.length > 3 ? ` and ${who.length - 3} more` : "");
-  return `<div class="card"><button type="button" class="arow" data-act="gochase"><span class="itile" style="--ic:var(--i-meet)">${ico("people")}</span><span class="ttl"><span class="tt">To Chase</span><span class="meta">${li.length} due today${late ? `<span class="sep">·</span><span class="late">${late} overdue</span>` : ""}<span class="sep">·</span>${esc(txt)}</span></span>${chevR}</button></div>`;
+  const by = {}; li.forEach(it => { const k = mine(it.t) ? (it.t.contact || "Client") : it.t.owner; (by[k] = by[k] || []).push(it); });
+  const who = Object.keys(by).sort((a, b) => by[a][0].date.localeCompare(by[b][0].date) || a.localeCompare(b));
+  RO = { ctx: true, noWho: true, nudge: true };
+  const inner = who.map(k => subGroup(`${k} · ${by[k].length}`, by[k].slice(0, 3).map(rowHtml).join(""), "wait")).join("");
+  RO = {};
+  const late = li.filter(it => diff(it.date) < 0).length;
+  return cardHtml(inner + `<button type="button" class="arow" data-act="gowork" data-sub="chase"><span class="itile" style="--ic:var(--i-meet)">${ico("people")}</span><span class="ttl"><span class="tt">All waiting items</span>${late ? `<span class="meta"><span class="late">${late} overdue</span></span>` : ""}</span>${chevR}</button>`, chHead("Waiting On", "--i-meet", li.length, "t:waiting"));
 }
-/* Home: the glance card, the morning plan, what was prepared, the load, then Focus, leftovers, today's untimed items by category, the chase line and the day's schedule, folded until you open it. */
+/* Home: Today. Now on top, then the morning plan, what is ready to review, progress, overdue, unplanned pills, the Day rail, waiting items, also today and what is next. */
 function viewHome() {
-  const p = todayParts(), d = p.d;
-  const head = `<header class="navbar"><div><h1>Home</h1><div class="sub">${esc(fDL(d))}</div></div><div class="acts">${inboxBtn()}${rfBtn()}<button type="button" class="icon-btn" data-act="new" aria-label="New task">${ico("plus")}</button></div></header>`;
+  const p = todayParts(), d = p.d, t3 = top3Map(p);
+  const head = `<header class="navbar"><div><h1>Today</h1><div class="sub">${esc(fDL(d))}</div></div><div class="acts">${inboxBtn()}${rfBtn()}<button type="button" class="icon-btn" data-act="new" aria-label="New task">${ico("plus")}</button></div></header>`;
   const props = propsNow();
   const propBar = props.length ? `<div class="propbar"><span>${props.length} proposed</span><button type="button" class="btn sm primary" data-act="paccall">Accept All</button><button type="button" class="btn sm" data-act="pclear">Clear</button></div>` : "";
   const tlOpen = p.timed.filter(isOpen).length;
-  const nxt = p.timed.filter(it => isOpen(it) && tm(it.time) > nowMin()).sort(byTime)[0];
-  const tl = (() => { const k = fk("c", "t:tl"), f = folded(k, !props.length); return `<div class="card tlc${f ? " folded" : ""}"><button type="button" class="ch" data-act="fold" data-f="${esc(k)}" data-o="${f ? 0 : 1}" aria-expanded="${!f}">Schedule${f && nxt ? `<span class="meta" style="margin-left:8px;font-weight:500">Next ${esc(fT(nxt.time))} · ${esc(nxt.title)}</span>` : ""}<span class="cnt">${p.timed.length - tlOpen}/${p.timed.length}</span>${chev}</button><div class="fb">${propBar}${p.timed.length || props.length ? `<div class="tl">${timelineHtml(p)}</div>` : `<div class="empty">Nothing scheduled today.</div>`}</div></div>`; })();
-  const chase = p.work && !p.wk && workHours() ? chaseLine() : "";
+  RO = { top3: t3 }; const tlInner = p.timed.length || props.length ? `<div class="tl">${timelineHtml(p)}</div>` : `<div class="empty">Nothing on your day yet. Place an unplanned task or add one with +.</div>`; RO = {};
+  const tl = `<div class="card tlc"><div class="ch static">Day<span class="cnt">${p.timed.length - tlOpen}/${p.timed.length}</span></div>${propBar}${tlInner}</div>`;
+  const work = p.work && !p.wk && workHours();
   let soon = "";
-  if (!S.hf || S.hf === "personal") { const li = Array.from({ length: 7 }, (_, i) => add(d, i + 1)).flatMap(x => (S.meetings[x] || []).map(m => mItem(m, x))).filter(it => it.etype === "birthday" || it.etype === "holiday").sort(byEvent); if (li.length) { RO = { planner: true, evDate: true }; soon = cardHtml(li.map(rowHtml).join(""), chHead("Coming Up", "--i-bday", li.length, "ev:soon")); RO = {}; } }
+  if (!S.hf || S.hf === "personal") { const li = Array.from({ length: 7 }, (_, i) => add(d, i + 1)).flatMap(x => (S.meetings[x] || []).map(m => mItem(m, x))).filter(it => it.etype === "birthday" || it.etype === "holiday").sort(byEvent); if (li.length) { RO = { planner: true, evDate: true }; soon = cardHtml(li.map(rowHtml).join(""), chHead("Next", "--i-bday", li.length, "ev:soon", true)); RO = {}; } }
   const note = S.meetNote ? `<p class="foot">${esc(S.meetNote)}</p>` : "";
-  const prepared = p.work && !p.wk && workHours() ? preparedHtml() : ""; // like Focus: work hours only
+  RO = { top3: t3 }; const od = overdueHtml(p); RO = {};
+  const c1 = od + unplannedHtml(p) + (work ? waitingHtml() : "") + alsoTodayHtml(p), c2 = tl + note + soon;
   return `${head}
   ${homeChips()}
   ${upNext()}
   ${planBanner()}
-  ${prepared}
+  ${work ? reviewHtml() : ""}
   ${capacityHtml(p)}
-  ${(() => { const c1 = focusHtml(p) + overdueHtml(p) + todayCard(p) + chase, c2 = tl + note + soon; return c1 ? `<div class="cols two"><div class="col">${c1}</div><div class="col">${c2}</div></div>` : `<div class="col">${c2}</div>`; })()}
+  ${c1 ? `<div class="cols two"><div class="col">${c1}</div><div class="col">${c2}</div></div>` : `<div class="col">${c2}</div>`}
   <p class="foot" style="text-align:center"><button type="button" class="txtbtn sm" data-act="settings">Settings</button> · Version ${esc(APP_VERSION)}</p>`;
 }
 
-/* ---------- Work: My Week (mine, by workday), Chasing (by person), Portfolio (by client, with health), Reports (what was prepared), Done ---------- */
+/* ---------- Work: This Week (load, then your tasks by workday), Clients (engagements with health), Waiting On (by person, with Nudge), Review (what the jobs prepared), Done ---------- */
 /* The chaser draft the morning job prepared for a waiting task, if one is still open. */
 const chaserFor = t => (S.reports || []).find(r => r.kind === "chaser" && r.taskId === t.id && r.status !== "done") || null;
 /* Engagement health, worked out from its tasks:
@@ -1917,7 +1979,15 @@ function auditRow(a) {
   return `<button type="button" class="arow" data-act="audit" data-id="${esc(a.id)}"><span class="itile" style="--ic:var(${CLIENT_VAR[a.client] || "--i-work"})">${ico("doc")}</span><span class="ttl"><span class="tt">${esc(a.engagement)}${engLate(a) ? '<span class="odot" title="Overdue"></span><span class="sr">Overdue</span>' : ""}</span><span class="meta">${parts.join('<span class="sep">·</span>')}</span></span>${chevR}</button>`;
 }
 const engClients = () => { const extra = [...new Set(S.audits.map(a => a.client))].filter(c => c && !CLIENTS.includes(c)); return [...CLIENTS, ...extra]; };
-/* My Week: Overdue, then each of the next five workdays with its load, then Later and No Date. Tasks with sessions sit on their session days. */
+/* Load: the five workdays as bars, your planned task time against the time Outlook leaves free (8 AM to 5 PM less meetings and lunch). A day in red is over. */
+function loadCard(days) {
+  const d0 = today(), loads = days.map(d => [d, workLoad(d)]), mx = Math.max(60, ...loads.map(([, l]) => Math.max(l.plan, l.free)));
+  const col = ([d, l]) => { const over = l.plan > l.free; return `<div class="ldc${over ? " over" : ""}${d === d0 ? " today" : ""}"><div class="lbar" role="img" aria-label="${esc(rel(d))}: ${esc(dur(l.plan) || "0m")} planned of ${esc(dur(l.free) || "0m")} free"><i class="free" style="height:${Math.round(l.free / mx * 100)}%"></i><i class="plan" style="height:${Math.min(100, Math.round(l.plan / mx * 100))}%"></i></div><b>${d === d0 ? "Today" : DAYS[wd(d)]}</b><small>${esc(dur(l.plan) || "0m")} of ${esc(dur(l.free) || "0m")}</small></div>`; };
+  const over = loads.filter(([, l]) => l.plan > l.free), under = loads.find(([d, l]) => d > (over[0] || [])[0] && l.plan < l.free);
+  const note = over.length ? `<div class="cap-n late">${esc(over[0][0] === d0 ? "Today is" : DAYS[wd(over[0][0])] + " is")} over by ${esc(dur(over[0][1].plan - over[0][1].free))}.${under ? ` Move something to ${esc(under[0] === d0 ? "today" : DAYS[wd(under[0])])}.` : ""}</div>` : `<div class="cap-n">Planned time against what Outlook leaves free.</div>`;
+  return `<div class="card loadc"><div class="ch static">Load<span class="cnt">${esc(dur(loads.reduce((n, [, l]) => n + l.plan, 0)))} this week</span></div><div class="lbars">${loads.map(col).join("")}</div>${note}</div>`;
+}
+/* This Week: Overdue, then each of the next five workdays with its load, then Later and No Date. Tasks with sessions sit on their session days. */
 function weekCards() {
   const d0 = today(), days = []; let d = isWeekend(d0) ? workdayFrom(d0) : d0; while (days.length < 5) { days.push(d); d = addWork(d, 1); }
   const last = days[days.length - 1];
@@ -1926,14 +1996,14 @@ function weekCards() {
   const overdue = ts.filter(t => isDay(t.due) && diff(t.due) < 0 && !sessOf(t).some(x => x.date >= d0)).map(tItem).sort(focusRank);
   const later = [], none = [];
   ts.forEach(t => { const li = sessOf(t); if (li.length) { if (!li.some(x => x.date >= d0 && x.date <= last) && li.some(x => x.date > last)) later.push(sessItem(t, li.find(x => x.date > last))); return; } if (!isDay(t.due)) none.push(tItem(t)); else if (t.due > last) later.push(tItem(t)); });
-  const cards = [];
-  RO = { ctx: true };
+  const cards = [loadCard(days)], t3 = (() => { const hf = S.hf; S.hf = ""; try { return top3Map(todayParts()); } finally { S.hf = hf; } })(); // the Home chip must not hide the Top 3 here
+  RO = { ctx: true, top3: t3 };
   if (overdue.length) cards.push(cardHtml(overdue.map(rowHtml).join("") + `<div class="card-acts"><button type="button" class="btn sm primary" data-act="resched">${ico("clock")}Reschedule All (${overdue.length})</button></div>`, chHead("Overdue", "--late", overdue.length, "wk:overdue")));
   RO = {};
   days.forEach(dd => {
     const items = [...ts.flatMap(t => taskItemsOn(t, dd)), ...S.routines.filter(r => r.scope === "work" && r.active !== false && cfOk(r) && match(r) && occursOn(r, dd)).map(r => occ(r, dd))].sort(rank);
     const open = items.filter(isOpen).length;
-    RO = { ctx: true, planner: true };
+    RO = { ctx: true, planner: true, top3: dd === d0 ? t3 : null };
     const inner = items.length ? items.map(rowHtml).join("") : `<div class="empty">Nothing planned${dd === d0 ? " today" : ""}.</div>`;
     RO = {};
     cards.push(cardHtml(inner, `<button type="button" class="ch" data-act="fold" data-f="${esc(fk("c", "wk:" + dd))}" data-o="${folded(fk("c", "wk:" + dd)) ? 0 : 1}" aria-expanded="${!folded(fk("c", "wk:" + dd))}"><span class="dot" style="background:var(${dd === d0 ? "--i-work" : "--label2"})"></span>${esc(rel(dd))}<span class="cnt">${items.length - open}/${items.length}</span>${loadTag(dd)}${chev}</button>`));
@@ -1961,9 +2031,9 @@ function workBody(s) {
     // waiting on others, on engagements you lead, grouped by the person who owes the next step
     const li = S.tasks.filter(t => isChase(t) && cfOk(t) && match(t)).map(chaseItem).sort(byDate);
     const by = {}; li.forEach(it => { const k = mine(it.t) ? (it.t.contact || "Client") : it.t.owner; (by[k] = by[k] || []).push(it); });
-    RO = { ctx: true, noWho: true };
-    const cards = Object.keys(by).sort((a, b) => { const da = by[a][0].date || "9999", db = by[b][0].date || "9999"; return da.localeCompare(db) || a.localeCompare(b); }).map(k => cardHtml(by[k].map(rowHtml).join(""), chHead("With " + k, null, by[k].length, "w:" + k)));
-    RO = {}; return cards;
+    RO = { ctx: true, noWho: true, nudge: true };
+    const cards = Object.keys(by).sort((a, b) => { const da = by[a][0].date || "9999", db = by[b][0].date || "9999"; return da.localeCompare(db) || a.localeCompare(b); }).map(k => { const drafts = by[k].filter(it => chaserFor(it.t)).length; return cardHtml(by[k].map(rowHtml).join(""), chHead(k, null, drafts ? `${by[k].length} · ${drafts} nudge${drafts > 1 ? "s" : ""} ready` : by[k].length, "w:" + k)); });
+    RO = {}; if (cards.length) cards.push(`<p class="foot">Nudge opens the chaser the morning job drafted in the original Outlook thread. Nothing is sent for you.</p>`); return cards;
   }
   if (s === "eng") {
     const live = S.audits.filter(a => engOpen(a) && (!S.cf || a.client === S.cf) && match(a)).sort(engSort);
@@ -1988,7 +2058,7 @@ function viewWork() {
   const head = `<header class="navbar"><div><h1>Work</h1>${S.engOk ? "" : `<div class="sub late">Update the back end to save engagements.</div>`}</div><div class="acts">${inboxBtn()}${searchBtn()}${rfBtn()}<button type="button" class="icon-btn" data-act="${s === "eng" ? "newaudit" : "new"}" aria-label="New ${s === "eng" ? "engagement" : "task"}">${ico("plus")}</button></div></header>
   <div class="tools">${segHtml("Show", WORK_SUBS, s, "sub")}${s === "reports" ? "" : chipRow()}${searchField()}</div>`;
   const cards = workBody(s);
-  const empty = S.q ? "Nothing matches your search." : S.cf && s !== "reports" ? `Nothing here for ${esc(S.cf)}.` : s === "week" ? "Nothing on you. Tap + to add a task." : s === "chase" ? "Nothing to chase on your engagements." : s === "eng" ? "No engagements yet. Tap + to add one." : s === "reports" ? "Nothing prepared yet. Chaser drafts, meeting briefs and status notes from the scheduled jobs appear here." : "Finished tasks, closed engagements and ended routines appear here.";
+  const empty = S.q ? "Nothing matches your search." : S.cf && s !== "reports" ? `Nothing here for ${esc(S.cf)}.` : s === "week" ? "Nothing on you. Tap + to add a task." : s === "chase" ? "Nothing waiting on anyone." : s === "eng" ? "No engagements yet. Tap + to add one." : s === "reports" ? "Nothing to review yet. Chaser drafts, meeting briefs and status notes from the scheduled jobs appear here." : "Finished tasks, closed engagements and ended routines appear here.";
   return head + (cards.length ? twoCols(cards) : cardHtml(`<div class="empty">${empty}</div>`));
 }
 /* ---------- Personal: Tasks (by date), Routines (by how they repeat), Done ---------- */
@@ -2238,7 +2308,7 @@ function delay(it, date, time) {
 /* ---------- clicks ---------- */
 view.addEventListener("click", e => {
   const nb = e.target.closest("[data-now]");
-  if (nb && S.nowKey) { const it = findItem(S.nowKey); if (!it) return; const a = nb.dataset.now; if (a === "done") markDone(it); else if (a === "skip") markSkip(it); else openSheet(isPlan(it) ? { type: "plan" } : { type: "item", key: key(asTask(it)) }); return; }
+  if (nb && S.nowKey) { const it = findItem(S.nowKey); if (!it) return; const a = nb.dataset.now; if (it.kind === "meet") { if (a === "done") markMeet(it, "done"); else if (a === "brief") { const r = briefFor(it); if (r) openReport(r.id); } else openSheet({ type: "item", key: key(it) }); return; } if (a === "done") markDone(it); else if (a === "skip") markSkip(it); else openSheet(isPlan(it) ? { type: "plan" } : { type: "item", key: key(asTask(it)) }); return; }
   const b = e.target.closest("[data-act]"); if (!b || !b.dataset.act) return;
   const a = b.dataset.act;
   if (a === "new") { if (S.view === "gym") { openSheet({ type: "editTask", obj: newTask() }); return; } S.qa = ""; openSheet({ type: "quick", side: sideOf() }); return; }
@@ -2252,7 +2322,12 @@ view.addEventListener("click", e => {
   if (a === "report") { openReport(b.dataset.id); return; }
   if (a === "search") { S.qOpen = !(S.qOpen || S.q); if (!S.qOpen) S.q = ""; renderMain(true); if (S.qOpen) { const q = document.getElementById("q"); if (q) q.focus({ preventScroll: true }); } return; }
   if (a === "refresh") { refreshNow(); return; }
-  if (a === "lastdone") { const it = findItem(b.dataset.k); if (it) markDone(it); return; }
+  if (a === "lastdone") { const it = findItem(b.dataset.k); if (it) { if (it.kind === "meet") markMeet(it, "done"); else markDone(it); } return; }
+  if (a === "nudge") { openReport(b.dataset.rid); return; }
+  if (a === "mdone" || a === "mskip") { const it = findItem(b.dataset.k); if (it && it.kind === "meet") markMeet(it, a === "mdone" ? "done" : "skipped"); return; }
+  if (a === "brief") { openReport(b.dataset.rid); return; }
+  if (a === "place") { const it = findItem(b.dataset.k); if (it) openSheet({ type: "place", key: key(asTask(it)) }); return; }
+  if (a === "gowork") { S.sub.work = b.dataset.sub || "week"; persist(); go("work"); return; }
   if (a === "plan") { openSheet({ type: "plan" }); return; }
   if (a === "planfree") { proposeFree(); return; }
   if (a === "paccall") { acceptProps(); return; }
@@ -2282,6 +2357,7 @@ view.addEventListener("click", e => {
   const it = findItem(sw.dataset.key); if (!it) return;
   const wasOpen = S.swipe; S.swipe = null;
   if (wasOpen && a === "toggle") { renderMain(true); return; }
+  if (it.kind === "meet") { if (a === "toggle") markMeet(it, it.status === "done" || it.status === "skipped" ? "" : "done"); else openSheet({ type: "item", key: key(it) }); return; }
   if (a === "toggle") { if (it.status === "done" || it.status === "skipped") unmark(it); else markDone(it); return; }
   if (a === "done") { markDone(it); return; }
   if (a === "skip") { markSkip(it); return; }
@@ -2389,6 +2465,26 @@ function reschedSheet() {
       <div class="cell"><label for="rsD">Pick a Date</label><input id="rsD" type="date" value="${esc(add(today(), 1))}" min="${esc(today())}"></div>
       <div class="cell"><span></span><button type="button" class="btn sm primary" data-s="rspick" ${ts.length ? "" : "disabled"}>Move</button></div></div>
     <p class="foot">${ts.some(t => t.scope === "work") ? "Work only moves to Sunday to Thursday; a Friday or Saturday becomes the next Sunday. " : ""}Each move is counted on the task, so things that keep slipping stand out.</p>
+  </div>`;
+}
+/* Free gaps today for one task: from now to the end of its window (work tasks end at 6 PM), at least 15 minutes each. */
+function gapsFor(it) {
+  const p = todayParts(), work = it.kind === "task" && it.t.scope === "work", end = work ? DAY_END.work : DAY_END.personal;
+  if (work && isWeekend(p.d)) return [];
+  const busy = p.timed.filter(x => isOpen(x) && key(x) !== key(it)).map(x => [tm(x.time), spanEnd(x, p.d)]).sort((a, b) => a[0] - b[0]);
+  let t = Math.max(Math.ceil((nowMin() + 5) / 15) * 15, work ? 480 : dayStartOf("personal")); const out = [];
+  for (const [a, b] of busy) { if (b <= t) continue; if (a - t >= 15) out.push([t, Math.min(a, end)]); t = Math.max(t, Math.ceil(b / 15) * 15); if (t >= end) break; }
+  if (end - t >= 15) out.push([t, end]);
+  return out.filter(g => g[1] - g[0] >= 15);
+}
+/* Place: an unplanned task goes into one of today's free gaps, or to the next morning. */
+function placeSheet(it) {
+  const t = it.t, len = durMins(t, today()) || 30, gaps = gapsFor(it), ic = itemIcon(it);
+  const rows = gaps.map(([a, b]) => `<button type="button" class="cell pk" data-s="pgap" data-a="${a}"><span>${esc(fT(hhmm(a)))} to ${esc(fT(hhmm(b)))}</span><span class="v${b - a < len ? " late" : ""}">${esc(dur(b - a))} free${b - a < len ? " · tight" : ""}</span></button>`).join("");
+  return bar("Place on Your Day", `<button type="button" class="txtbtn" data-s="close">Cancel</button>`, `<button type="button" class="txtbtn strong" data-s="popen">Details</button>`) + `<div class="sh-body">
+    <div class="hero"><span class="big" style="--ic:var(${ic.c})">${ico(ic.k)}</span><h3>${esc(it.title)}</h3><span class="when">${esc(dur(len))}${durMins(t, today()) ? "" : " · no duration set, 30 min assumed"}</span></div>
+    <div class="lbl">Free Today</div><div class="list">${rows || `<div class="empty">No free time left today.</div>`}</div>
+    <div class="lbl">Or</div><div class="list"><button type="button" class="cell pk" data-s="pnext"><span>${t.scope === "work" ? "Next workday" : "Tomorrow"} morning</span><span class="v">9:00 AM</span></button></div>
   </div>`;
 }
 function gapSheet() {
@@ -2506,6 +2602,7 @@ function renderSheet() {
   if (s.type === "report") { const r = (S.reports || []).find(x => x.id === s.id); if (!r) { closeSheet(); return; } const b0 = sheet.querySelector(".sh-body"), y = b0 ? b0.scrollTop : 0; putSheet(reportSheet(r)); const b1 = sheet.querySelector(".sh-body"); if (b1) b1.scrollTop = y; return; }
   if (s.type === "touch") { const it = findItem(s.key); if (!it || it.kind !== "task") { closeSheet(); return; } sheet.innerHTML = touchSheet(it); return; }
   if (s.type === "quick") { sheet.innerHTML = quickSheet(); return; }
+  if (s.type === "place") { const it = findItem(s.key); if (!it || it.kind !== "task") { closeSheet(); return; } putSheet(placeSheet(it)); return; }
   if (s.type === "plan" || s.type === "resched" || s.type === "gap" || s.type === "settings") { const b0 = sheet.querySelector(".sh-body"), y = b0 ? b0.scrollTop : 0; putSheet(s.type === "plan" ? planSheet() : s.type === "resched" ? reschedSheet() : s.type === "gap" ? gapSheet() : settingsSheet()); const b1 = sheet.querySelector(".sh-body"); if (b1) b1.scrollTop = y; return; }
   if (s.type === "audit") { const a = S.audits.find(x => x.id === s.id); if (!a) { closeSheet(); return; } const b0 = sheet.querySelector(".sh-body"), y = b0 ? b0.scrollTop : 0; putSheet(auditSheet(a)); const b1 = sheet.querySelector(".sh-body"); if (b1) b1.scrollTop = y; return; }
   if (s.type === "editAudit") { sheet.innerHTML = auditForm(s.obj); return; }
@@ -2581,12 +2678,16 @@ function meetSheet(it) {
   const st = String(it.mstatus || "").toLowerCase(), stLabel = /tentative/.test(st) ? "Tentative" : /oof/.test(st) ? "Out of office" : "";
   const rows = [["Location", it.loc], ["Organizer", it.organizer], ["Attendees", it.attendees], ["Status", stLabel]].filter(x => x[1]);
   const et = ETYPE[it.etype] || ETYPE.event, bd = it.etype === "birthday", dd = diff(it.date);
-  return bar(et.l, "", `<button type="button" class="txtbtn strong" data-s="close">Done</button>`) + `<div class="sh-body">
+  const mk = it.cal === "Outlook" && !!it.time, brief = briefFor(it);
+  return bar(et.l, "", `<button type="button" class="txtbtn strong" data-s="close">Close</button>`) + `<div class="sh-body">
     <div class="hero"><span class="big" style="--ic:var(${ic.c})">${ico(ic.k)}</span><h3>${esc(bd ? bdayName(it.title) : it.title)}</h3><span class="when">${bd ? "Birthday · " : ""}${esc(rel(it.date))}${it.end && it.time ? ", " + fT(it.time) + " to " + fT(it.end) : bd || it.etype === "holiday" ? "" : ", all day"}${dd > 1 ? " · in " + dd + " days" : ""}</span></div>
     ${teams ? `<a class="btn primary" href="${esc(link)}" target="_blank" rel="noopener">${ico("people")}Join Teams</a>` : http ? `<a class="btn" href="${esc(link)}" target="_blank" rel="noopener">${ico("meet")}Open in Outlook</a>` : it.cal !== "Outlook" ? `<a class="btn" href="https://calendar.google.com/calendar/u/0/r/day/${esc(it.date.replace(/-/g, "/"))}" target="_blank" rel="noopener">${ico("meet")}Open in Google Calendar</a>` : ""}
     ${rows.length ? `<div class="list">${rows.map(([k, v]) => `<div class="cell"><span>${k}</span><span class="v">${esc(v)}</span></div>`).join("")}</div>` : ""}
+    ${brief ? `<button type="button" class="btn" data-s="mbrief" data-rid="${esc(brief.id)}">${ico("doc")}Open the Brief${brief.status === "new" ? " · New" : ""}</button>` : ""}
+    ${mk ? (it.status === "done" || it.status === "skipped" ? `<div class="banner" style="--late:var(${it.status === "done" ? "--done" : "--label2"})">${ico(it.status === "done" ? "check" : "skip")}${it.status === "done" ? "Done." : "Not attended."}</div><button type="button" class="btn" data-s="mreopen">${ico("refresh")}Reopen</button>` : `<div class="chips"><button type="button" class="btn grow" data-s="mdone">${ico("check")}Mark Done</button><button type="button" class="btn grow" data-s="mskip">${ico("skip")}Did Not Attend</button></div>`) : ""}
+    ${mk ? `<button type="button" class="btn" data-s="mfollow">${ico("plus")}Add a Follow-up Task</button>` : ""}
     ${bd && dd >= 0 ? `<button type="button" class="btn" data-s="bdtask">${ico("plus")}Remind Me to Wish ${esc(bdayName(it.title).split(" ")[0])}</button>` : ""}
-    <p class="foot"><span class="src">${esc(it.cal || "Google")}</span> From your ${esc(it.cal === "Outlook" ? "Outlook" : it.cal || "Google")} calendar.</p></div>`;
+    <p class="foot"><span class="src">${esc(it.cal || "Google")}</span> From your ${esc(it.cal === "Outlook" ? "Outlook" : it.cal || "Google")} calendar.${mk ? " Done closes the meeting and moves Now on. Follow-ups are yours to add." : ""}</p></div>`;
 }
 function itemSheet(it) {
   const isT = it.kind === "task", src = isT ? it.t : it.r, ic = itemIcon(it);
@@ -3094,6 +3195,13 @@ sheet.addEventListener("click", e => {
     if (a === "planskip") { markPlanned("skipped"); closeSheet(); toast("Planning skipped for today"); return; }
     return;
   }
+  if (s.type === "place") {
+    const it = findItem(s.key); if (!it || it.kind !== "task") { closeSheet(); return; }
+    if (a === "pgap") { delay(it, today(), hhmm(Number(b.dataset.a))); closeSheet(); return; }
+    if (a === "pnext") { const d = it.t.scope === "work" ? nextWorkday() : add(today(), 1); delay(it, d, "09:00"); closeSheet(); return; }
+    if (a === "popen") { S.sheet = { type: "item", key: s.key }; renderSheet(); return; }
+    return;
+  }
   if (s.type === "resched") {
     const ts = reschedTasks();
     if (a === "rs") { applyResched(b.dataset.k, ts); closeSheet(); return; }
@@ -3163,6 +3271,9 @@ sheet.addEventListener("click", e => {
   }
   if (s.type === "item") {
     const it = findItem(s.key); if (!it) return;
+    if (it.kind === "meet" && (a === "mdone" || a === "mskip" || a === "mreopen")) { markMeet(it, a === "mdone" ? "done" : a === "mskip" ? "skipped" : ""); renderSheet(); return; }
+    if (a === "mbrief" && it.kind === "meet") { openReport(b.dataset.rid); return; }
+    if (a === "mfollow" && it.kind === "meet") { const t = newTask(); const cl = CLIENTS.find(c => new RegExp(c.split(" ")[0], "i").test(it.title + " " + (it.organizer || ""))) || "Internal"; Object.assign(t, { scope: "work", area: cl, title: "", due: workdayFrom(diff(it.date) >= 0 ? it.date : today()), notes: `Follow-up from "${it.title}" on ${fD(it.date)}` }); S.sheet = { type: "editTask", obj: t, from: s.key }; renderSheet(); return; }
     if (a === "bdtask" && it.kind === "meet") { const t = newTask(); Object.assign(t, { scope: "personal", area: "Other", title: "Wish " + bdayName(it.title) + " a happy birthday", due: it.date, time: diff(it.date) === 0 ? hhmm(Math.min(Math.ceil((nowMin() + 15) / 15) * 15, 1425)) : "09:00", alert: true }); S.sheet = { type: "editTask", obj: t, from: s.key }; renderSheet(); return; }
     if (listClick(a, b, it)) return;
     if (a === "rpdone" && it.kind === "task") { const r = (S.reports || []).find(x => x.id === b.dataset.rid); if (r) { setReport(r, "done"); toast("Marked sent"); renderSheet(); } return; }
@@ -3227,7 +3338,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "4.1"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
+const APP_VERSION = "5.0"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(() => swConfig()).catch(() => {});
 /* The page opens from the saved copy at once. The check below asks GitHub for the live version (a fresh URL each time, so
    GitHub's own 10-minute cache can't hide it), saves the new page and switches straight away if you haven't touched anything yet;
