@@ -1064,8 +1064,8 @@ const inboxCount = () => (S.proposals || []).length;
 function renderNav() {
   const od = ready() ? overdueCount() : 0, ch = ready() ? chaseCount() : 0;
   const badge = (n, cls, lbl) => n ? `<span class="badge-n${cls ? " " + cls : ""}">${n}</span><span class="sr">${n} ${lbl}</span>` : "";
-  const tb = VIEWS.map(([k, l]) => `<button type="button" data-view="${k}" ${S.view === k ? 'aria-current="page"' : ""}><span class="b">${ico(k)}${k === "today" ? badge(od, "", "overdue") : k === "work" ? badge(ch, "chase", "to chase") : ""}</span>${l}</button>`).join("");
-  const sideN = { today: od ? od + " overdue" : "", work: ch ? ch + " to chase" : "" };
+  const tb = VIEWS.map(([k, l]) => `<button type="button" data-view="${k}" ${S.view === k ? 'aria-current="page"' : ""}><span class="b">${ico(k)}${k === "today" ? badge(od, "", "overdue") : ""}</span>${l}</button>`).join("");
+  const sideN = { today: od ? od + " overdue" : "", work: "" };
   const mb = modeSeg();
   const sd = `<div class="brand">Personal Assistant</div>` + mb + VIEWS.map(([k, l]) => `<button type="button" data-view="${k}" ${S.view === k ? 'aria-current="page"' : ""}>${ico(k)}${l}${sideN[k] ? `<span class="n">${sideN[k]}</span>` : ""}</button>`).join("");
   if (tb + sd + mb === navHtml) return;
@@ -2965,7 +2965,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "2.0"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
+const APP_VERSION = "2.1"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(() => swConfig()).catch(() => {});
 /* The page opens from the saved copy at once. The check below asks GitHub for the live version (a fresh URL each time, so
    GitHub's own 10-minute cache can't hide it), saves the new page and switches straight away if you haven't touched anything yet;
