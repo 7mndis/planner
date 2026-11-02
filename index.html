@@ -668,6 +668,10 @@ a.btn { text-decoration: none; }
 .pr .kind.engagement { color: #6A3FB8; background: rgba(122, 76, 194, .13); }
 :root[data-theme="dark"] .pr .kind.engagement { color: #B297DC; }
 .pr .kind.reopen { color: #A65A00; background: rgba(214, 128, 20, .14); }
+.pr .kind.chaser { color: #B0306A; background: rgba(196, 52, 120, .12); }
+:root[data-theme="dark"] .pr .kind.chaser { color: #F08CBB; }
+.pr .kind.brief { color: #0F7A8A; background: rgba(20, 140, 160, .13); }
+:root[data-theme="dark"] .pr .kind.brief { color: #6FD0DE; }
 :root[data-theme="dark"] .pr .kind.reopen { color: #F2A54A; }
 .pr.busy { opacity: .5; pointer-events: none; }
 /* gym progress */
@@ -1387,16 +1391,20 @@ function quickSheet() {
 }
 
 /* ---------- inbox: changes the Outlook scans proposed, each accepted or dismissed with one tap ---------- */
-const P_KIND = { add: "New task", update: "Update", close: "Close task", engagement: "Engagement", reopen: "Reopen" };
+const P_KIND = { add: "New task", update: "Update", close: "Close task", engagement: "Engagement", reopen: "Reopen", chaser: "Chaser", brief: "Brief" };
+/* 5.1: chasers and meeting briefs are proposed first; Accept only approves, and the 13:15 job prepares what was accepted. Dismiss keeps it on hold. */
+const PREP_KINDS = { chaser: 1, brief: 1 };
 /* An update whose note starts with "Reopen", or an add whose note starts with "Reopens", brings finished work back, so it is labelled Reopen. */
 const pLabel = (kind, note) => (kind === "update" && /^\s*reopen/i.test(String(note || ""))) || (kind === "add" && /^\s*reopens/i.test(String(note || ""))) ? "reopen" : kind;
 const FIELD_LBL = { stage: "Stage", owner: "Owner", next_action: "Next action", next_date: "Next action date", last_action: "Last action", last_date: "Last action date", status: "Status", target: "Target date" };
 function proposalRow(p) {
   const kind = String(p.kind || "").toLowerCase(), eng = p.sub || "", t = p.taskId ? S.tasks.find(x => x.id === p.taskId) : null;
   const head = kind === "engagement" ? `${esc(FIELD_LBL[p.field] || p.field || "Field")} → ${esc(isDay(p.newValue) ? fD(p.newValue) : p.newValue || "")}` : esc(p.title || (t && t.title) || "");
-  const meta = [eng ? esc(eng) : "", kind !== "engagement" && p.owner && p.owner !== "Me" ? "With " + esc(p.owner) : "", kind !== "engagement" && isDay(p.due) ? (p.owner && p.owner !== "Me" ? "Chase " : "Due ") + esc(rel(p.due)) : "", isDay(p.date) ? esc(fDM(p.date)) : ""].filter(Boolean).join('<span class="sep">·</span>');
+  const prep = PREP_KINDS[kind];
+  const meta = (prep ? [eng ? esc(eng) : "", kind === "chaser" && p.owner && p.owner !== "Me" ? "To " + esc(p.owner) : "", kind === "brief" && isDay(p.due) ? "Meeting " + esc(rel(p.due)) + (p.newValue ? " " + esc(fT(p.newValue)) : "") : "", "Prepared at 1:15 PM if accepted"]
+    : [eng ? esc(eng) : "", kind !== "engagement" && p.owner && p.owner !== "Me" ? "With " + esc(p.owner) : "", kind !== "engagement" && isDay(p.due) ? (p.owner && p.owner !== "Me" ? "Chase " : "Due ") + esc(rel(p.due)) : "", isDay(p.date) ? esc(fDM(p.date)) : ""]).filter(Boolean).join('<span class="sep">·</span>');
   const link = /^https?:\/\//i.test(String(p.link || "")) ? `<a class="btn sm" href="${esc(p.link)}" target="_blank" rel="noopener">${ico("mail")}Email</a>` : "", lbl = pLabel(kind, p.note);
-  return `<div class="pr${S.sheet && S.sheet.busy && S.sheet.busy[p.id] ? " busy" : ""}" data-pid="${esc(p.id)}"><div class="pr-h"><span class="kind ${esc(lbl)}">${esc(P_KIND[lbl] || kind)}</span><b>${head}</b></div>${meta ? `<div class="pr-m">${meta}</div>` : ""}${p.note ? `<div class="pr-n">${esc(p.note)}</div>` : ""}<div class="pr-a"><button type="button" class="btn sm primary" data-s="pacc">${ico("check")}Accept</button><button type="button" class="btn sm" data-s="pdis">Dismiss</button>${link}</div></div>`;
+  return `<div class="pr${S.sheet && S.sheet.busy && S.sheet.busy[p.id] ? " busy" : ""}" data-pid="${esc(p.id)}"><div class="pr-h"><span class="kind ${esc(lbl)}">${esc(P_KIND[lbl] || kind)}</span><b>${head}</b></div>${meta ? `<div class="pr-m">${meta}</div>` : ""}${p.note ? `<div class="pr-n">${esc(p.note)}</div>` : ""}<div class="pr-a"><button type="button" class="btn sm primary" data-s="pacc">${ico("check")}Accept</button><button type="button" class="btn sm" data-s="pdis">${prep ? "Hold" : "Dismiss"}</button>${link}</div></div>`;
 }
 /* ---------- Notifications: every alert the planner sent, Work and Personal, kept 30 days; read state is shared by both iPhones ---------- */
 const NOTE_READ = "pa-note-read";
@@ -1437,18 +1445,19 @@ function inboxSheet() {
   const by = {}; li.forEach(p => { (by[p.area || "Other"] = by[p.area || "Other"] || []).push(p); });
   const groups = Object.keys(by).sort((a, b) => CLIENTS.indexOf(a) - CLIENTS.indexOf(b) || a.localeCompare(b)).map(c => `<div class="lbl"><span class="dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(${CLIENT_VAR[c] || "--i-work"});margin-right:6px;vertical-align:1px"></span>${esc(c)} · ${by[c].length}</div><div class="list">${by[c].map(proposalRow).join("")}</div>`).join("");
   return bar("Inbox", "", `<button type="button" class="txtbtn strong" data-s="close">Done</button>`) + `<div class="sh-body">${tabs}
-    ${li.length ? `<p class="foot">${li.length === 1 ? "One change" : li.length + " changes"} proposed from your Outlook mail. Accept applies it to the planner; Dismiss leaves the planner as it is.</p>${li.length > 1 ? `<button type="button" class="btn primary" data-s="paccall">${ico("check")}Accept All (${li.length})</button>` : ""}${groups}` : `<div class="card"><div class="empty">Nothing waiting. The next mail scan runs on the next workday morning and afternoon.</div></div>`}
+    ${li.length ? `<p class="foot">${li.length === 1 ? "One item" : li.length + " items"} proposed. Accept applies a change to the planner, or approves a chaser or brief for preparation at 1:15 PM; Dismiss or Hold leaves it as it is.</p>${li.length > 1 ? `<button type="button" class="btn primary" data-s="paccall">${ico("check")}Accept All (${li.length})</button>` : ""}${groups}` : `<div class="card"><div class="empty">Nothing waiting. Mail scans and chaser and brief proposals run on workday mornings.</div></div>`}
   </div>`;
 }
 /* Sends the decision to the server, which applies it and returns the fresh planner data. */
 function decideProposals(ids, decision) {
   if (!ids.length) return;
-  const s = S.sheet; if (s && s.type === "inbox") { s.busy = s.busy || {}; ids.forEach(id => { s.busy[id] = 1; }); renderSheet(); }
+  const s = S.sheet, before = (S.proposals || []).slice(); if (s && s.type === "inbox") { s.busy = s.busy || {}; ids.forEach(id => { s.busy[id] = 1; }); renderSheet(); }
   api("applyProposals", ids, decision).then(r => {
     if (r && r.data) { applyData(r.data); S.syncedAt = Date.now(); saveCache(); }
     else S.proposals = (S.proposals || []).filter(p => !ids.includes(p.id)); // offline: the change is queued, so hide the rows now
     const n = r && Array.isArray(r.applied) ? r.applied.length : ids.length, f = r && Array.isArray(r.failed) ? r.failed : [];
-    toast(decision === "dismiss" ? (n === 1 ? "Dismissed" : `Dismissed ${n}`) : (n === 1 ? "Applied" : `Applied ${n}`) + (f.length ? `, ${f.length} could not be applied` : ""));
+    const prepOnly = ids.every(id => { const p = (before || []).find(x => x.id === id); return p && PREP_KINDS[String(p.kind || "").toLowerCase()]; });
+    toast(decision === "dismiss" ? (prepOnly ? (n === 1 ? "On hold" : `${n} on hold`) : n === 1 ? "Dismissed" : `Dismissed ${n}`) : (prepOnly ? (n === 1 ? "Approved for 1:15 PM" : `${n} approved for 1:15 PM`) : n === 1 ? "Applied" : `Applied ${n}`) + (f.length ? `, ${f.length} could not be applied` : ""));
     if (S.sheet && S.sheet.type === "inbox") { S.sheet.busy = {}; renderSheet(); }
     render(true);
   }).catch(e => { if (S.sheet && S.sheet.type === "inbox") { S.sheet.busy = {}; renderSheet(); } fail(e); });
@@ -3338,7 +3347,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "5.0"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
+const APP_VERSION = "5.1"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(() => swConfig()).catch(() => {});
 /* The page opens from the saved copy at once. The check below asks GitHub for the live version (a fresh URL each time, so
    GitHub's own 10-minute cache can't hide it), saves the new page and switches straight away if you haven't touched anything yet;
