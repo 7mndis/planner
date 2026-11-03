@@ -2574,8 +2574,8 @@ function settingsSheet() {
   const st = notifState(), busy = S.sheet && S.sheet.busy;
   const pushRow = !pushOK() ? "" : S.pushSub === undefined ? `<div class="list"><div class="empty">Checking this device.</div></div>`
     : S.pushSub ? `<div class="lbl">Item Alerts Come From</div><div class="seg" role="radiogroup" aria-label="Item alerts come from">${[["push", "Planner"], ["calendar", "Google Calendar"]].map(([k, l]) => `<button type="button" data-s="alsrc" data-v="${k}" aria-pressed="${alertMode() === k}" ${busy ? "disabled" : ""}>${l}</button>`).join("")}</div><p class="foot" style="margin-top:-10px">${busy === "alerts" ? "Switching. This takes up to a minute while the calendar side is updated." : alertMode() === "push" ? "Every item with Alert on notifies each iPhone where planner alerts are on, at its alert time, and opens the item when tapped. Turn alerts on for each iPhone you use." : "Item alerts come from the Planner Alerts calendar. Switch to Planner to get them as notifications that open the item."}</p>
-    <div class="list"><div class="cell"><span>Planner Alerts on This Device</span><span class="v">On</span></div><div class="cell"><button type="button" class="btn sm primary" data-s="pushtest" ${busy ? "disabled" : ""}>Send a Test</button><button type="button" class="btn sm" data-s="pushoff" ${busy ? "disabled" : ""}>Turn Off</button></div></div><p class="foot" style="margin-top:-10px">From the planner itself: Plan Your Day at 8 AM, and a nudge once when a timed task is missed. Tapping one opens the right screen.</p>`
-    : `<button type="button" class="btn primary" data-s="pushon" ${busy ? "disabled" : ""}>${ico("alert")}Turn On Planner Alerts</button><p class="foot" style="margin-top:-10px${alertMode() === "push" ? ';color:var(--late)' : ""}">${alertMode() === "push" ? "Item alerts come from the planner, and this device isn't receiving them yet. Turn it on here." : "Lets the planner itself notify this device: Plan Your Day at 8 AM and missed items."}</p>`;
+    <div class="list"><div class="cell"><span>Planner Alerts on This Device</span><span class="v">On</span></div><div class="cell"><button type="button" class="btn sm primary" data-s="pushtest" ${busy ? "disabled" : ""}>Send a Test</button><button type="button" class="btn sm" data-s="pushoff" ${busy ? "disabled" : ""}>Turn Off</button></div></div><p class="foot" style="margin-top:-10px">From the planner itself: Plan Your Day at 8 AM, one nudge when personal items are missed, To Approve when the Inbox has new proposals and Ready to Review when something is prepared. Tapping one opens the right screen.</p>`
+    : `<button type="button" class="btn primary" data-s="pushon" ${busy ? "disabled" : ""}>${ico("alert")}Turn On Planner Alerts</button><p class="foot" style="margin-top:-10px${alertMode() === "push" ? ';color:var(--late)' : ""}">${alertMode() === "push" ? "Item alerts come from the planner, and this device isn't receiving them yet. Turn it on here." : "Lets the planner itself notify this device: Plan Your Day at 8 AM, missed items, proposals to approve and items ready to review."}</p>`;
   const notif = st === "granted" ? `<div class="list"><div class="cell"><span>Notifications</span><span class="v">Allowed</span></div></div><p class="foot" style="margin-top:-10px">The app icon shows missed items only: overdue tasks, tasks whose time has passed and routines missed today (${badgeCount()} now).</p>${pushRow}`
     : st === "denied" ? `<div class="list"><div class="cell"><span>Notifications</span><span class="v">Off</span></div></div><p class="foot" style="margin-top:-10px">They were declined for this app. Turn them on in iPhone Settings, Notifications, Personal Assistant.</p>`
     : st === "default" ? `<button type="button" class="btn primary" data-s="notif">${ico("alert")}Allow Notifications</button><p class="foot" style="margin-top:-10px">iPhone asks once. After that the planner can notify you itself, the app icon shows how many tasks are due, and the planner appears in iPhone Settings, Notifications.</p>`
@@ -3347,7 +3347,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "5.1"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
+const APP_VERSION = "5.2"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(() => swConfig()).catch(() => {});
 /* The page opens from the saved copy at once. The check below asks GitHub for the live version (a fresh URL each time, so
    GitHub's own 10-minute cache can't hide it), saves the new page and switches straight away if you haven't touched anything yet;
@@ -3520,9 +3520,11 @@ async function loadAll(first, pre) {
 /* A link ending in #plan (from the 8 AM calendar alert or a shortcut) opens Plan Your Day. */
 function checkHash() {
   if (!S.ready || S.sheet) return;
-  const h = location.hash, t = h.match(/(?:^#|&)task=([^&]+)/), ro = h.match(/(?:^#|&)routine=([^&]+)/), pl = /(^#|&)plan\b/.test(h), rp = /(^#|&)reports\b/.test(h);
-  if (!t && !ro && !pl && !rp) return;
-  if (rp) { try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {} S.sub.work = "reports"; persist(); if (S.view !== "work") go("work"); else render(true); return; }
+  const h = location.hash, t = h.match(/(?:^#|&)task=([^&]+)/), ro = h.match(/(?:^#|&)routine=([^&]+)/), pl = /(^#|&)plan\b/.test(h), rp = /(^#|&)reports\b/.test(h), ib = /(^#|&)inbox\b/.test(h);
+  if (!t && !ro && !pl && !rp && !ib) return;
+  const readUrl = u => { if (S.notesOk) markNotesRead((S.notes || []).filter(n => !n.read && n.url === u).map(n => n.id)); };
+  if (rp) { readUrl("#reports"); try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {} S.sub.work = "reports"; persist(); if (S.view !== "work") go("work"); else render(true); return; }
+  if (ib) { readUrl("#inbox"); try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {} openSheet({ type: "inbox", tab: "mail", nf: "all" }); return; }
   if (S.notesOk) { const u = (t ? "#task=" + t[1] : ro ? "#routine=" + ro[1] : "#plan"); markNotesRead((S.notes || []).filter(n => !n.read && (n.url === u || n.url === decodeURIComponent(u))).map(n => n.id)); }
   try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
   if (ro) { const id = decodeURIComponent(ro[1]), r = S.routines.find(x => x.id === id); if (r) { if (S.view !== "home") go("home"); else render(true); openSheet({ type: "item", key: "routine:" + encodeURIComponent(id) + ":" + today() }); } return; }

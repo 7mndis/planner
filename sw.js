@@ -3,7 +3,7 @@
    Version checks (?check=) always go to GitHub. Calls to Google (your data) are never touched.
    Push: the planner's server sends an empty push; this worker asks the server what to show, shows it,
    updates the icon badge and opens the planner on the right screen when the notification is tapped. */
-const CACHE = "planner-v6";
+const CACHE = "planner-v7";
 const CFG = "planner-cfg";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icon-180.png", "icon-512.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES.map(f => new Request(f, { cache: "reload" })))).then(() => self.skipWaiting())); });
@@ -31,7 +31,11 @@ async function cfg() { try { const r = await (await caches.open(CFG)).match("cfg
 async function nextMessage() {
   const c = await cfg(), sub = await self.registration.pushManager.getSubscription();
   if (!c || !sub) return null;
-  const r = await fetch(c.api, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ key: c.key, fn: "getPush", args: [sub.endpoint] }), redirect: "follow", cache: "no-store" });
+  /* Capped at 20 seconds so a slow or stuck server never leaves the push without a notification (iOS drops the subscription
+     after pushes that show nothing). A timeout before the server answers keeps the messages queued for the next push; one after it
+     has answered loses them, which is rare and still better than every later notification showing the wrong text. */
+  const ctl = new AbortController(), tid = setTimeout(() => ctl.abort(), 20000);
+  let r; try { r = await fetch(c.api, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ key: c.key, fn: "getPush", args: [sub.endpoint, 2] }), redirect: "follow", cache: "no-store", signal: ctl.signal }); } finally { clearTimeout(tid); }
   const j = await r.json();
   return j && j.ok ? j.data : null;
 }
@@ -42,7 +46,9 @@ self.addEventListener("push", e => {
     if (!m) { try { m = await nextMessage(); } catch (x) {} }
     m = m || { title: "Planner", body: "Open the planner to see what's due." };
     try { if (typeof m.badge === "number" && self.navigator.setAppBadge) await (m.badge ? self.navigator.setAppBadge(m.badge) : self.navigator.clearAppBadge()); } catch (x) {}
-    await self.registration.showNotification(m.title || "Planner", { body: m.body || "", tag: m.tag || undefined, data: { url: m.url || "" }, icon: "icon-180.png" });
+    /* The server hands over every message waiting for this device (older ones that missed their own push come in "more"). */
+    const all = [m].concat(Array.isArray(m.more) ? m.more : []);
+    for (const x of all) await self.registration.showNotification(x.title || "Planner", { body: x.body || "", tag: x.tag || undefined, data: { url: x.url || "" }, icon: "icon-180.png" });
   })());
 });
 self.addEventListener("notificationclick", e => {
