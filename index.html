@@ -2004,7 +2004,8 @@ function timelineHtml(p) {
   return html;
 }
 /* Top 3 as numbers: a Map of task id to 1, 2 or 3, carried on RO so a row shows the number in place of its icon wherever it sits (the Day, Unplanned, Overdue, This week). */
-const top3Map = p => new Map(focusList(p).map((it, i) => [it.id, i + 1]));
+/* 5.7: the Top 3 numbers are no longer shown; rows keep their own icon. */
+const top3Map = p => new Map();
 /* Ready to review: what the jobs prepared and you have not opened yet. Four rows, then a line to the rest under Work, Review. */
 function reviewHtml() {
   const li = (S.reports || []).filter(r => r.status === "new").sort((a, b) => String(b.at).localeCompare(String(a.at))); if (!li.length) return "";
@@ -2058,8 +2059,8 @@ function viewHome() {
   RO = { top3: t3 }; const tlInner = p.timed.length || props.length ? `<div class="tl">${timelineHtml(p)}</div>` : `<div class="empty">Nothing on your day yet. Place an unplanned task or add one with +.</div>`; RO = {};
   const tl = `<div class="card tlc"><div class="ch static">Day<span class="cnt">${p.timed.length - tlOpen}/${p.timed.length}</span></div>${propBar}${tlInner}</div>`;
   const work = p.work && !p.wk && workHours();
-  let soon = "";
-  if (!S.hf || S.hf === "personal") { const li = Array.from({ length: 7 }, (_, i) => add(d, i + 1)).flatMap(x => (S.meetings[x] || []).map(m => mItem(m, x))).filter(it => it.etype === "birthday" || it.etype === "holiday").sort(byEvent); if (li.length) { RO = { planner: true, evDate: true }; soon = cardHtml(li.map(rowHtml).join(""), chHead("Next", "--i-bday", li.length, "ev:soon", true)); RO = {}; } }
+  let soon = ""; // 5.7: Next (birthdays and holidays) removed from Today; they stay in the Calendar
+  if (false) { const li = Array.from({ length: 7 }, (_, i) => add(d, i + 1)).flatMap(x => (S.meetings[x] || []).map(m => mItem(m, x))).filter(it => it.etype === "birthday" || it.etype === "holiday").sort(byEvent); if (li.length) { RO = { planner: true, evDate: true }; soon = cardHtml(li.map(rowHtml).join(""), chHead("Next", "--i-bday", li.length, "ev:soon", true)); RO = {}; } }
   const note = S.meetNote ? `<p class="foot">${esc(S.meetNote)}</p>` : "";
   RO = { top3: t3 }; const od = overdueHtml(p); RO = {};
   const c1 = od + unplannedHtml(p) + (work ? waitingHtml() : "") + alsoTodayHtml(p), c2 = tl + note + soon;
@@ -2068,7 +2069,6 @@ function viewHome() {
   ${upNext()}
   ${planBanner()}
   ${work ? reviewHtml() : ""}
-  ${capacityHtml(p)}
   ${c1 ? `<div class="cols two"><div class="col">${c1}</div><div class="col">${c2}</div></div>` : `<div class="col">${c2}</div>`}
   <p class="foot" style="text-align:center"><button type="button" class="txtbtn sm" data-act="settings">Settings</button> · Version ${esc(APP_VERSION)}</p>`;
 }
@@ -2145,7 +2145,7 @@ function weekCards() {
   const overdue = ts.filter(t => isDay(t.due) && diff(t.due) < 0 && !sessOf(t).some(x => x.date >= d0)).map(tItem).sort(focusRank);
   const later = [], none = [];
   ts.forEach(t => { const li = sessOf(t); if (li.length) { if (!li.some(x => x.date >= d0 && x.date <= last) && li.some(x => x.date > last)) later.push(sessItem(t, li.find(x => x.date > last))); return; } if (!isDay(t.due)) none.push(tItem(t)); else if (t.due > last) later.push(tItem(t)); });
-  const cards = [loadCard(days)], t3 = (() => { const hf = S.hf; S.hf = ""; try { return top3Map(todayParts()); } finally { S.hf = hf; } })(); // the Home chip must not hide the Top 3 here
+  const cards = [], t3 = (() => { const hf = S.hf; S.hf = ""; try { return top3Map(todayParts()); } finally { S.hf = hf; } })(); // the Home chip must not hide the Top 3 here
   RO = { ctx: true, top3: t3 };
   if (overdue.length) cards.push(cardHtml(overdue.map(rowHtml).join("") + `<div class="card-acts"><button type="button" class="btn sm primary" data-act="resched">${ico("clock")}Reschedule All (${overdue.length})</button></div>`, chHead("Overdue", "--late", overdue.length, "wk:overdue")));
   RO = {};
@@ -2288,7 +2288,7 @@ function viewGym() {
   const prs = recentPRs(), prOf2 = n => prs.find(p => p.name === n);
   const exRow = x => { const u = x.unit || "kg", h = x.sets ? historyFor(x.name, u) : [], last = h[h.length - 1], best = h.length ? Math.max(...h.map(p => p.w)) : 0, pr = prOf2(x.name); return `<div class="exrow"><b>${esc(x.name)}${pr ? `<span class="chip pr">PR +${fmtW(pr.gain)} ${esc(pr.u)}</span>` : ""}</b><span class="v">${x.sets ? (last ? `Last ${fmtW(last.w)} ${esc(u)} · best ${fmtW(best)} ${esc(u)}` : "No weights logged yet") : isCardio(x) ? esc(cardioTxt(cardioOf(x))) : esc(x.note || "")}</span></div>`; };
   const progCards = GROUPS.filter(g => by[g]).map(g => cardHtml(by[g].map(exRow).join(""), chHead(g, "--k-gym", by[g].length, "g:" + g, g !== "Push" && g !== "Pull" && g !== "Legs")));
-  const prCard = prs.length ? cardHtml(prs.slice(0, 8).map(p => `<div class="exrow"><b>${esc(p.name)}</b><span class="v">${esc(fD(p.d))} · ${fmtW(p.w)} ${esc(p.u)} <span class="chip pr">+${fmtW(p.gain)}</span></span></div>`).join(""), chHead("Personal Bests · 30 Days", "--done", Math.min(prs.length, 8), "g:pr")) : "";
+  const prCard = false && prs.length ? cardHtml(prs.slice(0, 8).map(p => `<div class="exrow"><b>${esc(p.name)}</b><span class="v">${esc(fD(p.d))} · ${fmtW(p.w)} ${esc(p.u)} <span class="chip pr">+${fmtW(p.gain)}</span></span></div>`).join(""), chHead("Personal Bests · 30 Days", "--done", Math.min(prs.length, 8), "g:pr")) : "";
   // gym tasks (membership, gear) and recent sessions
   const tasks = S.tasks.filter(t => t.scope === "personal" && t.area === "Gym" && tOpen(t) && match(t)).map(tItem).sort(byDate);
   RO = {}; const taskCard = tasks.length ? cardHtml(tasks.map(rowHtml).join(""), chHead("Gym Tasks", null, tasks.length, "g:tasks")) : "";
@@ -3490,7 +3490,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "5.6"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
+const APP_VERSION = "5.7"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(() => swConfig()).catch(() => {});
 /* The page opens from the saved copy at once. The check below asks GitHub for the live version (a fresh URL each time, so
    GitHub's own 10-minute cache can't hide it), saves the new page and switches straight away if you haven't touched anything yet;
