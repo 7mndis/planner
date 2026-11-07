@@ -846,7 +846,8 @@ const CATF = [["", "All", ""], ["work", "Work", "--i-work"], ["gym", "Gym", "--k
 const catOfSrc = x => x.scope === "work" ? "work" : x.area === "Gym" ? "gym" : "personal";
 /* The category of any item on screen: meetings from Outlook are work, Google Calendar events personal. */
 const catOf = it => it.kind === "meet" ? (it.cal === "Outlook" ? "work" : "personal") : catOfSrc(it.kind === "routine" ? it.r : it.t);
-const catOk = it => !S.hf || catOf(it) === S.hf;
+/* Version 6: the category chip lives on the Calendar only, so it filters nothing anywhere else (Today, gaps, Reschedule All). */
+const catOk = it => !S.hf || S.view !== "cal" || catOf(it) === S.hf;
 /* Work items stay off Home and the Calendar on Friday and Saturday. */
 const offDay = (it, d) => it.kind !== "meet" && catOf(it) === "work" && isWeekend(d || it.date || today());
 /* Work hours: Sunday to Thursday 8 AM to 6 PM. Outside them the Work card on Home folds to one line. */
@@ -994,6 +995,7 @@ addEventListener("online", () => { showOffline(); flush(); });
 addEventListener("offline", showOffline);
 setInterval(() => { if (outbox.length) flush(); }, 30000);
 try { const v = JSON.parse(localStorage.getItem("pa5") || "{}"); if (v.view && VIEWS.some(x => x[0] === v.view)) S.view = v.view; if (v.sub) Object.assign(S.sub, v.sub); if (!WORK_SUBS.some(x => x[0] === S.sub.work)) S.sub.work = "week"; if (!PERS_SUBS.some(x => x[0] === S.sub.personal)) S.sub.personal = "cats"; if (v.fold && typeof v.fold === "object") S.fold = v.fold; if (typeof v.cf === "string" && CLIENTS.includes(v.cf)) S.cf = v.cf; if (["month", "week", "3day", "day"].includes(v.calMode)) S.calMode = v.calMode; if (typeof v.pf === "string" && PERS_CATS.includes(v.pf)) S.pf = v.pf; if (typeof v.hf === "string" && CATF.some(x => x[0] === v.hf)) S.hf = v.hf; if (isArea(v.area)) S.area = v.area; } catch (e) {}
+S.cf = ""; S.pf = ""; // Version 6: no client or category chips on Work and Personal
 const persist = () => { try { localStorage.setItem("pa5", JSON.stringify({ view: S.view, sub: S.sub, fold: S.fold, cf: S.cf, pf: S.pf, hf: S.hf, calMode: S.calMode, area: S.area })); } catch (e) {} };
 
 /* ---------- time, Bahrain ---------- */
@@ -2024,9 +2026,10 @@ function unplannedHtml(p) {
   return cardHtml(`<div class="pills">${li.map(pill).join("")}</div>${acts}`, chHead("Unplanned", null, open.length ? `${open.length} to place` : "All placed", "t:unplanned", !open.length));
 }
 /* Also today: all-day items and routines without a time (the Morning block, supplements, gym on a rest day), grouped the usual way. Tasks live in Unplanned. */
-/* 5.8: Also Today is gone as a card. All-day items and untimed routines sit at the top of the Day card under "Anytime". */
+/* Anytime, at the top of the Day card: all-day items, then untimed routines and tasks (Unplanned and Also Today before Version 6). A task is given a time from its sheet or from a free gap on the rail. */
 function anytimeHtml(p) {
-  const li = [...p.allDay, ...p.anytime.filter(it => it.kind !== "task")];
+  const shown = new Set(propsNow().map(x => x.id));
+  const li = [...p.allDay, ...p.anytime.filter(it => it.kind !== "task"), ...p.anytime.filter(it => it.kind === "task" && !shown.has(it.id)).sort(byPri)];
   if (!li.length) return "";
   const open = li.filter(isOpen).length, k = fk("g", "td", "anytime"), f = folded(k, open === 0);
   RO = { ctx: true, planner: true }; const rows = rgRows(li, "td:any"); RO = {};
@@ -2059,13 +2062,15 @@ function waitingHtml() {
   return cardHtml(inner + `<button type="button" class="arow" data-act="gowork" data-sub="chase"><span class="itile" style="--ic:var(--i-meet)">${ico("people")}</span><span class="ttl"><span class="tt">All waiting items</span>${late ? `<span class="meta"><span class="late">${late} overdue</span></span>` : ""}</span>${chevR}</button>`, chHead("Waiting On", "--i-meet", li.length, "t:waiting"));
 }
 /* Home: Today. Now on top, then the morning plan, what is ready to review, progress, overdue, unplanned pills, the Day rail, waiting items, also today and what is next. */
-function viewHome() {
+/* Version 6: Today shows everything (no category chips), so the Calendar's chip never hides anything here. */
+function viewHome() { const hf = S.hf; S.hf = ""; try { return viewHome6(); } finally { S.hf = hf; } }
+function viewHome6() {
   const p = todayParts(), d = p.d, t3 = top3Map(p);
   const head = `<header class="navbar"><div><h1>Today</h1><div class="sub">${esc(fDL(d))}</div></div><div class="acts">${inboxBtn()}${rfBtn()}<button type="button" class="icon-btn" data-act="new" aria-label="New task">${ico("plus")}</button></div></header>`;
   const props = propsNow();
   const propBar = props.length ? `<div class="propbar"><span>${props.length} proposed</span><button type="button" class="btn sm primary" data-act="paccall">Accept All</button><button type="button" class="btn sm" data-act="pclear">Clear</button></div>` : "";
   const tlOpen = p.timed.filter(isOpen).length;
-  RO = { top3: t3 }; const tlInner = p.timed.length || props.length ? `<div class="tl">${timelineHtml(p)}</div>` : `<div class="empty">Nothing on your day yet. Place an unplanned task or add one with +.</div>`; RO = {};
+  RO = { top3: t3 }; const tlInner = p.timed.length || props.length ? `<div class="tl">${timelineHtml(p)}</div>` : `<div class="empty">Nothing timed today. Tap + to add something.</div>`; RO = {};
   const any = anytimeHtml(p);
   const tl = `<div class="card tlc"><div class="ch static">Day<span class="cnt">${p.timed.length - tlOpen}/${p.timed.length}</span></div>${any}${propBar}${any && !(p.timed.length || props.length) ? "" : tlInner}</div>`;
   const work = p.work && !p.wk && workHours();
@@ -2073,12 +2078,9 @@ function viewHome() {
   if (false) { const li = Array.from({ length: 7 }, (_, i) => add(d, i + 1)).flatMap(x => (S.meetings[x] || []).map(m => mItem(m, x))).filter(it => it.etype === "birthday" || it.etype === "holiday").sort(byEvent); if (li.length) { RO = { planner: true, evDate: true }; soon = cardHtml(li.map(rowHtml).join(""), chHead("Next", "--i-bday", li.length, "ev:soon", true)); RO = {}; } }
   const note = S.meetNote ? `<p class="foot">${esc(S.meetNote)}</p>` : "";
   RO = { top3: t3 }; const od = overdueHtml(p); RO = {};
-  const c1 = od + unplannedHtml(p) + (work ? waitingHtml() : ""), c2 = tl + note + soon;
+  const c1 = od, c2 = tl + note + soon; // Version 6: Unplanned joins Anytime; Ready to Review and Waiting On live in Work only
   return `${head}
-  ${homeChips()}
   ${upNext()}
-  ${planBanner()}
-  ${work ? reviewHtml() : ""}
   ${c1 ? `<div class="cols two"><div class="col">${c1}</div><div class="col">${c2}</div></div>` : `<div class="col">${c2}</div>`}
   <p class="foot" style="text-align:center"><button type="button" class="txtbtn sm" data-act="settings">Settings</button> · Version ${esc(APP_VERSION)}</p>`;
 }
@@ -2163,9 +2165,9 @@ function weekCards() {
     const items = [...ts.flatMap(t => taskItemsOn(t, dd)), ...S.routines.filter(r => r.scope === "work" && r.active !== false && cfOk(r) && match(r) && occursOn(r, dd)).map(r => occ(r, dd))].sort(rank);
     const open = items.filter(isOpen).length;
     RO = { ctx: true, planner: true, top3: dd === d0 ? t3 : null };
-    const inner = items.length ? items.map(rowHtml).join("") : `<div class="empty">Nothing planned${dd === d0 ? " today" : ""}.</div>`;
+    const inner = items.map(rowHtml).join("");
     RO = {};
-    cards.push(cardHtml(inner, `<button type="button" class="ch" data-act="fold" data-f="${esc(fk("c", "wk:" + dd))}" data-o="${folded(fk("c", "wk:" + dd)) ? 0 : 1}" aria-expanded="${!folded(fk("c", "wk:" + dd))}"><span class="dot" style="background:var(${dd === d0 ? "--i-work" : "--label2"})"></span>${esc(rel(dd))}<span class="cnt">${items.length - open}/${items.length}</span>${loadTag(dd)}${chev}</button>`));
+    if (items.length) cards.push(cardHtml(inner, `<button type="button" class="ch" data-act="fold" data-f="${esc(fk("c", "wk:" + dd))}" data-o="${folded(fk("c", "wk:" + dd)) ? 0 : 1}" aria-expanded="${!folded(fk("c", "wk:" + dd))}"><span class="dot" style="background:var(${dd === d0 ? "--i-work" : "--label2"})"></span>${esc(rel(dd))}<span class="cnt">${open || ""}</span>${chev}</button>`));
   });
   RO = { ctx: true };
   if (later.length) cards.push(cardHtml(later.sort(byDate).map(rowHtml).join(""), chHead("Later", null, later.length, "wk:later", true)));
@@ -2220,29 +2222,29 @@ function workDone() {
 function viewWork() {
   const s = S.sub.work;
   const head = `<header class="navbar cat"><h1>Work</h1>${areaBar()}<div class="acts">${searchBtn()}<button type="button" class="icon-btn" data-act="${s === "eng" ? "newaudit" : "new"}" aria-label="New ${s === "eng" ? "engagement" : "task"}">${ico("plus")}</button></div></header>
-  ${S.engOk ? "" : `<p class="foot late">Update the back end to save engagements.</p>`}<div class="tools">${segHtml("Show", WORK_SUBS, s, "sub")}${chipRow()}${searchField()}</div>`;
+  ${S.engOk ? "" : `<p class="foot late">Update the back end to save engagements.</p>`}<div class="tools">${segHtml("Show", WORK_SUBS, s, "sub")}${searchField()}</div>`;
   const cards = workBody(s);
   const empty = S.q ? "Nothing matches your search." : S.cf && s !== "reports" ? `Nothing here for ${esc(S.cf)}.` : s === "week" ? "Nothing on you. Tap + to add a task." : s === "chase" ? "Nothing waiting on anyone." : s === "eng" ? "No engagements yet. Tap + to add one." : s === "reports" ? "Nothing to review yet. Chaser drafts, meeting briefs and status notes from the scheduled jobs appear here." : "Finished tasks, closed engagements and ended routines appear here.";
   return head + (cards.length ? twoCols(cards) : cardHtml(`<div class="empty">${empty}</div>`));
 }
 /* ---------- Personal: Tasks (by date), Routines (by how they repeat), Done ---------- */
 function viewPersonal() {
-  const s = S.sub.personal;
-  const head = `<header class="navbar cat"><h1>Personal</h1>${areaBar()}<div class="acts">${searchBtn()}<button type="button" class="icon-btn" data-act="${s === "routines" ? "newr" : "new"}" aria-label="New ${s === "routines" ? "routine" : "task"}">${ico("plus")}</button></div></header>
-  <div class="tools">${segHtml("Show", PERS_SUBS, s, "sub")}${catChipRow()}${searchField()}</div>`;
+  const s = "cats"; // Version 6: one list by category, routines inside each; Done folds at the bottom
+  const head = `<header class="navbar cat"><h1>Personal</h1>${areaBar()}<div class="acts">${searchBtn()}<button type="button" class="icon-btn" data-act="new" aria-label="New">${ico("plus")}</button></div></header>
+  ${S.qOpen || S.q ? `<div class="tools">${searchField()}</div>` : ""}`;
   let cards;
   if (s === "cats") {
     // like Clients in Work: one card per category holding its open tasks (soonest first) and its routines
-    const ts = S.tasks.filter(t => isPers(t) && tOpen(t) && match(t)).map(tItem).sort(byDayPri);
+    const ts = S.tasks.filter(t => t.scope === "personal" && tOpen(t) && match(t)).map(tItem).sort(byDayPri); // gym tasks (membership, gear) sit here under Gym
     const rs = S.routines.filter(r => isPers(r) && r.active !== false && match(r)).map(r => nextOcc(r) || occ(r, today())).sort((a, b) => (a.r.time || "99").localeCompare(b.r.time || "99"));
     const cat = a => CATS.includes(a) ? a : "Other";
-    cards = PERS_CATS.filter(c => !S.pf || c === S.pf).map(c => [c, ts.filter(i => cat(i.area) === c), rs.filter(o => cat(o.area) === c)]).filter(x => x[1].length || x[2].length).map(([c, a, b]) => {
+    cards = CATS.map(c => [c, ts.filter(i => cat(i.area) === c), rs.filter(o => cat(o.area) === c)]).filter(x => x[1].length || x[2].length).map(([c, a, b]) => {
       RO = {}; const tr = a.map(rowHtml).join(""); RO = { rfreq: true }; const rr = b.map(rowHtml).join(""); RO = {};
       const late = a.filter(i => isDay(i.t.due) && diff(i.t.due) < 0).length;
       return cardHtml((a.length && b.length ? subGroup("Tasks", tr, "cat:" + c) + subGroup("Routines", rr, "cat:" + c) : tr + rr), chHead(c, CAT_VAR[c] || "--k-other", (a.length + b.length) + (late ? ` · ${late} overdue` : ""), "cat:" + c));
     });
     RO = { ctx: true };
-    const dl = [...S.routines.filter(r => isPers(r) && r.active === false && pfOk(r.area) && match(r)).map(r => ({ ...occ(r, today()), status: "ended" })), ...S.tasks.filter(t => isPers(t) && !tOpen(t) && pfOk(t.area) && match(t)).sort((a, b) => String(b.updated || "").localeCompare(String(a.updated || ""))).map(tItem)];
+    const dl = [...S.routines.filter(r => isPers(r) && r.active === false && match(r)).map(r => ({ ...occ(r, today()), status: "ended" })), ...S.tasks.filter(t => t.scope === "personal" && !tOpen(t) && match(t)).sort((a, b) => String(b.updated || "").localeCompare(String(a.updated || ""))).map(tItem)];
     if (dl.length) cards.push(cardHtml(dl.slice(0, 40).map(rowHtml).join(""), chHead("Done", "--done", dl.length, "p:doneall", true)));
     RO = {};
   }
@@ -2287,7 +2289,7 @@ function viewGym() {
   let hero = "";
   const todays = gymOn(d0);
   if (todays.length) { const it = todays[0], g = gymProgress(it), st = it.status === "done" ? "Session done" : it.status === "progress" ? "In-progress" : it.status === "missed" ? "Missed · still open" : "Today's session"; hero = `<button type="button" class="gym-hero" data-act="dayopen" data-k="${esc(key(it))}"><span class="big">${ico("Gym")}</span><span><span class="ey">${esc(st)}${it.time ? " · " + esc(fT(it.time)) : ""}${itemMins(it, d0) ? " · " + esc(dur(itemMins(it, d0))) : ""}</span><b>${esc(it.title.replace(/^Gym:\s*/i, ""))}</b><small>${g.all ? `${g.done} of ${g.all} exercises done` : "No exercises yet"}</small></span>${chevR}</button>`; }
-  else { let nx = null, dd = d0; for (let i = 1; i < 14 && !nx; i++) { dd = add(d0, i); const li = gymOn(dd); if (li.length) nx = li[0]; } hero = nx ? `<button type="button" class="gym-hero" data-act="dayopen" data-k="${esc(key(nx))}"><span class="big">${ico("Gym")}</span><span><span class="ey">Rest day · next session ${esc(rel(nx.date).toLowerCase())}${nx.time ? ", " + esc(fT(nx.time)) : ""}</span><b>${esc(nx.title.replace(/^Gym:\s*/i, ""))}</b><small>${itemsOf(nx).length} exercises planned</small></span>${chevR}</button>` : `<div class="card"><div class="empty">No gym routine yet. Add one under Personal, Routines with the Gym category.</div></div>`; }
+  else { let nx = null, dd = d0; for (let i = 1; i < 14 && !nx; i++) { dd = add(d0, i); const li = gymOn(dd); if (li.length) nx = li[0]; } hero = nx ? `<button type="button" class="gym-hero" data-act="dayopen" data-k="${esc(key(nx))}"><span class="big">${ico("Gym")}</span><span><span class="ey">Rest day · next session ${esc(rel(nx.date).toLowerCase())}${nx.time ? ", " + esc(fT(nx.time)) : ""}</span><b>${esc(nx.title.replace(/^Gym:\s*/i, ""))}</b><small>${itemsOf(nx).length} exercises planned</small></span>${chevR}</button>` : `<div class="card"><div class="empty">No gym routine yet. Tap + and add one with a repeat, for example "Gym Push every Sunday 6pm".</div></div>`; }
   // the week: Sunday to Saturday, with the state of each day's session
   const wk = Array.from({ length: 7 }, (_, i) => add(ws, i)).map(dd => { const li = gymOn(dd), it = li[0], cls = [dd === d0 ? "today" : "", dd === sel ? "sel" : "", it ? (it.status === "done" ? "done" : it.status === "missed" ? "miss" : "on") : ""].filter(Boolean).join(" "); return `<button type="button" class="${cls}" data-act="gymday" data-d="${dd}" aria-label="${esc(fDL(dd))}${it ? ", " + esc(it.title) : ", rest"}" aria-pressed="${dd === sel}">${DAYS[wd(dd)]}<b>${Number(dd.slice(8))}</b><i></i></button>`; }).join("");
   const selLi = gymOn(sel);
@@ -2304,7 +2306,7 @@ function viewGym() {
   RO = {}; const taskCard = tasks.length ? cardHtml(tasks.map(rowHtml).join(""), chHead("Gym Tasks", null, tasks.length, "g:tasks")) : "";
   const recent = Object.values(S.logs).filter(l => l.routineId && gymRoutines().some(r => r.id === l.routineId) && l.date < d0 && l.checks && Object.keys(l.checks).length).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 6);
   const recentCard = recent.length ? cardHtml(recent.map(l => { const r = gymRoutines().find(x => x.id === l.routineId), n = Object.keys(l.checks).length, all = (r.items || []).length, sets = Object.values(l.checks).filter(v => v && v.s).length; return `<button type="button" class="rp" data-act="dayopen" data-k="${esc("routine:" + encodeURIComponent(r.id) + ":" + l.date)}"><span class="dot" style="background:var(${l.status === "done" ? "--done" : "--label2"})"></span><span class="ttl"><span class="tt">${esc(r.title.replace(/^Gym:\s*/i, ""))}</span><span class="meta">${esc(fD(l.date))}<span class="sep">·</span>${n} of ${all} exercises${sets ? `<span class="sep">·</span>${sets} with weights` : ""}</span></span>${chevR}</button>`; }).join(""), chHead("Recent Sessions", null, recent.length, "g:recent", true)) : "";
-  return head + `<div class="cols two"><div class="col">${hero}${weekCard}${taskCard}${recentCard}</div><div class="col">${prCard}${progCards.join("")}</div></div>`;
+  return head + `<div class="cols two"><div class="col">${hero}${weekCard}</div><div class="col">${progCards.join("")}</div></div>`; // Version 6: gym tasks live in Personal; Recent Sessions and Personal Bests removed
 }
 
 function applyMeetings(r, from, to) {
@@ -3500,7 +3502,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "5.8"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
+const APP_VERSION = "6.0"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(() => swConfig()).catch(() => {});
 /* The page opens from the saved copy at once. The check below asks GitHub for the live version (a fresh URL each time, so
    GitHub's own 10-minute cache can't hide it), saves the new page and switches straight away if you haven't touched anything yet;
