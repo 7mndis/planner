@@ -78,13 +78,14 @@ html, body { min-height: 100%; }
 .navbar .acts { display: flex; gap: 6px; flex: none; }
 .navbar h1 { margin: 0; font-size: 2rem; font-weight: 700; letter-spacing: -.02em; line-height: 1.1; }
 /* Areas: Work, Gym and Personal share one tab; this switcher sits under the title. Each segment is a full 44px target with its category colour on the icon. */
-.areabar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 3px; margin-top: -12px; background: var(--fill); border-radius: 13px; }
-.areabar button { border: 0; background: none; min-height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 7px; font-size: .94rem; font-weight: 600; color: var(--label2); padding: 0 8px; transition: background-color .2s, color .2s, transform .16s cubic-bezier(.2, .8, .2, 1); }
-.areabar button svg { width: 19px; height: 19px; color: var(--ic); opacity: .55; transition: opacity .2s; }
+.navbar.cat { align-items: center; }
+.navbar.cat h1 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } /* the switcher is the title on phones */
+.areabar { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; padding: 3px; background: var(--fill); border-radius: 13px; }
+.areabar button { border: 0; background: none; min-height: 44px; min-width: 0; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: .9rem; font-weight: 600; color: var(--label2); padding: 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: background-color .2s, color .2s, transform .16s cubic-bezier(.2, .8, .2, 1); }
+.areabar button svg { display: none; }
 .areabar button[aria-pressed="true"] { background: var(--seg-on, var(--card)); color: var(--label); box-shadow: 0 1px 3px rgba(0, 0, 0, .14); }
-.areabar button[aria-pressed="true"] svg { opacity: 1; }
 .areabar button:active { transform: scale(.97); }
-.areabar + .tools { margin-top: -10px; }
+.foot.late { color: var(--late); margin: -12px 0 0; }
 .navbar .sub { color: var(--label2); font-size: .88rem; margin-top: 3px; }
 .icon-btn { position: relative; width: 44px; height: 44px; border-radius: 22px; border: 0; background: var(--card); color: var(--label); display: grid; place-items: center; flex: none; }
 .icon-btn svg { width: 22px; height: 22px; }
@@ -494,8 +495,8 @@ a.btn { text-decoration: none; }
   .side button.in { padding-left: 22px; }
   .side .n { margin-left: auto; color: var(--label2); font-size: .82rem; font-variant-numeric: tabular-nums; }
   .tabbar, .topbar { display: none; }
-  .areabar { display: none; } /* the sidebar lists Work, Gym and Personal on wide screens */
-  .areabar + .tools { margin-top: 0; }
+  .areabar { display: none; } /* the sidebar lists Work, Gym and Personal on wide screens, so the title shows instead */
+  .navbar.cat h1 { position: static; width: auto; height: auto; overflow: visible; clip: auto; flex: 1; }
   .side .mode { margin: 0 0 10px; }
   .main { padding-block: 28px 40px; padding-left: 32px; padding-right: 32px; }
   .cols.two { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
@@ -647,6 +648,17 @@ a.btn { text-decoration: none; }
 .qa-bar svg { width: 20px; height: 20px; color: var(--label2); flex: none; }
 .qa-bar input { flex: 1; min-width: 0; border: 0; background: none; font-size: 1rem; padding: 12px 0; outline: none; color: var(--label); }
 .qa-bar .btn { min-height: 40px; padding: 0 14px; }
+.qa-opts { display: grid; gap: 4px; }
+.qo { display: grid; grid-template-columns: 74px minmax(0, 1fr); align-items: center; gap: 8px; min-height: 48px; }
+.qo .ql { font-size: .82rem; font-weight: 600; color: var(--label2); padding-left: 4px; }
+.qo .qc { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 4px 2px; -webkit-overflow-scrolling: touch; }
+.qo .qc::-webkit-scrollbar { display: none; }
+.qo .cfc { min-height: 38px; }
+.cfc.on { background: var(--ic, var(--label)); color: var(--bg); }
+.qpick { position: relative; overflow: hidden; cursor: pointer; }
+.qpick input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; border: 0; padding: 0; margin: 0; cursor: pointer; }
+.qa-hint b { color: var(--label); font-weight: 600; }
+.qmore { justify-self: start; margin-top: 4px; }
 .qa-prev { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 4px; }
 .qa-prev:empty { display: none; }
 .qa-prev .chip { font-size: .76rem; padding: 3px 9px; }
@@ -826,7 +838,7 @@ const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
    Areas holds the three category screens behind a switcher; Today and Calendar show all three, with a chip to narrow to one. S.view stays the screen showing (home, work, gym, personal, cal). */
 const VIEWS = [["home", "Today"], ["work", "Work"], ["gym", "Gym"], ["personal", "Personal"], ["cal", "Calendar"]];
 const AREAS = [["work", "Work", "--i-work"], ["gym", "Gym", "--k-gym"], ["personal", "Personal", "--i-personal"]];
-const TABS = [["home", "Today", "today"], ["areas", "Areas", "areas"], ["cal", "Calendar", "cal"]];
+const TABS = [["home", "Today", "today"], ["areas", "Category", "areas"], ["cal", "Calendar", "cal"]];
 const isArea = v => AREAS.some(x => x[0] === v);
 const tabOf = v => isArea(v) ? "areas" : v;
 const CATF = [["", "All", ""], ["work", "Work", "--i-work"], ["gym", "Gym", "--k-gym"], ["personal", "Personal", "--i-personal"]];
@@ -841,7 +853,7 @@ const workHours = () => !isWeekend(today()) && nowMin() >= 480 && nowMin() < 108
 /* Engagement components (audits, policies, proposals) live in the Audits tab of the Sheet; a task links to one through its client and audit fields. */
 const PHASES = ["Not started", "Planning", "Fieldwork", "Reporting", "Follow-up", "On hold", "Closed"];
 const PH_CLS = { "Not started": "ph-0", Planning: "ph-1", Fieldwork: "ph-2", Reporting: "ph-3", "Follow-up": "ph-4", "On hold": "ph-5", Closed: "ph-6" };
-const WORK_SUBS = [["week", "This Week"], ["eng", "Clients"], ["chase", "Waiting On"], ["reports", "Review"], ["done", "Done"]];
+const WORK_SUBS = [["week", "This Week"], ["eng", "Clients"], ["chase", "Waiting On"]];
 /* What the scheduled jobs prepare for you, shown under Work, Reports. */
 const RKIND = { chaser: ["Chaser Drafts", "mail"], brief: ["Meeting Briefs", "people"], status: ["Status Notes", "doc"], timesheet: ["Timesheet", "clock"], deck: ["Ashraq Deck", "chart"] };
 const PERS_CATS = CATS.filter(c => c !== "Gym");
@@ -857,7 +869,7 @@ const DEFAULT_STAGES = {
   "Quality Assessment": ["Planning", "Document Review", "Interviews", "Draft Report", "Final Report", "Closed"],
   "Custom": []
 };
-const PERS_SUBS = [["cats", "Categories"], ["tasks", "Tasks"], ["routines", "Routines"], ["done", "Done"]];
+const PERS_SUBS = [["cats", "Categories"], ["tasks", "Tasks"], ["routines", "Routines"]];
 const GRACE = 60;
 const LEADS = [["", "At the Time"], ["5", "5 Min Before"], ["10", "10 Min Before"], ["15", "15 Min Before"], ["30", "30 Min Before"], ["60", "1 Hour Before"], ["120", "2 Hours Before"], ["1440", "1 Day Before"]];
 /* How long an item takes. Empty means the default: 1 hour for gym (2 hours on the Saturday session), otherwise not set. */
@@ -1207,7 +1219,7 @@ function renderNav() {
   const tb = TABS.map(([k, l, i]) => `<button type="button" data-view="${k}" ${tab === k ? 'aria-current="page"' : ""}><span class="b">${ico(i)}${k === "home" ? badge(od, "", "overdue") : k === "areas" ? badge(nr, "chase", "to review") : ""}</span>${l}</button>`).join("");
   const sideN = { home: od ? od + " overdue" : "", work: nr ? nr + " to review" : "" };
   const sb = (k, l, i, cls) => `<button type="button" data-view="${k}"${cls ? ` class="${cls}"` : ""} ${S.view === k ? 'aria-current="page"' : ""}>${ico(i)}${l}${sideN[k] ? `<span class="n">${sideN[k]}</span>` : ""}</button>`;
-  const sd = `<div class="brand">Personal Assistant</div>` + sb("home", "Today", "today") + `<div class="grp">Areas</div>` + AREAS.map(([k, l]) => sb(k, l, k, "in")).join("") + sb("cal", "Calendar", "cal");
+  const sd = `<div class="brand">Personal Assistant</div>` + sb("home", "Today", "today") + `<div class="grp">Category</div>` + AREAS.map(([k, l]) => sb(k, l, k, "in")).join("") + sb("cal", "Calendar", "cal");
   if (tb + sd === navHtml) return;
   navHtml = tb + sd;
   document.getElementById("tabbar").innerHTML = tb;
@@ -1234,7 +1246,7 @@ function go(v, by) {
   S.view = v; S.q = ""; S.qOpen = false; S.swipe = null; persist(); window.scrollTo(0, 0); render();
 }
 /* The switcher under the title on Work, Gym and Personal. */
-const areaBar = () => `<div class="areabar" role="group" aria-label="Area">${AREAS.map(([k, l, c]) => `<button type="button" data-view="${k}" aria-pressed="${S.view === k}" style="--ic:var(${c})">${ico(k)}<span>${l}</span></button>`).join("")}</div>`;
+const areaBar = () => `<div class="areabar" role="group" aria-label="Category">${AREAS.map(([k, l, c]) => `<button type="button" data-view="${k}" aria-pressed="${S.view === k}" style="--ic:var(${c})">${ico(k)}<span>${l}</span></button>`).join("")}</div>`;
 ["tabbar", "side", "view"].forEach(id => document.getElementById(id).addEventListener("click", e => {
   const b = e.target.closest("[data-view]"); if (!b) return;
   go(b.dataset.view, id !== "tabbar");
@@ -1367,6 +1379,17 @@ function parseQuick(raw, side) {
   cut(/\s(and\s+)?remind me\b/i);
   if (cut(/(\blow priority\b|\bwhenever\b)/i)) o.priority = "low";
   if (cut(/(\bhigh priority\b|\bhigh\b|\burgent\b|\basap\b|\s!+\s)/i)) o.priority = "TRUE";
+  // repeat: "every day", "weekdays", "every Monday", "weekly", "monthly", "every year" make it a routine
+  o.freq = ""; o.days = [];
+  let rp;
+  // a bare "daily", "weekly" or "monthly" counts only at the start or end of the line, so "send weekly report" stays a task
+  const edge = w => new RegExp("(^\\s*(" + w + ")\\b\\s*|\\s\\b(" + w + ")\\s*$)", "i");
+  if (cut(/\b(every ?day|each day)\b/i) || cut(edge("daily"))) o.freq = "daily";
+  else if (cut(/\b(every (work ?day|weekday)s?|on weekdays)\b/i) || cut(edge("weekdays"))) { o.freq = "weekly"; o.days = [0, 1, 2, 3, 4]; }
+  else if (cut(/\bevery month\b/i) || cut(edge("monthly"))) o.freq = "monthly";
+  else if ((rp = cut(/\bevery (sun|mon|tue|wed|thu|fri|sat)(day|s|sday|nesday|rsday|urday)?\b/i))) { o.freq = "weekly"; o.days = [WDAY[rp[1].toLowerCase()]]; }
+  else if (cut(/\bevery week\b/i) || cut(edge("weekly"))) o.freq = "weekly";
+  else if (cut(/\bevery year\b/i) || cut(edge("yearly|annually"))) o.freq = "yearly";
   let lm = cut(/\b(\d{1,3}|an?|one)\s*(m|mins?|minutes?|h|hrs?|hours?|d|days?)\s+(before|early|earlier)\b/i);
   if (lm) { const n = /^\d/.test(lm[1]) ? Number(lm[1]) : 1, u = lm[2][0].toLowerCase(); o.lead = String(n * (u === "d" ? 1440 : u === "h" ? 60 : 1)); o.alert = true; }
   // waiting on someone
@@ -1402,7 +1425,9 @@ function parseQuick(raw, side) {
     }
     else if ((m = cut(/\b(?:on\s+)?(\d{1,2})\/(\d{1,2})\b/))) { let y = Number(d0.slice(0, 4)); let iso2 = y + "-" + pad(Number(m[2])) + "-" + pad(Number(m[1])); if (iso2 < d0) iso2 = (y + 1) + iso2.slice(4); o.due = iso2; }
   }
+  o.dueSet = !!o.due;
   if (!o.due) o.due = o.time && tm(o.time) <= nowMin() ? add(d0, 1) : d0; // a time that has passed means tomorrow
+  if (o.freq === "weekly" && o.days.length === 1 && !o.dueSet) o.due = add(d0, (o.days[0] - wd(d0) + 7) % 7); // "every Friday" starts on the coming Friday
   // client or category
   let cl = "", clw = "";
   for (const c of CLIENTS) { const w = (CLIENT_ALIAS[c] || [c]).find(a => new RegExp("\\b" + a + "\\b", a === "RAM" ? "" : "i").test(t)); if (w) { cl = c; clw = w; break; } }
@@ -1418,21 +1443,90 @@ function parseQuick(raw, side) {
   o.title = t ? t[0].toUpperCase() + t.slice(1) : "";
   return o;
 }
-function qaPreview(o) {
-  if (!o.title) return "";
-  const chip = (txt, hl) => `<span class="chip${hl ? " hl" : ""}">${esc(txt)}</span>`;
-  return [chip((o.scope === "work" ? "Work · " : "Personal · ") + o.area + (o.sub ? " · " + o.sub : "")), chip(rel(o.due)), o.time ? chip(fT(o.time)) : "", o.alert ? chip(o.lead ? "Alert " + leadLabel(o.lead).toLowerCase() : "Alert", true) : "", priOf(o) === "high" ? chip("High", true) : priOf(o) === "low" ? chip("Low") : "", o.owner !== "Me" ? chip("With " + o.owner) : ""].join("");
+/* ---------- New: one line, then only the options that fit what was typed ----------
+   The line is read as you type (day, time, client or category, "every Monday", "with reminder"); the rows under it show what was understood
+   and change it with one tap. A repeat turns it into a routine. Rows appear only when they apply: Remind only with a time, Days only for weekly,
+   Who only for work. More Options opens the full form, already filled in. */
+function qaEff(s) {
+  const p = parseQuick(S.qa || "", s.side), d = s.def || {}, ov = s.ov || {}, o = { ...p };
+  if (d.area && o.scope === "personal" && o.area === "Other") o.area = d.area;
+  if (d.freq && !o.freq) o.freq = d.freq;
+  if (d.due && !o.dueSet) o.due = d.due;
+  Object.assign(o, ov);
+  if (!("alert" in ov)) o.alert = p.alert || !!o.time;
+  if (!o.time) o.alert = false;
+  if (o.freq === "weekly" && !(o.days || []).length) o.days = [wd(o.due)];
+  if (o.scope !== "work" && o.owner !== "Me" && !OWNERS.includes(o.owner)) o.owner = "Me";
+  return o;
 }
-function qaObj(side) { const p = parseQuick(S.qa || "", side); return { ...newTask(), ...p, status: p.owner !== "Me" ? "waiting" : "due" }; }
-/* The + button: one line in plain words becomes a task; the full form is one tap away. */
+const QA_TIMES = { personal: [["09:00", "9 AM"], ["13:00", "1 PM"], ["18:00", "6 PM"], ["21:00", "9 PM"]], work: [["09:00", "9 AM"], ["11:00", "11 AM"], ["14:00", "2 PM"], ["16:00", "4 PM"]] };
+const QA_REM = [["off", "Off"], ["0", "At the time"], ["15", "15 min before"], ["60", "1 hour before"]];
+function qaOpts() {
+  const s = S.sheet;
+  if (!(S.qa || "").trim()) return `<p class="foot qa-hint">Write it the way you would say it, for example <b>${s.side === "work" ? "Tamkeen send the agenda tomorrow 10am" : "Call the bank tomorrow 10am"}</b> or <b>Supplements every day 9pm</b>. The options adjust to what you write.</p>`;
+  const o = qaEff(s), d0 = today(), d1 = add(d0, 1);
+  const chip = (k, v, l, on, c) => `<button type="button" class="cfc" data-s="qo" data-k="${k}" data-v="${esc(v)}" aria-pressed="${!!on}"${c ? ` style="--ic:var(${c})"` : ""}>${esc(l)}</button>`;
+  const pick = (k, type, val, label, on) => `<label class="cfc qpick${on ? " on" : ""}"><span>${esc(label)}</span><input type="${type}" data-q="${k}" value="${esc(val || "")}" aria-label="${k === "due" ? "Pick a day" : "Pick a time"}"></label>`;
+  const row = (l, inner) => `<div class="qo"><span class="ql">${l}</span><div class="qc">${inner}</div></div>`;
+  const rows = [];
+  // when: a day for one-off items, the weekdays for a weekly routine, nothing for a daily one
+  if (o.freq === "weekly") rows.push(row("Days", DAYS.map((l, i) => chip("day", String(i), l, o.days.includes(i))).join("")));
+  else if (o.freq !== "daily") {
+    const other = o.due !== d0 && o.due !== d1;
+    rows.push(row(o.freq ? "Starts" : "When", chip("due", d0, "Today", o.due === d0) + chip("due", d1, "Tomorrow", o.due === d1) + pick("due", "date", o.due, other ? fD(o.due) : "Pick a day", other)));
+  }
+  const tl = QA_TIMES[o.scope === "work" ? "work" : "personal"], tOther = o.time && !tl.some(x => x[0] === o.time);
+  const tp = pick("time", "time", o.time, tOther ? fT(o.time) : "Pick", tOther); // a typed time not in the list shows right after No time
+  rows.push(row("Time", chip("time", "", "No time", !o.time) + (tOther ? tp : "") + tl.map(([v, l]) => chip("time", v, l, o.time === v)).join("") + (tOther ? "" : tp)));
+  if (o.time) { const cur = !o.alert ? "off" : String(o.lead || "") === "" ? "0" : String(o.lead); rows.push(row("Remind", QA_REM.map(([v, l]) => chip("rem", v, l, cur === v)).join("") + (QA_REM.some(x => x[0] === cur) ? "" : chip("rem", cur, leadLabel(cur), true)))); }
+  rows.push(row("Repeat", [["", "Never"], ["daily", "Daily"], ["weekly", "Weekly"], ["monthly", "Monthly"], ["yearly", "Yearly"]].map(([v, l]) => chip("freq", v || "never", l, (o.freq || "") === v)).join("")));
+  // where it belongs: the detected client or category first, the rest of that side, then a switch to the other side
+  const w = o.scope === "work", list = w ? CLIENTS : CATS, ord = [o.area, ...list.filter(x => x !== o.area)];
+  rows.push(row("For", ord.map(x => chip("area", x, x, x === o.area, w ? CLIENT_VAR[x] : CAT_VAR[x])).join("") + chip("scope", w ? "personal" : "work", w ? "Personal ›" : "Work ›", false, w ? "--i-personal" : "--i-work")));
+  if (w && !o.freq) { const own = [...new Set(["Me", ...ownersFor(o.area, o.owner), "Client"])]; rows.push(row("Who", own.map(x => chip("owner", x, x === "Me" ? "Me" : "Waiting on " + x, o.owner === x)).join(""))); }
+  return rows.join("") + `<button type="button" class="txtbtn qmore" data-s="qamore">More Options</button>`;
+}
 function quickSheet() {
-  const s = S.sheet, p = S.qa ? parseQuick(S.qa, s.side) : null;
-  return `<form id="qaForm" autocomplete="off">` + bar("New Task", `<button type="button" class="txtbtn" data-s="close">Cancel</button>`, `<button type="submit" class="txtbtn strong" ${S.qa && S.qa.trim() ? "" : "disabled"}>Add</button>`) + `<div class="sh-body">
-    <label class="qa-bar">${ico("plus")}<span class="sr">What needs doing</span><input id="qa" type="text" enterkeyhint="done" placeholder="${s.side === "work" ? "Tamkeen send the agenda tomorrow 10am" : "Call the bank tomorrow 10am"}" value="${esc(S.qa || "")}" autofocus></label>
-    <div class="qa-prev" id="qaPrev">${p ? qaPreview(p) : ""}</div>
-    <p class="foot" style="margin-top:-8px">Say the client or audit, a day, a time and "with reminder". Anything else can be set in the full form.</p>
-    <button type="button" class="btn" data-s="qamore">${ico("pencil")}Full Form</button>
+  const s = S.sheet;
+  return `<form id="qaForm" autocomplete="off">` + bar("New", `<button type="button" class="txtbtn" data-s="close">Cancel</button>`, `<button type="submit" class="txtbtn strong" ${S.qa && S.qa.trim() ? "" : "disabled"}>Add</button>`) + `<div class="sh-body">
+    <label class="qa-bar">${ico("plus")}<span class="sr">What do you need to do</span><input id="qa" type="text" enterkeyhint="done" placeholder="What do you need to do?" value="${esc(S.qa || "")}" autofocus></label>
+    <div class="qa-opts" id="qaOpts">${qaOpts()}</div>
   </div></form>`;
+}
+const qaRefresh = () => { const el = document.getElementById("qaOpts"); if (el) { const xs = [...el.querySelectorAll(".qc")].map(x => x.scrollLeft); el.innerHTML = qaOpts(); [...el.querySelectorAll(".qc")].forEach((x, i) => { if (xs[i]) x.scrollLeft = xs[i]; }); } };
+/* One tap on an option changes only that part; what was typed stays as it is. */
+function qaSet(k, v) {
+  const s = S.sheet, ov = s.ov = s.ov || {}, o = qaEff(s);
+  if (k === "freq") { ov.freq = v === "never" ? "" : v; if (v === "weekly" && !(o.days || []).length) ov.days = [wd(o.due)]; }
+  else if (k === "day") { const i = Number(v), cur = o.days || []; const nx = cur.includes(i) ? cur.filter(x => x !== i) : [...cur, i].sort(); if (!nx.length) { toast("Keep at least one day."); return; } ov.days = nx; }
+  else if (k === "rem") { if (v === "off") ov.alert = false; else { ov.alert = true; ov.lead = v === "0" ? "" : v; } }
+  else if (k === "scope") { if (v === o.scope) return; const p = parseQuick(S.qa || "", s.side); ov.scope = v; ov.area = v === p.scope ? p.area : v === "work" ? "Internal" : "Other"; ov.owner = "Me"; }
+  else if (k === "area") { ov.area = v; ov.scope = CLIENTS.includes(v) ? "work" : "personal"; if (ov.scope !== "work") ov.owner = "Me"; }
+  else ov[k] = v;
+  qaRefresh();
+}
+function qaRoutine(o) {
+  const r = { ...newRoutine(), title: o.title, scope: o.scope, area: o.area, freq: o.freq, days: o.freq === "weekly" ? o.days : [], dom: o.freq === "monthly" || o.freq === "yearly" ? Number(o.due.slice(8)) : "", month: o.freq === "yearly" ? Number(o.due.slice(5, 7)) : 1, time: o.time || "", alert: !!(o.alert && o.time), lead: o.lead || "", start: o.due };
+  return r;
+}
+function qaTask(o) {
+  const t = { ...newTask(), ...o, status: o.owner !== "Me" ? "waiting" : "due" };
+  ["freq", "days", "dueSet"].forEach(k => delete t[k]);
+  return t;
+}
+function quickAdd() {
+  const s = S.sheet; if (!(S.qa || "").trim()) return false;
+  const o = qaEff(s); if (!o.title) { toast("Add a title."); return false; }
+  S.qa = "";
+  if (o.freq) {
+    const r = qaRoutine(o); delete r._new; saveRoutine(r);
+    toast("Routine added: " + freqText(r).toLowerCase() + (r.time ? ", " + fT(r.time) : ""), () => { S.routines = S.routines.filter(x => x.id !== r.id); render(true); api("deleteRoutine", r.id).catch(fail); });
+    return true;
+  }
+  const t = qaTask(o); delete t._new; S.just = "task:" + encodeURIComponent(t.id);
+  saveTask(t);
+  toast("Added for " + rel(t.due).toLowerCase() + (t.time ? ", " + fT(t.time) : ""), () => { S.tasks = S.tasks.filter(x => x.id !== t.id); render(true); api("deleteTask", t.id).catch(fail); });
+  return true;
 }
 
 /* ---------- inbox: changes the Outlook scans proposed, each accepted or dismissed with one tap ---------- */
@@ -1607,8 +1701,9 @@ function markPlanned(status) {
   if (r && occursOn(r, today())) setLog(PLAN_ID, today(), status);
   else render(true);
 }
+/* 5.6: Plan Your Day is retired. The banner no longer shows and the routine is hidden. */
 function planBanner() {
-  const n = nowMin(); if (n < 480 || n >= 1080 || planDone()) return "";
+  return "";
   return `<button type="button" class="planb" data-act="plan"><span class="big">${ico("today")}</span><span class="tr-t"><span class="ey">Morning Plan</span><b>Plan Your Day</b><small>Clear leftovers, check the load and give open tasks a time. About two minutes.</small></span>${chevR}</button>`;
 }
 /* Last, Now and Up Next in one card: what just happened, what is on now, and what comes next today. */
@@ -1913,7 +2008,7 @@ const top3Map = p => new Map(focusList(p).map((it, i) => [it.id, i + 1]));
 /* Ready to review: what the jobs prepared and you have not opened yet. Four rows, then a line to the rest under Work, Review. */
 function reviewHtml() {
   const li = (S.reports || []).filter(r => r.status === "new").sort((a, b) => String(b.at).localeCompare(String(a.at))); if (!li.length) return "";
-  const rows = li.slice(0, 4).map(reportRow).join("") + (li.length > 4 ? `<button type="button" class="arow" data-act="gowork" data-sub="reports"><span class="itile" style="--ic:var(--i-work)">${ico("doc")}</span><span class="ttl"><span class="tt">${li.length - 4} more to review</span></span>${chevR}</button>` : "");
+  const rows = li.slice(0, 4).map(reportRow).join("") + (li.length > 4 ? `<button type="button" class="arow" data-act="gowork" data-sub="chase"><span class="itile" style="--ic:var(--i-work)">${ico("doc")}</span><span class="ttl"><span class="tt">${li.length - 4} more to review</span></span>${chevR}</button>` : "");
   return cardHtml(rows, chHead("Ready to Review", "--i-work", li.length, "t:review"));
 }
 /* Unplanned: today's tasks with no time, as pills. Tap one to place it in a free gap. Routines without a time sit under Also Today. */
@@ -2074,20 +2169,20 @@ function reportRow(r) {
   return `<button type="button" class="rp${r.status === "new" ? " new" : ""}" data-act="report" data-id="${esc(r.id)}"><span class="dot"></span><span class="ttl"><span class="tt">${esc(r.title || (RKIND[r.kind] || [r.kind])[0])}</span><span class="meta">${meta}${r.status === "done" ? '<span class="sep">·</span>Done' : ""}</span></span>${chevR}</button>`;
 }
 function reportCards() {
-  const li = (S.reports || []).filter(r => match({ title: r.title, notes: r.body, area: r.client, engagement: r.engagement })).sort((a, b) => String(b.at).localeCompare(String(a.at)));
+  const li = (S.reports || []).filter(r => (!S.cf || !r.client || r.client === S.cf) && match({ title: r.title, notes: r.body, area: r.client, engagement: r.engagement })).sort((a, b) => String(b.at).localeCompare(String(a.at)));
   const by = {}; li.forEach(r => (by[r.kind] = by[r.kind] || []).push(r));
   return Object.keys(RKIND).concat(Object.keys(by).filter(k => !RKIND[k])).filter(k => by[k]).map(k => { const n = by[k].filter(r => r.status === "new").length; return cardHtml(by[k].map(reportRow).join(""), chHead((RKIND[k] || [k])[0], null, n ? `${by[k].length} · ${n} new` : by[k].length, "rp:" + k, !n && by[k].every(r => r.status === "done"))); });
 }
 function workBody(s) {
   if (s === "week") return weekCards();
-  if (s === "reports") return reportCards();
   if (s === "chase") {
-    // waiting on others, on engagements you lead, grouped by the person who owes the next step
+    // what the jobs prepared (chaser drafts, briefs, status notes) sits at the top, then who owes you what, grouped by person
     const li = S.tasks.filter(t => isChase(t) && cfOk(t) && match(t)).map(chaseItem).sort(byDate);
     const by = {}; li.forEach(it => { const k = mine(it.t) ? (it.t.contact || "Client") : it.t.owner; (by[k] = by[k] || []).push(it); });
     RO = { ctx: true, noWho: true, nudge: true };
     const cards = Object.keys(by).sort((a, b) => { const da = by[a][0].date || "9999", db = by[b][0].date || "9999"; return da.localeCompare(db) || a.localeCompare(b); }).map(k => { const drafts = by[k].filter(it => chaserFor(it.t)).length; return cardHtml(by[k].map(rowHtml).join(""), chHead(k, null, drafts ? `${by[k].length} · ${drafts} nudge${drafts > 1 ? "s" : ""} ready` : by[k].length, "w:" + k)); });
-    RO = {}; if (cards.length) cards.push(`<p class="foot">Nudge opens the chaser the morning job drafted in the original Outlook thread. Nothing is sent for you.</p>`); return cards;
+    RO = {}; if (cards.length) cards.push(`<p class="foot">Nudge opens the chaser the morning job drafted in the original Outlook thread. Nothing is sent for you.</p>`);
+    return [...reportCards(), ...cards];
   }
   if (s === "eng") {
     const live = S.audits.filter(a => engOpen(a) && (!S.cf || a.client === S.cf) && match(a)).sort(engSort);
@@ -2098,19 +2193,24 @@ function workBody(s) {
       const inner = Object.keys(by).sort().map(k => subGroup(`Led by ${k} · ${by[k].length}`, by[k].map(auditRow).join(""), "team")).join("") + `<p class="foot" style="margin:8px 16px 12px">Engagements led by colleagues. Their steps stay here with no dates or reminders for you and never reach Today or Chasing.</p>`;
       cards.push(cardHtml(inner, chHead("Team", null, team.length, "en:team", true)));
     }
+    const dn = workDone(); if (dn) cards.push(dn);
     return cards;
   }
-  // done: finished tasks, closed engagements and ended routines, by client
-  RO = { ctx: false };
+  return [];
+}
+/* Done folds into one card at the bottom of Clients: finished tasks, closed engagements and ended routines, newest first. */
+function workDone() {
+  RO = { ctx: true };
   const done = [...S.routines.filter(r => r.scope === "work" && r.active === false && cfOk(r) && match(r)).map(r => ({ ...occ(r, today()), status: "ended" })), ...S.tasks.filter(t => t.scope === "work" && !tOpen(t) && cfOk(t) && match(t)).sort((a, b) => String(b.doneAt || b.updated || "").localeCompare(String(a.doneAt || a.updated || ""))).map(tItem)];
   const closed = S.audits.filter(a => !engOpen(a) && (!S.cf || a.client === S.cf) && match(a));
-  const cards = engClients().map(c => [c, done.filter(i => i.area === c), closed.filter(a => a.client === c)]).filter(x => x[1].length || x[2].length).map(([c, li, au]) => cardHtml(au.map(auditRow).join("") + li.map(rowHtml).join(""), chHead(c, CLIENT_VAR[c], li.length + au.length, "done:" + c)));
-  RO = {}; return cards;
+  const n = done.length + closed.length; if (!n) { RO = {}; return ""; }
+  const html = closed.map(auditRow).join("") + done.slice(0, 40).map(rowHtml).join("");
+  RO = {}; return cardHtml(html, chHead("Done", "--done", n, "w:doneall", true));
 }
 function viewWork() {
   const s = S.sub.work;
-  const head = `<header class="navbar"><div><h1>Work</h1>${S.engOk ? "" : `<div class="sub late">Update the back end to save engagements.</div>`}</div><div class="acts">${inboxBtn()}${searchBtn()}${rfBtn()}<button type="button" class="icon-btn" data-act="${s === "eng" ? "newaudit" : "new"}" aria-label="New ${s === "eng" ? "engagement" : "task"}">${ico("plus")}</button></div></header>
-  ${areaBar()}<div class="tools">${segHtml("Show", WORK_SUBS, s, "sub")}${s === "reports" ? "" : chipRow()}${searchField()}</div>`;
+  const head = `<header class="navbar cat"><h1>Work</h1>${areaBar()}<div class="acts">${searchBtn()}<button type="button" class="icon-btn" data-act="${s === "eng" ? "newaudit" : "new"}" aria-label="New ${s === "eng" ? "engagement" : "task"}">${ico("plus")}</button></div></header>
+  ${S.engOk ? "" : `<p class="foot late">Update the back end to save engagements.</p>`}<div class="tools">${segHtml("Show", WORK_SUBS, s, "sub")}${chipRow()}${searchField()}</div>`;
   const cards = workBody(s);
   const empty = S.q ? "Nothing matches your search." : S.cf && s !== "reports" ? `Nothing here for ${esc(S.cf)}.` : s === "week" ? "Nothing on you. Tap + to add a task." : s === "chase" ? "Nothing waiting on anyone." : s === "eng" ? "No engagements yet. Tap + to add one." : s === "reports" ? "Nothing to review yet. Chaser drafts, meeting briefs and status notes from the scheduled jobs appear here." : "Finished tasks, closed engagements and ended routines appear here.";
   return head + (cards.length ? twoCols(cards) : cardHtml(`<div class="empty">${empty}</div>`));
@@ -2118,8 +2218,8 @@ function viewWork() {
 /* ---------- Personal: Tasks (by date), Routines (by how they repeat), Done ---------- */
 function viewPersonal() {
   const s = S.sub.personal;
-  const head = `<header class="navbar"><div><h1>Personal</h1></div><div class="acts">${inboxBtn()}${searchBtn()}${rfBtn()}<button type="button" class="icon-btn" data-act="${s === "routines" ? "newr" : "new"}" aria-label="New ${s === "routines" ? "routine" : "task"}">${ico("plus")}</button></div></header>
-  ${areaBar()}<div class="tools">${segHtml("Show", PERS_SUBS, s, "sub")}${catChipRow()}${searchField()}</div>`;
+  const head = `<header class="navbar cat"><h1>Personal</h1>${areaBar()}<div class="acts">${searchBtn()}<button type="button" class="icon-btn" data-act="${s === "routines" ? "newr" : "new"}" aria-label="New ${s === "routines" ? "routine" : "task"}">${ico("plus")}</button></div></header>
+  <div class="tools">${segHtml("Show", PERS_SUBS, s, "sub")}${catChipRow()}${searchField()}</div>`;
   let cards;
   if (s === "cats") {
     // like Clients in Work: one card per category holding its open tasks (soonest first) and its routines
@@ -2131,6 +2231,10 @@ function viewPersonal() {
       const late = a.filter(i => isDay(i.t.due) && diff(i.t.due) < 0).length;
       return cardHtml((a.length && b.length ? subGroup("Tasks", tr, "cat:" + c) + subGroup("Routines", rr, "cat:" + c) : tr + rr), chHead(c, CAT_VAR[c] || "--k-other", (a.length + b.length) + (late ? ` · ${late} overdue` : ""), "cat:" + c));
     });
+    RO = { ctx: true };
+    const dl = [...S.routines.filter(r => isPers(r) && r.active === false && pfOk(r.area) && match(r)).map(r => ({ ...occ(r, today()), status: "ended" })), ...S.tasks.filter(t => isPers(t) && !tOpen(t) && pfOk(t.area) && match(t)).sort((a, b) => String(b.updated || "").localeCompare(String(a.updated || ""))).map(tItem)];
+    if (dl.length) cards.push(cardHtml(dl.slice(0, 40).map(rowHtml).join(""), chHead("Done", "--done", dl.length, "p:doneall", true)));
+    RO = {};
   }
   else if (s === "tasks") cards = dateCards(S.tasks.filter(t => isPers(t) && tOpen(t) && pfOk(t.area) && match(t)).map(tItem).sort(byDayPri), "p", true);
   else if (s === "routines") {
@@ -2168,7 +2272,7 @@ function recentPRs() {
 }
 function viewGym() {
   const d0 = today(), sel = isDay(S.gymDay) ? S.gymDay : d0, ws = weekStart(d0);
-  const head = `<header class="navbar"><div><h1>Gym</h1><div class="sub">${esc(fDL(sel))}</div></div><div class="acts">${rfBtn()}<button type="button" class="icon-btn" data-act="new" aria-label="New gym task">${ico("plus")}</button></div></header>${areaBar()}`;
+  const head = `<header class="navbar cat"><h1>Gym</h1>${areaBar()}<div class="acts"><button type="button" class="icon-btn" data-act="new" aria-label="New gym item">${ico("plus")}</button></div></header>`;
   // hero: today's session, else the next one
   let hero = "";
   const todays = gymOn(d0);
@@ -2182,7 +2286,7 @@ function viewGym() {
   // progress per exercise, by group
   const ex = exerciseList(), by = {}; ex.forEach(x => (by[x.group || "Other"] = by[x.group || "Other"] || []).push(x));
   const prs = recentPRs(), prOf2 = n => prs.find(p => p.name === n);
-  const exRow = x => { const u = x.unit || "kg", h = x.sets ? historyFor(x.name, u) : [], last = h[h.length - 1], best = h.length ? Math.max(...h.map(p => p.w)) : 0, pr = prOf2(x.name); return `<div class="exrow"><b>${esc(x.name)}${pr ? `<span class="chip pr">PR +${fmtW(pr.gain)} ${esc(pr.u)}</span>` : ""}</b><span class="v">${x.sets ? (last ? `Last ${fmtW(last.w)} ${esc(u)} · best ${fmtW(best)} ${esc(u)}` : "No weights logged yet") : isCardio(x) ? esc(cardioTxt(cardioOf(x))) : esc(x.note || "")}</span>${x.sets ? progressHtml(x.name, u) : ""}</div>`; };
+  const exRow = x => { const u = x.unit || "kg", h = x.sets ? historyFor(x.name, u) : [], last = h[h.length - 1], best = h.length ? Math.max(...h.map(p => p.w)) : 0, pr = prOf2(x.name); return `<div class="exrow"><b>${esc(x.name)}${pr ? `<span class="chip pr">PR +${fmtW(pr.gain)} ${esc(pr.u)}</span>` : ""}</b><span class="v">${x.sets ? (last ? `Last ${fmtW(last.w)} ${esc(u)} · best ${fmtW(best)} ${esc(u)}` : "No weights logged yet") : isCardio(x) ? esc(cardioTxt(cardioOf(x))) : esc(x.note || "")}</span></div>`; };
   const progCards = GROUPS.filter(g => by[g]).map(g => cardHtml(by[g].map(exRow).join(""), chHead(g, "--k-gym", by[g].length, "g:" + g, g !== "Push" && g !== "Pull" && g !== "Legs")));
   const prCard = prs.length ? cardHtml(prs.slice(0, 8).map(p => `<div class="exrow"><b>${esc(p.name)}</b><span class="v">${esc(fD(p.d))} · ${fmtW(p.w)} ${esc(p.u)} <span class="chip pr">+${fmtW(p.gain)}</span></span></div>`).join(""), chHead("Personal Bests · 30 Days", "--done", Math.min(prs.length, 8), "g:pr")) : "";
   // gym tasks (membership, gear) and recent sessions
@@ -2365,13 +2469,13 @@ view.addEventListener("click", e => {
   if (nb && S.nowKey) { const it = findItem(S.nowKey); if (!it) return; const a = nb.dataset.now; if (it.kind === "meet") { if (a === "done") markMeet(it, "done"); else if (a === "brief") { const r = briefFor(it); if (r) openReport(r.id); } else openSheet({ type: "item", key: key(it) }); return; } if (a === "done") markDone(it); else if (a === "skip") markSkip(it); else openSheet(isPlan(it) ? { type: "plan" } : { type: "item", key: key(asTask(it)) }); return; }
   const b = e.target.closest("[data-act]"); if (!b || !b.dataset.act) return;
   const a = b.dataset.act;
-  if (a === "new") { if (S.view === "gym") { openSheet({ type: "editTask", obj: newTask() }); return; } S.qa = ""; openSheet({ type: "quick", side: sideOf() }); return; }
+  if (a === "new") { S.qa = ""; openSheet({ type: "quick", side: sideOf(), ov: {}, def: S.view === "gym" ? { area: "Gym" } : S.view === "cal" && isDay(S.calDay) ? { due: S.calDay } : {} }); return; }
   if (a === "newaudit") { openSheet({ type: "editAudit", obj: newAudit() }); return; }
   if (a === "audit") { openSheet({ type: "audit", id: b.dataset.id }); return; }
   if (a === "inbox") { openSheet({ type: "inbox", tab: inboxCount() && !unreadCount() ? "mail" : "notes", nf: "all" }); markNotesSeen(); return; }
   if (a === "hf") { S.hf = CATF.some(x => x[0] === b.dataset.cf) ? b.dataset.cf : ""; S.swipe = null; persist(); renderMain(true); return; }
   if (a === "gymday") { S.gymDay = b.dataset.d; renderMain(true); return; }
-  if (a === "reports") { S.sub.work = "reports"; persist(); go("work"); return; }
+  if (a === "reports") { S.sub.work = "chase"; persist(); go("work"); return; }
   if (a === "gochase") { S.sub.work = "chase"; persist(); go("work"); return; }
   if (a === "report") { openReport(b.dataset.id); return; }
   if (a === "search") { S.qOpen = !(S.qOpen || S.q); if (!S.qOpen) S.q = ""; renderMain(true); if (S.qOpen) { const q = document.getElementById("q"); if (q) q.focus({ preventScroll: true }); } return; }
@@ -2401,7 +2505,7 @@ view.addEventListener("click", e => {
   if (a === "calnav") { const n = Number(b.dataset.n); S.calGrp = null; if (S.calMode === "month") { const m = S.calMonth || monthStart(S.calDay || today()), dt = D(m); dt.setUTCMonth(dt.getUTCMonth() + n); S.calMonth = iso(dt); S.calDay = S.calMonth.slice(0, 7) === today().slice(0, 7) ? today() : S.calMonth; } else { S.calDay = add(S.calDay || today(), n * calStep[S.calMode]); S.calMonth = monthStart(S.calDay); } renderMain(true); return; }
   if (a === "caltoday") { S.calDay = today(); S.calMonth = monthStart(today()); S.calGrp = null; renderMain(true); return; }
   if (a === "newday") { const t = newTask(); t.due = S.calDay || today(); openSheet({ type: "editTask", obj: t }); return; }
-  if (a === "newr") { openSheet({ type: "editRoutine", obj: newRoutine() }); return; }
+  if (a === "newr") { S.qa = ""; openSheet({ type: "quick", side: sideOf(), ov: {}, def: { freq: "daily" } }); return; }
   if (a === "fold") { S.fold[b.dataset.f] = b.dataset.o === "1" ? 1 : 0; S.swipe = null; saveFold(); renderMain(true); return; }
   if (a === "dayopen") { const it = findItem(b.dataset.k); if (it) openSheet(isPlan(it) ? { type: "plan" } : { type: "item", key: key(asTask(it)) }); return; }
   if (a === "sub") { S.sub[S.view] = b.dataset.sub; S.swipe = null; persist(); renderMain(); return; }
@@ -2417,22 +2521,14 @@ view.addEventListener("click", e => {
   if (a === "skip") { markSkip(it); return; }
   if (a === "open") { if (wasOpen) renderMain(true); openSheet(isPlan(it) && it.status !== "done" ? { type: "plan" } : { type: "item", key: key(asTask(it)) }); return; }
 });
-/* Quick add lives in the + sheet: the preview updates as you type; Add saves without opening the form. */
+/* New: the options under the line follow what you type; Add saves without opening the form. */
 document.getElementById("sheet").addEventListener("input", e => {
   if (e.target.id !== "qa" || !S.sheet || S.sheet.type !== "quick") return;
   S.qa = e.target.value;
-  const pv = document.getElementById("qaPrev"), btn = e.target.closest("form").querySelector(".sh-bar button[type=submit]");
-  if (pv) pv.innerHTML = S.qa.trim() ? qaPreview(parseQuick(S.qa, S.sheet.side)) : "";
+  const btn = e.target.closest("form").querySelector(".sh-bar button[type=submit]");
+  qaRefresh();
   if (btn) btn.disabled = !S.qa.trim();
 });
-function quickAdd() {
-  const s = S.sheet; if (!(S.qa || "").trim()) return false;
-  const t = qaObj(s.side); if (!t.title) { toast("Add a title."); return false; }
-  delete t._new; S.qa = ""; S.just = "task:" + encodeURIComponent(t.id);
-  saveTask(t);
-  toast("Added for " + rel(t.due).toLowerCase() + (t.time ? ", " + fT(t.time) : ""), () => { S.tasks = S.tasks.filter(x => x.id !== t.id); render(true); api("deleteTask", t.id).catch(fail); });
-  return true;
-}
 view.addEventListener("input", e => { if (e.target.id === "q") { S.q = e.target.value; const p = e.target.selectionStart; renderMain(true); const q = document.getElementById("q"); if (q) { q.focus(); q.setSelectionRange(p, p); } } });
 
 /* ---------- swipe ---------- */
@@ -3048,7 +3144,7 @@ function gymHtml(it, items, ed) {
       : cd ? cardioHtml(x) : `<div class="set note"><input type="text" data-f="note" value="${esc(x.note || "")}" placeholder="Details" aria-label="${esc(x.name)} details"></div>`;
     const useBtn = ed ? "" : `<button type="button" class="txtbtn sm" data-s="uselast" data-id="${esc(x.id)}">Use</button>`;
     const lastTxt = last && last.v.s && x.sets ? `<div class="ex-last"><span>Last ${esc(rel(last.date))}: ${last.v.s.map(st => `${st.reps} × ${fmtW(conv(Number(st.w) || 0, last.v.u || "kg", u))}`).join(", ")} ${u}</span>${useBtn}</div>` : last && last.v.c && cd ? `<div class="ex-last"><span>Last ${esc(rel(last.date))}: ${esc(cardioTxt(last.v.c))}</span>${useBtn}</div>` : "";
-    return `<div class="list ex${on ? " on" : ""}${sk && !ed ? " sk" : ""}" data-li="${esc(x.id)}">${head}${body}${lastTxt}${x.sets && !ed ? progressHtml(x.name, u) : ""}</div>`;
+    return `<div class="list ex${on ? " on" : ""}${sk && !ed ? " sk" : ""}" data-li="${esc(x.id)}">${head}${body}${lastTxt}</div>`;
   }).join("");
   return `<div class="exs">${ex || `<div class="list"><div class="empty">No exercises yet.</div></div>`}</div><button type="button" class="btn sm" data-s="exadd" style="justify-self:start">${ico("plus")}Add Exercise</button>`;
 }
@@ -3211,6 +3307,7 @@ function readTask(f) { const d = new FormData(f), eid = d.has("engagement") ? St
 function readRoutine(f, r) { const d = new FormData(f); return { title: String(d.get("title") || "").trim(), scope: d.get("scope"), area: d.get("area"), block: d.get("block") || "", freq: d.get("freq"), days: d.getAll("days").map(Number), dom: d.has("dom") ? (Number(d.get("dom")) || "") : r.dom, month: d.has("month") ? Number(d.get("month")) : r.month, time: d.get("time") || "", dur: String(d.get("dur") || ""), notes: String(d.get("notes") || "").trim(), alert: d.get("alert") === "on", lead: String(d.get("lead") || ""), _bal: d.has("bal") ? String(d.get("bal") || "").trim() : r._bal }; }
 sheet.addEventListener("change", e => {
   const s = S.sheet; if (!s) return;
+  if (s.type === "quick" && e.target.dataset.q) { if (e.target.value) qaSet(e.target.dataset.q, e.target.value); return; }
   if (s.type === "plan" && e.target.dataset.pl) { s.un = s.un || {}; s.un[e.target.dataset.pl] = !e.target.checked; renderSheet(); return; }
   if (s.type === "item" && e.target.closest("[data-li]")) { listChange(e.target); return; }
   if (e.target.id === "leadSel" && s.type === "item") { const it = findItem(s.key); if (!it) return; const src = it.kind === "task" ? it.t : it.r, v = e.target.value; if (it.kind === "task") saveTask({ ...src, lead: v }); else saveRoutine({ ...src, lead: v }); renderSheet(); toast("Alert " + leadLabel(v).toLowerCase()); return; }
@@ -3279,7 +3376,8 @@ sheet.addEventListener("click", e => {
     return;
   }
   if (s.type === "quick") {
-    if (a === "qamore") { const o = qaObj(s.side); o._new = true; S.qa = ""; S.sheet = { type: "editTask", obj: o }; renderSheet(); }
+    if (a === "qo") { qaSet(b.dataset.k, b.dataset.v); return; }
+    if (a === "qamore") { const o = qaEff(s); if (o.freq) { const r = qaRoutine(o); r._new = true; S.qa = ""; S.sheet = { type: "editRoutine", obj: r }; } else { const t = qaTask(o); t._new = true; S.qa = ""; S.sheet = { type: "editTask", obj: t }; } renderSheet(); }
     return;
   }
   if (s.type === "audit") {
@@ -3392,7 +3490,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "5.5"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
+const APP_VERSION = "5.6"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(() => swConfig()).catch(() => {});
 /* The page opens from the saved copy at once. The check below asks GitHub for the live version (a fresh URL each time, so
    GitHub's own 10-minute cache can't hide it), saves the new page and switches straight away if you haven't touched anything yet;
@@ -3504,7 +3602,7 @@ function normEng(a) {
   return { id: a.id, client: a.client || "", engagement: a.engagement || a.audit || "", template: a.template || "Internal Audit", stage: a.stage || (/Planning|Fieldwork/.test(ph) ? ph : ph === "Reporting" ? "Draft Report" : ""), status: a.status || (ph === "Closed" ? "Closed" : ph === "On hold" ? "On hold" : ph === "Not started" ? "Not started" : "Active"), target: a.target || "", owner: a.owner || a.lead || "Me", next_action: a.next_action || "", next_date: a.next_date || "", last_action: a.last_action || "", last_date: a.last_date || "", notes: a.notes || "", active: a.active !== false && a.active !== "FALSE", updated: a.updated || "" };
 }
 function applyData(d) {
-  S.tasks = d.tasks; S.routines = d.routines; S.touches = Array.isArray(d.touches) ? d.touches : [];
+  S.tasks = d.tasks; S.routines = (d.routines || []).filter(r => r.id !== PLAN_ID); S.touches = Array.isArray(d.touches) ? d.touches : [];
   S.engOk = Array.isArray(d.engagements);
   S.audits = (S.engOk ? d.engagements : Array.isArray(d.audits) ? d.audits : []).map(normEng).filter(a => a.client && a.client !== "DWE");
   if (d.stageMap && typeof d.stageMap === "object") S.stages = d.stageMap;
@@ -3568,7 +3666,7 @@ function checkHash() {
   const h = location.hash, t = h.match(/(?:^#|&)task=([^&]+)/), ro = h.match(/(?:^#|&)routine=([^&]+)/), pl = /(^#|&)plan\b/.test(h), rp = /(^#|&)reports\b/.test(h), ib = /(^#|&)inbox\b/.test(h);
   if (!t && !ro && !pl && !rp && !ib) return;
   const readUrl = u => { if (S.notesOk) markNotesRead((S.notes || []).filter(n => !n.read && n.url === u).map(n => n.id)); };
-  if (rp) { readUrl("#reports"); try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {} S.sub.work = "reports"; persist(); if (S.view !== "work") go("work"); else render(true); return; }
+  if (rp) { readUrl("#reports"); try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {} S.sub.work = "chase"; persist(); if (S.view !== "work") go("work"); else render(true); return; }
   if (ib) { readUrl("#inbox"); try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {} openSheet({ type: "inbox", tab: "mail", nf: "all" }); return; }
   if (S.notesOk) { const u = (t ? "#task=" + t[1] : ro ? "#routine=" + ro[1] : "#plan"); markNotesRead((S.notes || []).filter(n => !n.read && (n.url === u || n.url === decodeURIComponent(u))).map(n => n.id)); }
   try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
