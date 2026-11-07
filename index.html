@@ -24,7 +24,7 @@
 })();
 </script>
 <style>
-/* Layout: a planner in five tabs (Home, Work, Gym, Personal, Calendar) in a floating tab bar on phones and a sidebar on wide screens. Every screen is one level of grouped lists; detail lives in sheets. Home (Today): Last, Now and Up Next, the morning plan, Ready to Review, progress, Overdue, Unplanned pills, the Day rail with the Top 3 numbered and meetings carrying Join, Brief and Done, Waiting On, Also Today and Next. Work: This Week (load bars from Outlook gaps, then each workday), Clients, Waiting On (Nudge opens the drafted chaser), Review, Done. Gym: today's session, the week, progress, library. Personal: categories, tasks, routines, done. Calendar: Month, Week, 3 Days, Day across every category. True neutral surfaces in both themes; colour is kept to small icons, chips and the Top 3 numbers. */
+/* Layout: a planner in three tabs (Today, Areas, Calendar) in a floating tab bar on phones and a sidebar on wide screens. Areas holds Work, Gym and Personal behind one switcher under the title. Every screen is one level of grouped lists; detail lives in sheets. Home (Today): Last, Now and Up Next, the morning plan, Ready to Review, progress, Overdue, Unplanned pills, the Day rail with the Top 3 numbered and meetings carrying Join, Brief and Done, Waiting On, Also Today and Next. Work: This Week (load bars from Outlook gaps, then each workday), Clients, Waiting On (Nudge opens the drafted chaser), Review, Done. Gym: today's session, the week, progress, library. Personal: categories, tasks, routines, done. Calendar: Month, Week, 3 Days, Day across every category. True neutral surfaces in both themes; colour is kept to small icons, chips and the Top 3 numbers. */
 :root {
   --bg: #F2F2F7;
   --card: #FFFFFF;
@@ -77,6 +77,14 @@ html, body { min-height: 100%; }
 .navbar { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; padding-top: 2px; }
 .navbar .acts { display: flex; gap: 6px; flex: none; }
 .navbar h1 { margin: 0; font-size: 2rem; font-weight: 700; letter-spacing: -.02em; line-height: 1.1; }
+/* Areas: Work, Gym and Personal share one tab; this switcher sits under the title. Each segment is a full 44px target with its category colour on the icon. */
+.areabar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 3px; margin-top: -12px; background: var(--fill); border-radius: 13px; }
+.areabar button { border: 0; background: none; min-height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 7px; font-size: .94rem; font-weight: 600; color: var(--label2); padding: 0 8px; transition: background-color .2s, color .2s, transform .16s cubic-bezier(.2, .8, .2, 1); }
+.areabar button svg { width: 19px; height: 19px; color: var(--ic); opacity: .55; transition: opacity .2s; }
+.areabar button[aria-pressed="true"] { background: var(--seg-on, var(--card)); color: var(--label); box-shadow: 0 1px 3px rgba(0, 0, 0, .14); }
+.areabar button[aria-pressed="true"] svg { opacity: 1; }
+.areabar button:active { transform: scale(.97); }
+.areabar + .tools { margin-top: -10px; }
 .navbar .sub { color: var(--label2); font-size: .88rem; margin-top: 3px; }
 .icon-btn { position: relative; width: 44px; height: 44px; border-radius: 22px; border: 0; background: var(--card); color: var(--label); display: grid; place-items: center; flex: none; }
 .icon-btn svg { width: 22px; height: 22px; }
@@ -325,7 +333,7 @@ a.btn { text-decoration: none; }
 /* client filter chips */
 .cfrow { display: flex; gap: 8px; overflow-x: auto; padding: 2px 4px 6px; margin: -8px 0 -6px; scrollbar-width: none; -webkit-overflow-scrolling: touch; touch-action: pan-x; -webkit-mask-image: linear-gradient(90deg, transparent, #000 16px, #000 calc(100% - 20px), transparent); mask-image: linear-gradient(90deg, transparent, #000 16px, #000 calc(100% - 20px), transparent); }
 .cfrow::-webkit-scrollbar { display: none; }
-.cfc { flex: none; border: 0; border-radius: 16px; min-height: 32px; padding: 0 12px; background: var(--card); color: var(--label2); font-size: .82rem; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+.cfc { flex: none; border: 0; border-radius: 18px; min-height: 36px; padding: 0 12px; background: var(--card); color: var(--label2); font-size: .82rem; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
 .cfc .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ic, var(--label2)); }
 .cfc[aria-pressed="true"] { background: var(--ic, var(--label)); color: var(--bg); }
 .cfc.all[aria-pressed="true"] { background: var(--label); color: var(--card); }
@@ -356,7 +364,8 @@ a.btn { text-decoration: none; }
 /* tab bar */
 /* tab bar: docked to the bottom edge and filling the home indicator area, so nothing ever shows beneath it */
 .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 6px max(12px, env(safe-area-inset-left, 0px)) calc(env(safe-area-inset-bottom, 0px) + 4px) max(12px, env(safe-area-inset-right, 0px)); background: var(--glass); -webkit-backdrop-filter: blur(24px) saturate(1.8); backdrop-filter: blur(24px) saturate(1.8); border-top: .5px solid var(--sep); transform: translate3d(0, 0, 0); }
-.tabbar button { border: 0; background: none; border-radius: 14px; min-height: 50px; display: grid; justify-items: center; align-content: center; gap: 3px; font-size: .64rem; font-weight: 600; color: var(--label2); padding: 0; }
+.tabbar button { border: 0; background: none; border-radius: 14px; min-height: 50px; display: grid; justify-items: center; align-content: center; gap: 3px; font-size: .68rem; font-weight: 600; color: var(--label2); padding: 0; }
+.tabbar { justify-content: center; grid-auto-columns: minmax(0, 150px); }
 .tabbar button svg { width: 25px; height: 25px; }
 .tabbar button[aria-current="page"] { color: var(--accent); }
 .tabbar button { transition: transform .16s cubic-bezier(.2, .8, .2, 1), color .2s; }
@@ -481,8 +490,12 @@ a.btn { text-decoration: none; }
   .side button svg { width: 20px; height: 20px; color: var(--label2); }
   .side button[aria-current="page"] { background: var(--fill); font-weight: 600; }
   .side button[aria-current="page"] svg { color: var(--label); }
+  .side .grp { font-size: .74rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--label2); padding: 14px 12px 4px; }
+  .side button.in { padding-left: 22px; }
   .side .n { margin-left: auto; color: var(--label2); font-size: .82rem; font-variant-numeric: tabular-nums; }
   .tabbar, .topbar { display: none; }
+  .areabar { display: none; } /* the sidebar lists Work, Gym and Personal on wide screens */
+  .areabar + .tools { margin-top: 0; }
   .side .mode { margin: 0 0 10px; }
   .main { padding-block: 28px 40px; padding-left: 32px; padding-right: 32px; }
   .cols.two { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
@@ -809,8 +822,13 @@ const CAT_VAR = { Gym: "--k-gym", Supplements: "--k-supp", Faith: "--k-faith", H
 const OWNERS = ["Me", "Client", "Aysha", "Noor", "Bhavish", "Shaikha", "Osama", "Abdulrahman"];
 const FREQ = [["daily", "Every Day"], ["weekly", "Weekly"], ["monthly", "Monthly"], ["lastworkday", "Last Workday of Month"], ["yearly", "Yearly"]];
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-/* One app, five tabs. Every item belongs to one category: work (scope work), gym (personal, area Gym) or personal (everything else). Home and Calendar show all three, with a chip to narrow to one. */
-const VIEWS = [["home", "Home"], ["work", "Work"], ["gym", "Gym"], ["personal", "Personal"], ["cal", "Calendar"]];
+/* One app, three tabs: Today, Areas and Calendar. Every item belongs to one category: work (scope work), gym (personal, area Gym) or personal (everything else).
+   Areas holds the three category screens behind a switcher; Today and Calendar show all three, with a chip to narrow to one. S.view stays the screen showing (home, work, gym, personal, cal). */
+const VIEWS = [["home", "Today"], ["work", "Work"], ["gym", "Gym"], ["personal", "Personal"], ["cal", "Calendar"]];
+const AREAS = [["work", "Work", "--i-work"], ["gym", "Gym", "--k-gym"], ["personal", "Personal", "--i-personal"]];
+const TABS = [["home", "Today", "today"], ["areas", "Areas", "areas"], ["cal", "Calendar", "cal"]];
+const isArea = v => AREAS.some(x => x[0] === v);
+const tabOf = v => isArea(v) ? "areas" : v;
 const CATF = [["", "All", ""], ["work", "Work", "--i-work"], ["gym", "Gym", "--k-gym"], ["personal", "Personal", "--i-personal"]];
 const catOfSrc = x => x.scope === "work" ? "work" : x.area === "Gym" ? "gym" : "personal";
 /* The category of any item on screen: meetings from Outlook are work, Google Calendar events personal. */
@@ -855,6 +873,7 @@ const P = {
   personal: '<circle cx="12" cy="7.5" r="4.5" fill="currentColor" stroke="none"/><path fill="currentColor" stroke="none" d="M3.5 21a8.5 8.5 0 0 1 17 0z"/>',
   cal: '<rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 9.5h18"/><circle cx="8" cy="14" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="14" r="1.1" fill="currentColor" stroke="none"/><circle cx="16" cy="14" r="1.1" fill="currentColor" stroke="none"/><circle cx="8" cy="17.5" r="1.1" fill="currentColor" stroke="none"/>',
   inbox: '<path d="M3 13l2.6-7.6A2 2 0 0 1 7.5 4h9a2 2 0 0 1 1.9 1.4L21 13v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 13h5l1.5 3h5L16 13h5"/>',
+  areas: '<rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/>',
   home: '<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>',
   gym: '<path d="M6.5 7v10M17.5 7v10M3.5 9.5v5M20.5 9.5v5M6.5 12h11"/>',
   plus: '<path d="M12 5v14M5 12h14"/>', refresh: '<path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4.5V9h-4.5"/>', search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',
@@ -887,7 +906,7 @@ const P = {
 const ico = k => `<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[k] || P.Other}</svg>`;
 
 /* ---------- state ---------- */
-const S = { tasks: [], routines: [], logs: {}, touches: [], audits: [], stages: { ...DEFAULT_STAGES }, contacts: [], proposals: [], notes: [], notesOk: false, reports: [], engOk: true, ready: false, view: "home", sub: { work: "week", personal: "cats" }, q: "", qOpen: false, meetings: {}, meetNote: "", loadedAt: 0, sheet: null, swipe: null, just: null, fold: {}, cf: "", pf: "", hf: "", gymDay: "", calMode: "month" };
+const S = { tasks: [], routines: [], logs: {}, touches: [], audits: [], stages: { ...DEFAULT_STAGES }, contacts: [], proposals: [], notes: [], notesOk: false, reports: [], engOk: true, ready: false, view: "home", sub: { work: "week", personal: "cats" }, q: "", qOpen: false, meetings: {}, meetNote: "", loadedAt: 0, sheet: null, swipe: null, just: null, fold: {}, cf: "", pf: "", hf: "", gymDay: "", calMode: "month", area: "", areaAt: 0 };
 
 /* Calls go to Apps Script as plain-text POSTs (no CORS preflight). Writes run one at a time, in order,
    so a quick tick and untick can never arrive at the server in the wrong order. */
@@ -961,8 +980,8 @@ function api(fn, ...args) {
 addEventListener("online", () => { showOffline(); flush(); });
 addEventListener("offline", showOffline);
 setInterval(() => { if (outbox.length) flush(); }, 30000);
-try { const v = JSON.parse(localStorage.getItem("pa5") || "{}"); if (v.view && VIEWS.some(x => x[0] === v.view)) S.view = v.view; if (v.sub) Object.assign(S.sub, v.sub); if (!WORK_SUBS.some(x => x[0] === S.sub.work)) S.sub.work = "week"; if (!PERS_SUBS.some(x => x[0] === S.sub.personal)) S.sub.personal = "cats"; if (v.fold && typeof v.fold === "object") S.fold = v.fold; if (typeof v.cf === "string" && CLIENTS.includes(v.cf)) S.cf = v.cf; if (["month", "week", "3day", "day"].includes(v.calMode)) S.calMode = v.calMode; if (typeof v.pf === "string" && PERS_CATS.includes(v.pf)) S.pf = v.pf; if (typeof v.hf === "string" && CATF.some(x => x[0] === v.hf)) S.hf = v.hf; } catch (e) {}
-const persist = () => { try { localStorage.setItem("pa5", JSON.stringify({ view: S.view, sub: S.sub, fold: S.fold, cf: S.cf, pf: S.pf, hf: S.hf, calMode: S.calMode })); } catch (e) {} };
+try { const v = JSON.parse(localStorage.getItem("pa5") || "{}"); if (v.view && VIEWS.some(x => x[0] === v.view)) S.view = v.view; if (v.sub) Object.assign(S.sub, v.sub); if (!WORK_SUBS.some(x => x[0] === S.sub.work)) S.sub.work = "week"; if (!PERS_SUBS.some(x => x[0] === S.sub.personal)) S.sub.personal = "cats"; if (v.fold && typeof v.fold === "object") S.fold = v.fold; if (typeof v.cf === "string" && CLIENTS.includes(v.cf)) S.cf = v.cf; if (["month", "week", "3day", "day"].includes(v.calMode)) S.calMode = v.calMode; if (typeof v.pf === "string" && PERS_CATS.includes(v.pf)) S.pf = v.pf; if (typeof v.hf === "string" && CATF.some(x => x[0] === v.hf)) S.hf = v.hf; if (isArea(v.area)) S.area = v.area; } catch (e) {}
+const persist = () => { try { localStorage.setItem("pa5", JSON.stringify({ view: S.view, sub: S.sub, fold: S.fold, cf: S.cf, pf: S.pf, hf: S.hf, calMode: S.calMode, area: S.area })); } catch (e) {} };
 
 /* ---------- time, Bahrain ---------- */
 const pad = n => String(n).padStart(2, "0");
@@ -1183,18 +1202,44 @@ function overdueCount(c) { const wk = isWeekend(today()); return S.tasks.filter(
 const inboxCount = () => (S.proposals || []).length;
 const newReports = () => (S.reports || []).filter(r => r.status === "new").length;
 function renderNav() {
-  const od = ready() ? overdueCount() : 0, nr = ready() ? newReports() : 0;
+  const od = ready() ? overdueCount() : 0, nr = ready() ? newReports() : 0, tab = tabOf(S.view);
   const badge = (n, cls, lbl) => n ? `<span class="badge-n${cls ? " " + cls : ""}">${n}</span><span class="sr">${n} ${lbl}</span>` : "";
-  const tb = VIEWS.map(([k, l]) => `<button type="button" data-view="${k}" ${S.view === k ? 'aria-current="page"' : ""}><span class="b">${ico(k)}${k === "home" ? badge(od, "", "overdue") : k === "work" ? badge(nr, "chase", "prepared") : ""}</span>${l}</button>`).join("");
-  const sideN = { home: od ? od + " overdue" : "", work: nr ? nr + " prepared" : "" };
-  const sd = `<div class="brand">Personal Assistant</div>` + VIEWS.map(([k, l]) => `<button type="button" data-view="${k}" ${S.view === k ? 'aria-current="page"' : ""}>${ico(k)}${l}${sideN[k] ? `<span class="n">${sideN[k]}</span>` : ""}</button>`).join("");
+  const tb = TABS.map(([k, l, i]) => `<button type="button" data-view="${k}" ${tab === k ? 'aria-current="page"' : ""}><span class="b">${ico(i)}${k === "home" ? badge(od, "", "overdue") : k === "areas" ? badge(nr, "chase", "to review") : ""}</span>${l}</button>`).join("");
+  const sideN = { home: od ? od + " overdue" : "", work: nr ? nr + " to review" : "" };
+  const sb = (k, l, i, cls) => `<button type="button" data-view="${k}"${cls ? ` class="${cls}"` : ""} ${S.view === k ? 'aria-current="page"' : ""}>${ico(i)}${l}${sideN[k] ? `<span class="n">${sideN[k]}</span>` : ""}</button>`;
+  const sd = `<div class="brand">Personal Assistant</div>` + sb("home", "Today", "today") + `<div class="grp">Areas</div>` + AREAS.map(([k, l]) => sb(k, l, k, "in")).join("") + sb("cal", "Calendar", "cal");
   if (tb + sd === navHtml) return;
   navHtml = tb + sd;
   document.getElementById("tabbar").innerHTML = tb;
   document.getElementById("side").innerHTML = sd;
 }
-function go(v) { if (v === "today") v = "home"; if (!S.dir) { const a = VIEWS.findIndex(x => x[0] === S.view), b = VIEWS.findIndex(x => x[0] === v); S.dir = b > a ? 1 : b < a ? -1 : 0; } if (v === S.view) { window.scrollTo({ top: 0, behavior: "smooth" }); return; } S.view = v; S.q = ""; S.qOpen = false; S.swipe = null; persist(); window.scrollTo(0, 0); render(); }
-["tabbar", "side"].forEach(id => document.getElementById(id).addEventListener("click", e => { const b = e.target.closest("[data-view]"); if (b) go(b.dataset.view); }));
+/* Which area the Areas tab opens on: Gym while a session is under way or about to start, the area picked in the last 30 minutes,
+   Work during work hours, otherwise the last area used (Personal rather than Work after hours). */
+function gymNow() { const d = today(), n = nowMin(); return gymOn(d).some(it => it.status !== "done" && it.status !== "skipped" && it.status !== "missed" && (it.status === "progress" || (it.time && n >= tm(it.time) - 20 && n < tm(it.time) + (itemMins(it, d) || 60)))); }
+function areaPick() {
+  if (gymNow()) return "gym";
+  if (S.area && Date.now() - S.areaAt < 30 * 60000) return S.area;
+  if (workHours()) return "work";
+  return S.area && S.area !== "work" ? S.area : "personal";
+}
+const navPos = v => { const t = TABS.findIndex(x => x[0] === tabOf(v)); return t * 10 + (isArea(v) ? AREAS.findIndex(x => x[0] === v) : 0); };
+/* by: a tap on the switcher or the sidebar picks an area on purpose, so the Areas tab keeps it for 30 minutes; deep links and the auto pick do not. */
+function go(v, by) {
+  if (v === "today") v = "home";
+  if (v === "areas") v = isArea(S.view) ? S.view : areaPick();
+  if (isArea(v)) { S.area = v; if (by) S.areaAt = Date.now(); }
+  if (isArea(v) && isArea(S.view)) S.dir = 0; // switching area fades in place; only tabs slide
+  else if (!S.dir) { const a = navPos(S.view), b = navPos(v); S.dir = b > a ? 1 : b < a ? -1 : 0; }
+  if (v === S.view) { window.scrollTo({ top: 0, behavior: "smooth" }); return; }
+  S.view = v; S.q = ""; S.qOpen = false; S.swipe = null; persist(); window.scrollTo(0, 0); render();
+}
+/* The switcher under the title on Work, Gym and Personal. */
+const areaBar = () => `<div class="areabar" role="group" aria-label="Area">${AREAS.map(([k, l, c]) => `<button type="button" data-view="${k}" aria-pressed="${S.view === k}" style="--ic:var(${c})">${ico(k)}<span>${l}</span></button>`).join("")}</div>`;
+["tabbar", "side", "view"].forEach(id => document.getElementById(id).addEventListener("click", e => {
+  const b = e.target.closest("[data-view]"); if (!b) return;
+  go(b.dataset.view, id !== "tabbar");
+  if (id === "view") { const f = view.querySelector('.areabar [aria-pressed="true"]'); if (f) f.focus({ preventScroll: true }); } // keep focus on the switcher for VoiceOver and keyboards
+}));
 /* The top bar sits flush with the page until the page scrolls under it. */
 const topbarEl = document.getElementById("topbar");
 let tbOn = false;
@@ -2065,7 +2110,7 @@ function workBody(s) {
 function viewWork() {
   const s = S.sub.work;
   const head = `<header class="navbar"><div><h1>Work</h1>${S.engOk ? "" : `<div class="sub late">Update the back end to save engagements.</div>`}</div><div class="acts">${inboxBtn()}${searchBtn()}${rfBtn()}<button type="button" class="icon-btn" data-act="${s === "eng" ? "newaudit" : "new"}" aria-label="New ${s === "eng" ? "engagement" : "task"}">${ico("plus")}</button></div></header>
-  <div class="tools">${segHtml("Show", WORK_SUBS, s, "sub")}${s === "reports" ? "" : chipRow()}${searchField()}</div>`;
+  ${areaBar()}<div class="tools">${segHtml("Show", WORK_SUBS, s, "sub")}${s === "reports" ? "" : chipRow()}${searchField()}</div>`;
   const cards = workBody(s);
   const empty = S.q ? "Nothing matches your search." : S.cf && s !== "reports" ? `Nothing here for ${esc(S.cf)}.` : s === "week" ? "Nothing on you. Tap + to add a task." : s === "chase" ? "Nothing waiting on anyone." : s === "eng" ? "No engagements yet. Tap + to add one." : s === "reports" ? "Nothing to review yet. Chaser drafts, meeting briefs and status notes from the scheduled jobs appear here." : "Finished tasks, closed engagements and ended routines appear here.";
   return head + (cards.length ? twoCols(cards) : cardHtml(`<div class="empty">${empty}</div>`));
@@ -2074,7 +2119,7 @@ function viewWork() {
 function viewPersonal() {
   const s = S.sub.personal;
   const head = `<header class="navbar"><div><h1>Personal</h1></div><div class="acts">${inboxBtn()}${searchBtn()}${rfBtn()}<button type="button" class="icon-btn" data-act="${s === "routines" ? "newr" : "new"}" aria-label="New ${s === "routines" ? "routine" : "task"}">${ico("plus")}</button></div></header>
-  <div class="tools">${segHtml("Show", PERS_SUBS, s, "sub")}${catChipRow()}${searchField()}</div>`;
+  ${areaBar()}<div class="tools">${segHtml("Show", PERS_SUBS, s, "sub")}${catChipRow()}${searchField()}</div>`;
   let cards;
   if (s === "cats") {
     // like Clients in Work: one card per category holding its open tasks (soonest first) and its routines
@@ -2123,7 +2168,7 @@ function recentPRs() {
 }
 function viewGym() {
   const d0 = today(), sel = isDay(S.gymDay) ? S.gymDay : d0, ws = weekStart(d0);
-  const head = `<header class="navbar"><div><h1>Gym</h1><div class="sub">${esc(fDL(sel))}</div></div><div class="acts">${rfBtn()}<button type="button" class="icon-btn" data-act="new" aria-label="New gym task">${ico("plus")}</button></div></header>`;
+  const head = `<header class="navbar"><div><h1>Gym</h1><div class="sub">${esc(fDL(sel))}</div></div><div class="acts">${rfBtn()}<button type="button" class="icon-btn" data-act="new" aria-label="New gym task">${ico("plus")}</button></div></header>${areaBar()}`;
   // hero: today's session, else the next one
   let hero = "";
   const todays = gymOn(d0);
@@ -3347,7 +3392,7 @@ view.addEventListener("submit", e => {
 });
 
 /* ---------- offline copy and update notice ---------- */
-const APP_VERSION = "5.3"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
+const APP_VERSION = "5.5"; // raise to 1.1, 1.2 and so on with each release; any change shows the update banner
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(() => swConfig()).catch(() => {});
 /* The page opens from the saved copy at once. The check below asks GitHub for the live version (a fresh URL each time, so
    GitHub's own 10-minute cache can't hide it), saves the new page and switches straight away if you haven't touched anything yet;
